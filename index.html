@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>CCBC</title>
+		<link rel="stylesheet" href="./bootstrap.min.css">
+		<script src="./jquery.min.js"></script>
+		<script src="./bootstrap.min.js"></script>
+	</head>
+	<body>
+		<form role="form">
+			<div class="form-group">
+				<label for="name">单表暴力</label>
+				<textarea id="content" class="form-control" rows="20"></textarea>
+				<button id="bruteforce" type="button">单表暴力</button>
+			</div>
+		</form>
+		<script src="./bootstrap.min.js"></script>
+		<script src="./substitution.js"></script>
+		<script>
+			$("#bruteforce").click(function(){
+				var content = $("#content").val();
+				console.info(content);
+				plaintext = substituteSolver(content);
+				$("#content").val(plaintext);
+			});
+		</script>
+	</body>
+</html>
