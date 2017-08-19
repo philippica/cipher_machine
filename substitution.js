@@ -20,8 +20,8 @@ MappingTable.prototype = {
 	init : function() {
 		this.matrix = new Array(26);
 		for(var i = 0; i < 26; i++) {
+			this.matrix[String.fromCharCode(97 + i)] = new Array(26);
 			var curCol = this.matrix[String.fromCharCode(97 + i)];
-			curCol = new Array(26);
 			for(var j = 0; j < 26; j++) {
 				curCol[String.fromCharCode(97 + j)] = MappingTable.possible;
 			}
