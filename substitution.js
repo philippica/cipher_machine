@@ -15,11 +15,35 @@ function pattern(str) {
 }
 
 
-function substituteSolver(text) {
-	tokens = text.split(/[^a-zA-Z0-9\']+/);
-	countOfTokens = tokens.length;
-	for(var i = 0; i < countOfTokens; i++) {
-		console.info(tokens[i]);
+MappingTable = function(matrix) {this.matrix = matrix;}
+MappingTable.prototype = {
+	init : function() {
+		this.matrix = new Array(26);
+		for(var i = 0; i < 26; i++) {
+			var curCol = this.matrix[String.fromCharCode(97 + i)];
+			curCol = new Array(26);
+			for(var j = 0; j < 26; j++) {
+				curCol[String.fromCharCode(97 + j)] = MappingTable.possible;
+			}
+		}
 	}
-	return tokens;
+}
+MappingTable.possible   = 0;
+MappingTable.impossible = 1;
+
+
+token = function(word, posibleList){this.word = word; this.posibleList = posibleList};
+
+token.prototype = {
+	eliminate : function(){}
+}
+
+
+function substituteSolver(text) {
+	rawTokens = text.split(/[^a-zA-Z0-9\']+/);
+	countOfTokens = rawTokens.length;
+	for(var i = 0; i < countOfTokens; i++) {
+		console.info(rawTokens[i]);
+	}
+	return rawTokens;
 }
