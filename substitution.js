@@ -26,6 +26,18 @@ MappingTable.prototype = {
 				curCol[String.fromCharCode(97 + j)] = MappingTable.possible;
 			}
 		}
+	},
+	disallow : function(oriChar, matchedChar) {
+		this.matrix[oriChar][matchedChar] = MappingTable.impossible;
+	},
+	getAllowedChars : function(oriChar) {
+		ret = new Array();
+		for(var i = 0; i < 26; i++) {
+			if(this.matrix[oriChar][String.fromCharCode(97 + j)] == MappingTable.possible) {
+				ret.push(String.fromCharCode(97 + j));
+			}
+		}
+		return ret;
 	}
 }
 MappingTable.possible   = 0;
