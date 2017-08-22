@@ -38,16 +38,33 @@ MappingTable.prototype = {
 			}
 		}
 		return ret;
+	},
+	isAllowed : function(oriChar, matchedChar) {
+		return this.matrix[oriChar][matchedChar];
 	}
 }
 MappingTable.possible   = 0;
 MappingTable.impossible = 1;
 
 
-token = function(word, posibleList){this.word = word; this.posibleList = posibleList};
+token = function(word, possibleList){this.word = word; this.possibleList = posibleList};
 
 token.prototype = {
-	eliminate : function(){}
+	eliminate : function(mappingTable){
+		var len = this.word.length;
+		for(var possibleWord in this.possibleList) {
+			var flag = 0;
+			for(var i = 0; i < len; i++) {
+				if(mappingTable.isAllowed(this.word[i], possibleWord[i]) == MappingTable.impossible) {
+					flag = 1;
+					break;
+				}
+			}
+			if(flag) {
+				this.possibleList
+			}
+		}
+	}
 }
 
 
