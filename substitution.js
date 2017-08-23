@@ -15,7 +15,7 @@ function pattern(str) {
 }
 
 
-MappingTable = function(matrix) {this.matrix = matrix;}
+MappingTable = function() {}
 MappingTable.prototype = {
 	init : function() {
 		this.matrix = new Array(26);
@@ -43,36 +43,82 @@ MappingTable.prototype = {
 		return this.matrix[oriChar][matchedChar];
 	}
 }
-MappingTable.possible   = 0;
-MappingTable.impossible = 1;
+MappingTable.possible   = 1;
+MappingTable.impossible = 0;
+
+var mappingTable = new MappingTable();
 
 
-token = function(word, possibleList){this.word = word; this.possibleList = posibleList};
+Token = function(word, possibleList){this.word = word; this.possibleList = possibleList};
 
-token.prototype = {
-	eliminate : function(mappingTable){
-		var len = this.word.length;
-		for(var possibleWord in this.possibleList) {
-			var flag = 0;
-			for(var i = 0; i < len; i++) {
-				if(mappingTable.isAllowed(this.word[i], possibleWord[i]) == MappingTable.impossible) {
-					flag = 1;
+Token.prototype = {
+	eliminate : function(mappingTable) {
+		var len = this.word.length,
+		    possibleListLen = this.possibleList.length,
+		    deleteList = new Array();
+		// For each possible word, delete it if it's letter is not matched.
+		for(var i = 0; i < possibleListLen; i++) {
+			var flag = 0,
+			    possibleWord = this.possibleList[i];
+			if(possibleWord === undefined) {
+				break;
+			}
+			for(var j = 0; j < len; j++) {
+				if(mappingTable.isAllowed(this.word[j], possibleWord[j]) === MappingTable.impossible) {
+					deleteList[i] = 1;
 					break;
 				}
 			}
-			if(flag) {
-				this.possibleList
+		}
+		for(var i = possibleListLen - 1; i >= 0; i--) {
+			if(deleteList[i] === 1) {
+				this.possibleList.splice(i, 1);
 			}
 		}
+		
+	},
+	trimMappingTable : function(mappingTable) {
+		var len = this.word.length,
+			possibleListLen = this.possibleList.length,
+			possibleLetters = new Array(26);
+		for(var i = 0; i < len; i++) {
+			for(var j = 0; j < 26; j++) {
+				possibleLetters[j] = MappingTable.impossible;
+			}
+			var curLetter = this.word[i];
+			for(var j = 0; j < possibleListLen; j++) {
+				possibleLetters[this.possibleList[j].charCodeAt(i) - 97] = MappingTable.possible;
+			}
+			for(var j = 0; j < 26; j++) {
+				if(possibleLetters[j] !== MappingTable.possible) {
+					mappingTable.disallow(this.word[i], String.fromCharCode(97 + j));
+				}
+			}
+		}
+	},
+	customize : function(mappingTable) {
+		this.eliminate(mappingTable);
+		this.trimMappingTable(mappingTable);
 	}
 }
 
+
+var queue = new Array();
 
 function substituteSolver(text) {
 	rawTokens = text.split(/[^a-zA-Z0-9\']+/);
 	countOfTokens = rawTokens.length;
+	mappingTable.init();
 	for(var i = 0; i < countOfTokens; i++) {
 		console.info(rawTokens[i]);
+		var possibleList = words[pattern(rawTokens[i])].slice(0);
+		var curToken = new Token(rawTokens[i], possibleList);
+		curToken.customize(mappingTable);
+		console.info(curToken);
 	}
 	return rawTokens;
 }
+
+
+
+
