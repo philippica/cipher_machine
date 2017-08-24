@@ -4,7 +4,6 @@ function pattern(str) {
 	var ret = "";
 	var usedLetter = new Array(26);
 	for(var i = 0; i < len; i++) {
-		console.info(usedLetter[str[i]]);
 		if(usedLetter[str[i]] == undefined) {
 			usedLetter[str[i]] = String.fromCharCode(curLetter + 97);
 			curLetter++;
@@ -106,19 +105,39 @@ Token.prototype = {
 var queue = new Array();
 
 function substituteSolver(text) {
+	text = text.toLowerCase();
 	rawTokens = text.split(/[^a-zA-Z0-9\']+/);
 	countOfTokens = rawTokens.length;
 	mappingTable.init();
+	queue = [];
 	for(var i = 0; i < countOfTokens; i++) {
-		console.info(rawTokens[i]);
+		if(rawTokens[i] == "") {
+			continue;
+		}
 		var possibleList = words[pattern(rawTokens[i])].slice(0);
 		var curToken = new Token(rawTokens[i], possibleList);
 		curToken.customize(mappingTable);
-		console.info(curToken);
+		if(curToken.possibleList.length > 1) {
+			queue.push(curToken);
+		} else {
+			console.info(curToken.possibleList);
+		}
 	}
-	return rawTokens;
+	var loopTime = 0;
+	while(queue.length > 0) {
+		var topToken = queue.shift();
+		topToken.customize(mappingTable);
+		if(topToken.possibleList.length > 1) {
+			queue.push(topToken);
+		} else {
+			console.info(topToken.possibleList);
+		}
+		loopTime++;
+		if(loopTime > 100)break;
+	}
+	console.info("end");
+	for(var i = 0; i < queue.length; i++) {
+		console.info(queue[i]);
+	}
+	return text;
 }
-
-
-
-
