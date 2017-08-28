@@ -32,7 +32,7 @@ MappingTable.prototype = {
 	getAllowedChars : function(oriChar) {
 		ret = new Array();
 		for(var i = 0; i < 26; i++) {
-			if(this.matrix[oriChar][String.fromCharCode(97 + j)] == MappingTable.possible) {
+			if(this.matrix[oriChar][String.fromCharCode(97 + j)] === MappingTable.possible) {
 				ret.push(String.fromCharCode(97 + j));
 			}
 		}
@@ -48,7 +48,7 @@ MappingTable.impossible = 0;
 var mappingTable = new MappingTable();
 
 
-Token = function(word, possibleList){this.word = word; this.possibleList = possibleList};
+Token = function(word, possibleList, position){this.word = word; this.possibleList = possibleList; this.position = position;};
 
 Token.prototype = {
 	eliminate : function(mappingTable) {
@@ -105,8 +105,9 @@ Token.prototype = {
 var queue = new Array();
 
 function substituteSolver(text) {
-	text = text.toLowerCase();
-	rawTokens = text.split(/[^a-zA-Z0-9\']+/);
+	var text = text.toLowerCase();
+	var rawTokens = text.split(/[^a-zA-Z0-9\']+/);
+	var ans = new Array();
 	countOfTokens = rawTokens.length;
 	mappingTable.init();
 	queue = [];
@@ -115,29 +116,32 @@ function substituteSolver(text) {
 			continue;
 		}
 		var possibleList = words[pattern(rawTokens[i])].slice(0);
-		var curToken = new Token(rawTokens[i], possibleList);
+		var curToken = new Token(rawTokens[i], possibleList, i);
 		curToken.customize(mappingTable);
 		if(curToken.possibleList.length > 1) {
 			queue.push(curToken);
 		} else {
-			console.info(curToken.possibleList);
+			ans[curToken.position] = curToken;
 		}
 	}
 	var loopTime = 0;
 	while(queue.length > 0) {
 		var topToken = queue.shift();
 		topToken.customize(mappingTable);
-		if(topToken.possibleList.length > 1) {
+		if(topToken.possibleList.length > 10) {
 			queue.push(topToken);
+			loopTime++;
 		} else {
-			console.info(topToken.possibleList);
+			ans[topToken.position] = topToken;
 		}
-		loopTime++;
 		if(loopTime > 100)break;
 	}
-	console.info("end");
 	for(var i = 0; i < queue.length; i++) {
-		console.info(queue[i]);
+		ans[queue[i].position] = queue[i];
+	}
+	console.info(ans);
+	for(var i = 0; i < ans.length; i++) {
+		console.info(ans[i].possibleList[0]);
 	}
 	return text;
 }
