@@ -14,7 +14,7 @@ function pattern(str) {
 }
 
 
-MappingTable = function() {}
+MappingTable = function() {this.mode = MappingTable.impossible;}
 MappingTable.prototype = {
 	init : function() {
 		this.matrix = new Array(26);
@@ -25,14 +25,15 @@ MappingTable.prototype = {
 				curCol[String.fromCharCode(97 + j)] = MappingTable.possible;
 			}
 		}
+		this.mode = MappingTable.impossible;
 	},
 	disallow : function(oriChar, matchedChar) {
-		this.matrix[oriChar][matchedChar] = MappingTable.impossible;
+		this.matrix[oriChar][matchedChar] = this.mode;
 	},
 	getAllowedChars : function(oriChar) {
 		ret = new Array();
 		for(var i = 0; i < 26; i++) {
-			if(this.matrix[oriChar][String.fromCharCode(97 + j)] === MappingTable.possible) {
+			if(this.matrix[oriChar][String.fromCharCode(97 + j)] !== MappingTable.impossible) {
 				ret.push(String.fromCharCode(97 + j));
 			}
 		}
@@ -41,9 +42,14 @@ MappingTable.prototype = {
 	isAllowed : function(oriChar, matchedChar) {
 		return this.matrix[oriChar][matchedChar];
 	}
+	mapMode : function(mode) {
+		this.mode = mode;
+	}
 }
-MappingTable.possible   = 1;
-MappingTable.impossible = 0;
+MappingTable.guessPossible   = 3;
+MappingTable.guessImpossible = 2;
+MappingTable.possible        = 1;
+MappingTable.impossible      = 0;
 
 var mappingTable = new MappingTable();
 
@@ -60,9 +66,10 @@ Token.prototype = {
 			var flag = 0,
 			    possibleWord = this.possibleList[i];
 			if(possibleWord === undefined) {
-				break;
+				deleteList[i] = 1;
+				continue;
 			}
-			for(var j = 0; j < len; j++) {
+			for(var j = 0; j < len; j++) {			
 				if(mappingTable.isAllowed(this.word[j], possibleWord[j]) === MappingTable.impossible) {
 					deleteList[i] = 1;
 					break;
@@ -103,11 +110,28 @@ Token.prototype = {
 
 
 var queue = new Array();
+var ans = new Array();
+
+
+function refreshQue() {
+	var loopTime = 0;
+	while(queue.length > 0) {
+		var topToken = queue.shift();
+		topToken.customize(mappingTable);
+		if(topToken.possibleList.length > 1) {
+			queue.push(topToken);
+			loopTime++;
+		} else {
+			ans[topToken.position] = topToken;
+		}
+		if(loopTime > 500)break;
+	}
+}
+
 
 function substituteSolver(text) {
 	var text = text.toLowerCase();
 	var rawTokens = text.split(/[^a-zA-Z0-9\']+/);
-	var ans = new Array();
 	countOfTokens = rawTokens.length;
 	mappingTable.init();
 	queue = [];
@@ -124,18 +148,20 @@ function substituteSolver(text) {
 			ans[curToken.position] = curToken;
 		}
 	}
-	var loopTime = 0;
-	while(queue.length > 0) {
-		var topToken = queue.shift();
-		topToken.customize(mappingTable);
-		if(topToken.possibleList.length > 10) {
-			queue.push(topToken);
-			loopTime++;
-		} else {
-			ans[topToken.position] = topToken;
-		}
-		if(loopTime > 100)break;
+
+	refreshQue();
+
+	var minLen = 3000;
+	var minIdx = 0;
+	for(var i = 0; i < queue.length; i++) {
+		if(queue[i].possibleList.length < minLen) {
+			minIdx = i;
+			minLen = queue[i].possibleList.length
+		} 
 	}
+	console.info(minLen);
+
+
 	for(var i = 0; i < queue.length; i++) {
 		ans[queue[i].position] = queue[i];
 	}
@@ -143,5 +169,11 @@ function substituteSolver(text) {
 	for(var i = 0; i < ans.length; i++) {
 		console.info(ans[i].possibleList[0]);
 	}
+
+
 	return text;
 }
+
+
+
+
