@@ -18,6 +18,7 @@ MappingTable = function() {this.mode = MappingTable.impossible;}
 MappingTable.prototype = {
 	init : function() {
 		this.matrix = new Array(26);
+		this.ensure = new Array(26);
 		for(var i = 0; i < 26; i++) {
 			this.matrix[String.fromCharCode(97 + i)] = new Array(26);
 			var curCol = this.matrix[String.fromCharCode(97 + i)];
@@ -30,6 +31,20 @@ MappingTable.prototype = {
 	disallow : function(oriChar, matchedChar) {
 		this.matrix[oriChar][matchedChar] = this.mode;
 	},
+	unique : function(ch) {
+		var count = 0;
+		for(var i = 0; i < 26; i++) {
+			if(this.matrix[ch][String.fromCharCode(97 + i)] === MappingTable.possible) {
+				this.ensure[ch] = String.fromCharCode(97 + i);
+				count++;
+				if(count > 1) {
+					this.ensure[ch] = null;
+					return false;
+				}
+			}
+		}
+		return true;
+	},
 	getAllowedChars : function(oriChar) {
 		ret = new Array();
 		for(var i = 0; i < 26; i++) {
@@ -41,7 +56,8 @@ MappingTable.prototype = {
 	},
 	isAllowed : function(oriChar, matchedChar) {
 		return this.matrix[oriChar][matchedChar];
-	}
+	},
+	
 	mapMode : function(mode) {
 		this.mode = mode;
 	}
@@ -100,6 +116,15 @@ Token.prototype = {
 					mappingTable.disallow(this.word[i], String.fromCharCode(97 + j));
 				}
 			}
+ 			if(mappingTable.unique(curLetter) === true) {
+				ensureLetter = mappingTable.ensure[curLetter];
+				for(var j = 0; j < 26; j++) {
+					if(curLetter === String.fromCharCode(j + 97)){
+						continue;
+					}
+					mappingTable.disallow(String.fromCharCode(97 + j), ensureLetter);
+				}
+			} 
 		}
 	},
 	customize : function(mappingTable) {
