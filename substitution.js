@@ -160,6 +160,7 @@ function substituteSolver(text) {
 	countOfTokens = rawTokens.length;
 	mappingTable.init();
 	queue = [];
+	ans = [];
 	for(var i = 0; i < countOfTokens; i++) {
 		if(rawTokens[i] == "") {
 			continue;
