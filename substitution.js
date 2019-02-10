@@ -14,7 +14,18 @@ function pattern(str) {
 }
 
 
-MappingTable = function() {this.mode = MappingTable.impossible;}
+MappingTable = function() {
+	this.mode = MappingTable.impossible;
+	this.matrix = new Array(26);
+	this.ensure = new Array(26);
+	for(var i = 0; i < 26; i++) {
+		this.matrix[String.fromCharCode(97 + i)] = new Array(26);
+		var curCol = this.matrix[String.fromCharCode(97 + i)];
+		for(var j = 0; j < 26; j++) {
+			curCol[String.fromCharCode(97 + j)] = MappingTable.possible;
+		}
+	}
+}
 MappingTable.prototype = {
 	init : function() {
 		this.matrix = new Array(26);
@@ -60,6 +71,16 @@ MappingTable.prototype = {
 	
 	mapMode : function(mode) {
 		this.mode = mode;
+	},
+	copy : function() {
+		var ret = new MappingTable();
+		ret.ensure = [].concat(this.ensure);
+		for(var i = 0; i < 26; i++) {
+			for(var j = 0 ; j < 26; j++) {
+				ret.matrix[String.fromCharCode(97 + i)][String.fromCharCode(97 + j)] = this.matrix[String.fromCharCode(97 + i)][String.fromCharCode(97 + j)]
+			}
+		}
+		return ret;
 	}
 }
 MappingTable.guessPossible   = 3;
@@ -67,10 +88,13 @@ MappingTable.guessImpossible = 2;
 MappingTable.possible        = 1;
 MappingTable.impossible      = 0;
 
-var mappingTable = new MappingTable();
 
 
-Token = function(word, possibleList, position){this.word = word; this.possibleList = possibleList; this.position = position;};
+Token = function(word, possibleList, position) {
+	this.word = word; 
+	this.possibleList = JSON.parse(JSON.stringify(possibleList)); 
+	this.position = position;
+};
 
 Token.prototype = {
 	eliminate : function(mappingTable) {
@@ -130,6 +154,10 @@ Token.prototype = {
 	customize : function(mappingTable) {
 		this.eliminate(mappingTable);
 		this.trimMappingTable(mappingTable);
+	},
+	copy : function() {
+		var ret = new Token(this.word, this.possibleList, this.position);
+		return ret;
 	}
 }
 
@@ -138,27 +166,85 @@ var queue = new Array();
 var ans = new Array();
 
 
-function refreshQue() {
+function refreshQue(que, answer, mappingTable) {
 	var loopTime = 0;
-	while(queue.length > 0) {
-		var topToken = queue.shift();
+	while(que.length > 0) {
+		var topToken = que.shift();
 		topToken.customize(mappingTable);
 		if(topToken.possibleList.length > 1) {
-			queue.push(topToken);
+			que.push(topToken);
 			loopTime++;
+		} else if (topToken.possibleList.length === 0){
+			return 0;
 		} else {
-			ans[topToken.position] = topToken;
+			answer[topToken.position] = topToken;
 		}
 		if(loopTime > 500)break;
 	}
+	return 1;
+}
+
+function output(answer, queue)
+{
+	var ret = "";
+	answer.sort((a, b)=>{
+		return a.position - b.position;
+	});
+	for(var idx in answer) {
+		ret += answer[idx].possibleList[0] + " ";
+	}
+	console.info(ret);
+}
+
+
+function dfs(que, answer, mappingTable) {
+	if(que.length === 0) {
+		return;
+	}
+
+	var minLen = que[0].possibleList.length;
+	var minIdx = 0;
+	for(var i = 0; i < que.length; i++) {
+		if(minLen > que[i].possibleList.length) {
+			minLen = que[i].possibleList.length;
+			minIdx = i;
+		}
+	}
+
+	for(var i = 0; i < minLen; i++) {
+		var dummyQue = new Array();
+		var dummyAns = new Array();
+		var dummyMappingTable = mappingTable.copy();
+
+		for(var j = 0; j < que.length; j++) {
+			dummyQue.push(que[j].copy());
+		}
+
+		for(var idx in answer) {
+			dummyAns[answer[idx].position] = answer[idx].copy();
+			//dummyAns.push(answer[idx].copy());
+		}
+
+		dummyQue[minIdx].possibleList = [];
+		dummyQue[minIdx].possibleList.push(que[minIdx].possibleList[i]);
+		if(refreshQue(dummyQue, dummyAns, dummyMappingTable) === 0) {
+			continue;
+		}
+		if(dummyQue.length === 0) {
+			output(dummyAns, dummyQue);
+			continue;
+		}
+		dfs(dummyQue, dummyAns, mappingTable);
+	}
+
 }
 
 
 function substituteSolver(text) {
 	var text = text.toLowerCase();
 	var rawTokens = text.split(/[^a-zA-Z0-9\']+/);
+	var mappingTable = new MappingTable();
 	countOfTokens = rawTokens.length;
-	mappingTable.init();
 	queue = [];
 	ans = [];
 	for(var i = 0; i < countOfTokens; i++) {
@@ -175,7 +261,10 @@ function substituteSolver(text) {
 		}
 	}
 
-	refreshQue();
+	refreshQue(queue, ans, mappingTable);
+
+
+	dfs(queue, ans, mappingTable);
 
 	var minLen = 3000;
 	var minIdx = 0;
@@ -185,16 +274,7 @@ function substituteSolver(text) {
 			minLen = queue[i].possibleList.length
 		} 
 	}
-	console.info(minLen);
 
-
-	for(var i = 0; i < queue.length; i++) {
-		ans[queue[i].position] = queue[i];
-	}
-	console.info(ans);
-	for(var i = 0; i < ans.length; i++) {
-		console.info(ans[i].possibleList[0]);
-	}
 
 
 	return text;
