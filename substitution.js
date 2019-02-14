@@ -87,7 +87,7 @@ MappingTable.guessPossible   = 3;
 MappingTable.guessImpossible = 2;
 MappingTable.possible        = 1;
 MappingTable.impossible      = 0;
-
+globleAns = [];
 
 
 Token = function(word, possibleList, position) {
@@ -184,7 +184,7 @@ function refreshQue(que, answer, mappingTable) {
 	return 1;
 }
 
-function output(answer, queue)
+function output(answer, queue, weight)
 {
 	var ret = "";
 	answer.sort((a, b)=>{
@@ -193,12 +193,14 @@ function output(answer, queue)
 	for(var idx in answer) {
 		ret += answer[idx].possibleList[0] + " ";
 	}
-	console.info(ret);
+	globleAns.push({ret, weight});
+	//console.info(ret);
 }
 
 
-function dfs(que, answer, mappingTable) {
+function dfs(que, answer, mappingTable, totalWeight) {
 	if(que.length === 0) {
+		output(answer, que, totalWeight);
 		return;
 	}
 
@@ -212,6 +214,7 @@ function dfs(que, answer, mappingTable) {
 	}
 
 	for(var i = 0; i < minLen; i++) {
+		var weight = (i + 1) * 100.0 / minLen;
 		var dummyQue = new Array();
 		var dummyAns = new Array();
 		var dummyMappingTable = mappingTable.copy();
@@ -230,11 +233,7 @@ function dfs(que, answer, mappingTable) {
 		if(refreshQue(dummyQue, dummyAns, dummyMappingTable) === 0) {
 			continue;
 		}
-		if(dummyQue.length === 0) {
-			output(dummyAns, dummyQue);
-			continue;
-		}
-		dfs(dummyQue, dummyAns, mappingTable);
+		dfs(dummyQue, dummyAns, mappingTable, totalWeight + weight);
 	}
 
 }
@@ -244,6 +243,7 @@ function substituteSolver(text) {
 	var text = text.toLowerCase();
 	var rawTokens = text.split(/[^a-zA-Z0-9\']+/);
 	var mappingTable = new MappingTable();
+	globleAns = [];
 	countOfTokens = rawTokens.length;
 	queue = [];
 	ans = [];
@@ -264,17 +264,12 @@ function substituteSolver(text) {
 	refreshQue(queue, ans, mappingTable);
 
 
-	dfs(queue, ans, mappingTable);
+	dfs(queue, ans, mappingTable, 0);
 
-	var minLen = 3000;
-	var minIdx = 0;
-	for(var i = 0; i < queue.length; i++) {
-		if(queue[i].possibleList.length < minLen) {
-			minIdx = i;
-			minLen = queue[i].possibleList.length
-		} 
-	}
-
+	globleAns.sort(function(a, b) {
+		return a.weight - b.weight;
+	});
+	console.info(globleAns);
 
 
 	return text;
