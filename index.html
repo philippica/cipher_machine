@@ -15,13 +15,13 @@
 				<button id="bruteforce" type="button">单表暴力</button>
 			</div>
 		</form>
-		<script src="./dict.js"></script>
-		<script src="./substitution.js"></script>
+		
+		<script src="./dist/index.js"></script>
 		<script>
 			$("#bruteforce").click(function(){
 				var content = $("#content").val();
 				console.info(content);
-				plaintext = substituteSolver(content);
+				plaintext = new Substitution.default().substituteSolver(content);
 				$("#content").val(plaintext);
 			});
 		</script>
