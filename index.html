@@ -21,7 +21,7 @@
 			$("#bruteforce").click(function(){
 				var content = $("#content").val();
 				console.info(content);
-				plaintext = SubstitutionSolver(content);
+				plaintext = new Substitution.default().substituteSolver(content);
 				$("#content").val(plaintext);
 			});
 		</script>
