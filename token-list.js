@@ -21,20 +21,44 @@ export class TokenList {
 		return ret;
 	}
 
+	generateWeight(possibleList, weight) {
+		const possibleListLen = possibleList.length;
+		if(possibleListLen > 10) {
+			for(let i = 0; i < possibleListLen; i++) {
+				if(i / possibleListLen < 0.1) {
+					weight[possibleList[i]] = 15;
+				} else if(i / possibleListLen < 0.6) {
+					weight[possibleList[i]] = 8;
+				} else if(i / possibleListLen < 0.9) {
+					weight[possibleList[i]] = 1;
+				} else {
+					weight[possibleList[i]] = -1;
+				}
+			}
+		} else {
+			for(let i = 0; i < possibleListLen; i++) {
+				weight[possibleList[i]] = possibleListLen - i;
+			}
+		}
+	}
 
-    build(rawTokens, ans, mappingTable) {
+
+    build(rawTokens, knownWordsList, mappingTable, weight) {
 		const countOfTokens = rawTokens.length;
 		for(let i = 0; i < countOfTokens; i++) {
 			if(rawTokens[i] == "") {
 				continue;
 			}
 			const possibleList = words[this.pattern(rawTokens[i])].slice(0);
+
+			this.generateWeight(possibleList, weight);
+
 			const curToken = new Token(rawTokens[i], possibleList, i);
 			curToken.customize(mappingTable);
 			if(curToken.possibleList.length > 1) {
 				this._list.push(curToken);
 			} else {
-				ans[curToken.position] = curToken;
+				knownWordsList.list[curToken.position] = curToken;
 			}
 		}
     }
@@ -53,8 +77,10 @@ export class TokenList {
 
     copy() {
         const retTokenList = new TokenList();
-        for(let unknwonWordToken of this._list) {
-            retTokenList.push(unknwonWordToken.copy());
+        for(let i = 0; i < this._list.length; i++) {
+			const wordToken = this._list[i];
+			if(!wordToken)continue;
+            retTokenList.list[i] = wordToken.copy();
         }
         return retTokenList;
     }
@@ -71,23 +97,31 @@ export class TokenList {
         return minIndex;
     }
 
-	refreshByMappintTable(answer, mappingTable) {
+	refreshByMappintTable(knownWordsList, mappingTable) {
 		var loopTime = 0;
         const list = this._list;
+		let lastChanged = 0;
 		while(list.length > 0) {
 			var topToken = list.shift();
-			topToken.customize(mappingTable);
+			const isChanged = topToken.customize(mappingTable);
 			if(topToken.possibleList.length > 1) {
 				list.push(topToken);
-				loopTime++;
 			} else if (topToken.possibleList.length === 0){
-				return 0;
+				return [false];
 			} else {
-				answer[topToken.position] = topToken;
+				knownWordsList.list[topToken.position] = topToken;
 			}
-			if(loopTime > 500)break;
+
+			loopTime++;
+			if(loopTime - lastChanged > list.length) {
+				break;
+			}
+			if(isChanged) {
+				lastChanged = loopTime;
+			}
+			// if(loopTime > 500)break;
 		}
-		return 1;
+		return [true];
 	}
 
     empty() {
