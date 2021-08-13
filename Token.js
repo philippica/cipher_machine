@@ -10,11 +10,11 @@ export class Token {
     eliminate(mappingTable) {
 		var len = this.word.length,
 		    possibleListLen = this.possibleList.length,
-		    deleteList = new Array();
+		    deleteList = new Array(),
+			flag = false;
 		// For each possible word, delete it if it's letter is not matched.
 		for(var i = 0; i < possibleListLen; i++) {
-			var flag = 0,
-			    possibleWord = this.possibleList[i];
+			var possibleWord = this.possibleList[i];
 			if(possibleWord === undefined) {
 				deleteList[i] = 1;
 				continue;
@@ -22,6 +22,7 @@ export class Token {
 			for(var j = 0; j < len; j++) {			
 				if(mappingTable.isAllowed(this.word[j], possibleWord[j]) === MappingTable.impossible) {
 					deleteList[i] = 1;
+					flag = true;
 					break;
 				}
 			}
@@ -30,12 +31,14 @@ export class Token {
 			if(deleteList[i] === 1) {
 				this.possibleList.splice(i, 1);
 			}
-		}	
+		}
+		return flag;
 	}
     trimMappingTable(mappingTable) {
 		var len = this.word.length,
 			possibleListLen = this.possibleList.length,
-			possibleLetters = new Array(26);
+			possibleLetters = new Array(26),
+			flag = false;
 		for(var i = 0; i < len; i++) {
 			for(var j = 0; j < 26; j++) {
 				possibleLetters[j] = MappingTable.impossible;
@@ -46,7 +49,8 @@ export class Token {
 			}
 			for(var j = 0; j < 26; j++) {
 				if(possibleLetters[j] !== MappingTable.possible) {
-					mappingTable.disallow(this.word[i], String.fromCharCode(97 + j));
+					const isChanged = mappingTable.disallow(this.word[i], String.fromCharCode(97 + j));
+					flag = flag || isChanged;
 				}
 			}
  			if(mappingTable.unique(curLetter) === true) {
@@ -55,14 +59,17 @@ export class Token {
 					if(curLetter === String.fromCharCode(j + 97)){
 						continue;
 					}
-					mappingTable.disallow(String.fromCharCode(97 + j), ensureLetter);
+					const isChanged = mappingTable.disallow(String.fromCharCode(97 + j), ensureLetter);
+					flag = isChanged || flag;
 				}
-			} 
+			}
 		}
+		return flag;
     }
     customize(mappingTable) {
-		this.eliminate(mappingTable);
-		this.trimMappingTable(mappingTable);
+		let isEliminated = this.eliminate(mappingTable);
+		let isTrimed = this.trimMappingTable(mappingTable);
+		return isEliminated || isTrimed;
 	}
     copy() {
 		var ret = new Token(this.word, this.possibleList, this.position);

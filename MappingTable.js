@@ -30,7 +30,9 @@ export class MappingTable {
 	}
 
 	disallow(oriChar, matchedChar) {
+		const isChanged = this.matrix[oriChar][matchedChar] !== this.mode;
 		this.matrix[oriChar][matchedChar] = this.mode;
+		return isChanged;
 	}
 
 	unique(ch) {
@@ -61,9 +63,11 @@ export class MappingTable {
 	isAllowed(oriChar, matchedChar) {
 		return this.matrix[oriChar][matchedChar];
 	}
+
 	mapMode(mode) {
 		this.mode = mode;
 	}
+	
 	copy() {
 		const ret = new MappingTable();
 		ret.ensure = [].concat(this.ensure);

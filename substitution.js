@@ -1,6 +1,4 @@
-import { words } from './dict.js';
 import { MappingTable } from './MappingTable';
-import { Token } from './Token';
 import { TokenList } from './token-list.js';
 
 
@@ -8,6 +6,7 @@ export class SubstitutionSolver {
 	constructor() {
 		this.globleAns = [];
 		this.ans = new Array();
+		this.weight = [];
 	}
 	substituteSolver(text) {
 		var text = text.toLowerCase();
@@ -16,28 +15,26 @@ export class SubstitutionSolver {
 		var unknownWordsList = new TokenList();
 		this.globleAns = [];
 		this.ans = [];
+		var knownWordsList = new TokenList();
 
-		unknownWordsList.build(rawTokens, this.ans, mappingTable);
+		unknownWordsList.build(rawTokens, knownWordsList, mappingTable, this.weight);
 
-		unknownWordsList.refreshByMappintTable(this.ans, mappingTable);
+		unknownWordsList.refreshByMappintTable(knownWordsList, mappingTable);
 	
-		this.dfs(unknownWordsList, this.ans, mappingTable, 0);
+		this.dfs(unknownWordsList, knownWordsList, mappingTable, 0);
 	
-		this.globleAns.sort(function(a, b) {
-			return a.weight - b.weight;
-		});
+		this.globleAns.sort((a, b) => b.weight - a.weight);
 		console.info(this.globleAns);
 		return text;
 	}
 
-	output(answer, weight)
+	output(answer)
 	{
-		var ret = "";
-		answer.sort((a, b)=>{
-			return a.position - b.position;
-		});
-		for(var idx in answer) {
-			ret += answer[idx].possibleList[0] + " ";
+		let ret = "";
+		let weight = 0;
+		for(let possibleToken of answer.list) {
+			ret += possibleToken.possibleList[0] + " ";
+			weight += this.weight[possibleToken.possibleList[0]];
 		}
 		this.globleAns.push({ret, weight});
 	}
@@ -51,9 +48,9 @@ export class SubstitutionSolver {
  *  	void
 */
 
-	dfs(unknownWordsList, answer, mappingTable, totalWeight) {
+	dfs(unknownWordsList, knownWordsList, mappingTable) {
 		if(unknownWordsList.empty()) {
-			this.output(answer, totalWeight);
+			this.output(knownWordsList);
 			return;
 		}
 
@@ -61,23 +58,18 @@ export class SubstitutionSolver {
 		const minLen = unknownWordsList.list[minSizeIndex].possibleList.length;
 	
 		for(var i = 0; i < minLen; i++) {
-			var weight = (i + 1) * 100.0 / minLen;
+			const chooseWord = unknownWordsList.list[minSizeIndex].possibleList[i];
 			const dummyUnknownWordsList = unknownWordsList.copy();
-			const dummyAns = new Array();
+			const dummyAns = knownWordsList.copy();
 			const dummyMappingTable = mappingTable.copy();
-
-	
-			for(var idx in answer) {
-				dummyAns[answer[idx].position] = answer[idx].copy();
-				//dummyAns.push(answer[idx].copy());
-			}
 	
 			dummyUnknownWordsList.list[minSizeIndex].possibleList = [];
-			dummyUnknownWordsList.list[minSizeIndex].possibleList.push(unknownWordsList.list[minSizeIndex].possibleList[i]);
-			if(dummyUnknownWordsList.refreshByMappintTable(dummyAns, dummyMappingTable) === 0) {
+			dummyUnknownWordsList.list[minSizeIndex].possibleList.push(chooseWord);
+			const result = dummyUnknownWordsList.refreshByMappintTable(dummyAns, dummyMappingTable);
+			if(result[0] === false) {
 				continue;
 			}
-			this.dfs(dummyUnknownWordsList, dummyAns, mappingTable, totalWeight + weight);
+			this.dfs(dummyUnknownWordsList, dummyAns, mappingTable);
 		}
 	}
 
