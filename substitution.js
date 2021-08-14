@@ -21,11 +21,12 @@ export class SubstitutionSolver {
 
 		unknownWordsList.refreshByMappintTable(knownWordsList, mappingTable);
 	
-		this.dfs(unknownWordsList, knownWordsList, mappingTable, 0);
-	
+		this.dfsNonRecursion(unknownWordsList, knownWordsList, mappingTable);
+		// this.dfs(unknownWordsList, knownWordsList, mappingTable);
+
 		this.globleAns.sort((a, b) => b.weight - a.weight);
 		console.info(this.globleAns);
-		return text;
+		return this.globleAns.map((item)=>item.ret);
 	}
 
 	output(answer)
@@ -62,19 +63,51 @@ export class SubstitutionSolver {
 			const dummyUnknownWordsList = unknownWordsList.copy();
 			const dummyAns = knownWordsList.copy();
 			const dummyMappingTable = mappingTable.copy();
-	
-			dummyUnknownWordsList.list[minSizeIndex].possibleList = [];
-			dummyUnknownWordsList.list[minSizeIndex].possibleList.push(chooseWord);
-			const result = dummyUnknownWordsList.refreshByMappintTable(dummyAns, dummyMappingTable);
-			if(result[0] === false) {
+
+			dummyUnknownWordsList.setPossibleList(minSizeIndex, chooseWord);
+
+			if(dummyUnknownWordsList.refreshByMappintTable(dummyAns, dummyMappingTable) === false) {
 				continue;
 			}
-			this.dfs(dummyUnknownWordsList, dummyAns, mappingTable);
+			this.dfs(dummyUnknownWordsList, dummyAns, dummyMappingTable);
+		}
+	}
+
+	dfsNonRecursion(unknownWordsList, knownWordsList, mappingTable) {
+		const stack = new Array();
+		stack.push({unknownWordsList, knownWordsList, mappingTable});
+		let countOfAnswer = 0;
+		while(stack.length > 0) {
+			const state = stack.pop();
+			if(state.unknownWordsList.empty()) {
+				this.output(state.knownWordsList);
+				countOfAnswer++;
+				if(countOfAnswer > 3000) {
+					return;
+				}
+				continue;
+			}
+
+			const minSizeIndex = state.unknownWordsList.getMinPossibleList();
+			const minLen = state.unknownWordsList.list[minSizeIndex].possibleList.length;
+		
+			for(var i = 0; i < minLen; i++) {
+				const chooseWord = state.unknownWordsList.list[minSizeIndex].possibleList[i];
+				const dummyUnknownWordsList = state.unknownWordsList.copy();
+				const dummyAns = state.knownWordsList.copy();
+				const dummyMappingTable = state.mappingTable.copy();
+	
+				dummyUnknownWordsList.setPossibleList(minSizeIndex, chooseWord);
+	
+				if(dummyUnknownWordsList.refreshByMappintTable(dummyAns, dummyMappingTable) === false) {
+					continue;
+				}
+				stack.push({unknownWordsList: dummyUnknownWordsList, knownWordsList: dummyAns, mappingTable: dummyMappingTable});
+			}
 		}
 	}
 
 }
-
 
 
 

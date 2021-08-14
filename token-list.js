@@ -25,7 +25,10 @@ export class TokenList {
 		const possibleListLen = possibleList.length;
 		if(possibleListLen > 10) {
 			for(let i = 0; i < possibleListLen; i++) {
-				if(i / possibleListLen < 0.1) {
+				if(possibleListLen > 100 && i <= 10) {
+					weight[possibleList[i]] = 17;
+				}
+				else if(i / possibleListLen < 0.4) {
 					weight[possibleList[i]] = 15;
 				} else if(i / possibleListLen < 0.6) {
 					weight[possibleList[i]] = 8;
@@ -107,7 +110,7 @@ export class TokenList {
 			if(topToken.possibleList.length > 1) {
 				list.push(topToken);
 			} else if (topToken.possibleList.length === 0){
-				return [false];
+				return false;
 			} else {
 				knownWordsList.list[topToken.position] = topToken;
 			}
@@ -121,11 +124,44 @@ export class TokenList {
 			}
 			// if(loopTime > 500)break;
 		}
-		return [true];
+		return true;
+	}
+
+
+	refreshByMappintTable2(knownWordsList, mappingTable) {
+		let list = this._list;
+		while(1) {
+			let isChangedThisTurn = false;
+			let newList = [];
+			for(let i = 0; i < list.length; i++) {
+				var topToken = list[i];
+				const isChanged = topToken.customize(mappingTable);
+				isChangedThisTurn = isChanged || isChangedThisTurn;
+				if(topToken.possibleList.length > 1) {
+					newList.push(topToken);
+				} else if (topToken.possibleList.length === 0){
+					this._list = list;
+					return false;
+				} else {
+					knownWordsList.list[topToken.position] = topToken;
+				}
+			}
+			list = newList;
+			if(isChangedThisTurn === false) {
+				break;
+			}
+		}
+		this._list = list;
+		return true;
 	}
 
     empty() {
         return this._list.length === 0;
     }
+
+	setPossibleList(index, word) {
+		this._list[index].possibleList = [];
+		this._list[index].possibleList.push(word);
+	}
 }
 
