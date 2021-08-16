@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Substitution - Test</title>
+	</head>
+	<body>
+		
+		<script src="../dist/index.js"></script>
+		<script>
+			const ans1 = new Substitution.default().substituteSolver("i am a boy");
+			if(ans1.length === 2012) {
+				console.info("Test1 pass.");
+			} else {
+				console.error("Test1 failed.");
+			}
+
+			const ans2 = new Substitution.default().substituteSolver("i am a boy and", 20000, 2);
+			const ans3 = new Substitution.default().substituteSolver("i am a boy and", 20000, 3);
+			if(ans2.length === ans3.length && ans2.length === 15035) {
+				console.info("Test2 pass.");
+			} else {
+				console.error("Test2 failed.");
+			}
+
+			const ans4 = new Substitution.default().substituteSolver("i. am\" a boy\", and", 20000, 3);
+			if(ans4.length === 15035) {
+				console.info("Test3 pass.");
+			} else {
+				console.error("Test3 failed.");
+			}
+		</script>
+	</body>
+</html>
