@@ -7,8 +7,11 @@ export class SubstitutionSolver {
 		this.globleAns = [];
 		this.ans = new Array();
 		this.weight = [];
+		this.threshold = 10;
 	}
-	substituteSolver(text) {
+	substituteSolver(text, maxOutput, threshold) {
+		this.threshold = threshold || 10;
+		this.maxOutput = maxOutput || 3000;
 		var text = text.toLowerCase();
 		var rawTokens = text.split(/[^a-zA-Z0-9\']+/);
 		var mappingTable = new MappingTable();
@@ -77,12 +80,13 @@ export class SubstitutionSolver {
 		const stack = new Array();
 		stack.push({unknownWordsList, knownWordsList, mappingTable});
 		let countOfAnswer = 0;
+		const stack2 = new Array();
 		while(stack.length > 0) {
 			const state = stack.pop();
 			if(state.unknownWordsList.empty()) {
 				this.output(state.knownWordsList);
 				countOfAnswer++;
-				if(countOfAnswer > 3000) {
+				if(countOfAnswer > this.maxOutput) {
 					return;
 				}
 				continue;
@@ -90,8 +94,9 @@ export class SubstitutionSolver {
 
 			const minSizeIndex = state.unknownWordsList.getMinPossibleList();
 			const minLen = state.unknownWordsList.list[minSizeIndex].possibleList.length;
+			const loopLen = Math.min(minLen, this.threshold);
 		
-			for(var i = 0; i < minLen; i++) {
+			for(var i = 0; i < loopLen; i++) {
 				const chooseWord = state.unknownWordsList.list[minSizeIndex].possibleList[i];
 				const dummyUnknownWordsList = state.unknownWordsList.copy();
 				const dummyAns = state.knownWordsList.copy();
@@ -104,6 +109,47 @@ export class SubstitutionSolver {
 				}
 				stack.push({unknownWordsList: dummyUnknownWordsList, knownWordsList: dummyAns, mappingTable: dummyMappingTable});
 			}
+			state.unknownWordsList.list[minSizeIndex].possibleList = state.unknownWordsList.list[minSizeIndex].possibleList.slice(loopLen);
+			if(state.unknownWordsList.refreshByMappintTable(state.knownWordsList, state.mappingTable) === false) {
+				continue;
+			}
+			stack2.push({
+				unknownWordsList: state.unknownWordsList,
+				knownWordsList: state.knownWordsList,
+				mappingTable: state.mappingTable,
+			});
+		}
+
+		while(stack2.length > 0) {
+			const state = stack2.pop();
+			if(state.unknownWordsList.empty()) {
+				this.output(state.knownWordsList);
+				countOfAnswer++;
+				if(countOfAnswer > this.maxOutput) {
+					return;
+				}
+				continue;
+			}
+
+			const minSizeIndex = state.unknownWordsList.getMinPossibleList();
+			const minLen = state.unknownWordsList.list[minSizeIndex].possibleList.length;
+			const loopLen = Math.min(minLen, this.threshold);
+		
+			for(var i = 0; i < minLen; i++) {
+				const chooseWord = state.unknownWordsList.list[minSizeIndex].possibleList[i];
+				const dummyUnknownWordsList = state.unknownWordsList.copy();
+				const dummyAns = state.knownWordsList.copy();
+				const dummyMappingTable = state.mappingTable.copy();
+	
+				dummyUnknownWordsList.setPossibleList(minSizeIndex, chooseWord);
+	
+				if(dummyUnknownWordsList.refreshByMappintTable(dummyAns, dummyMappingTable) === false) {
+					continue;
+				}
+				stack2.push({unknownWordsList: dummyUnknownWordsList, knownWordsList: dummyAns, mappingTable: dummyMappingTable});
+			}
+			state.unknownWordsList.list[minSizeIndex].possibleList = state.unknownWordsList.list[minSizeIndex].possibleList.slice(loopLen);
+			state.unknownWordsList.refreshByMappintTable(state.knownWordsList, state.mappingTable);
 		}
 	}
 
