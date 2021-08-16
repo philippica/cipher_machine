@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>NONOGRAM</title>
+		<link rel="stylesheet" href="./bootstrap.min.css">
+		<script src="./jquery.min.js"></script>
+		<script src="./bootstrap.min.js"></script>
+		<style>
+			.cell {
+				height: 23px;
+				width: 23px;
+				border: 1px solid black;
+				margin-right: -1px;
+				margin-bottom: -1px;
+			}
+			.row {
+				display: flex;
+			}
+			.row-input {
+				height: 18px;
+				width: 18px;
+				margin-right: 5px;
+			}
+			#playground {
+				margin: 30px;
+			}
+		</style>
+	</head>
+	<body>
+		<form role="form">
+			<div class="form-group">
+				<label for="name">行</label>
+				<input id="row" value="2" onchange="ModifiedCb()"/>
+				<label for="name">列</label>
+				<input id="column" value="2" onchange="ModifiedCb()"/>
+			</div>
+		</form>
+		<div id="playground">
+		</div>
+		
+		<script src="./dist/index.js"></script>
+		<script>
+			const ModifiedCb = () => {
+				let col = parseInt($("#column").val());
+				let row = parseInt($("#row").val());
+				$("#playground").empty();
+				for(let i = 0; i < row; i++) {
+					$("#playground").append(`<div id="row-${i}" class="row"></div>`);
+					$(`#playground #row-${i}`).append(`<input class="row-input"></input>`);
+					for(let j = 0; j < col; j++) {
+						$(`#playground #row-${i}`).append(`<div id="cell-${i}-${j}" class="cell"></div>`);
+					}
+				}
+			}
+			ModifiedCb();
+		</script>
+	</body>
+</html>
