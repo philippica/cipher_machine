@@ -15,6 +15,7 @@
 				<button id="bruteforce" type="button">单表暴力</button>
 			</div>
 		</form>
+		<div id="substitution-answer"></div>
 		
 		<script src="./dist/index.js"></script>
 		<script>
@@ -22,7 +23,10 @@
 				var content = $("#content").val();
 				console.info(content);
 				plaintext = new Substitution.default().substituteSolver(content);
-				$("#content").val(plaintext);
+				$("#substitution-answer").empty();
+				for(let i = 0; i < Math.min(plaintext.length, 100); i++) {
+					$("#substitution-answer").append(`<div>${plaintext[i]}</div>`);
+				}
 			});
 		</script>
 	</body>

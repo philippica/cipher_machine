@@ -52,16 +52,24 @@ export class TokenList {
 			if(rawTokens[i] == "") {
 				continue;
 			}
-			const possibleList = words[this.pattern(rawTokens[i])].slice(0);
-
-			this.generateWeight(possibleList, weight);
-
-			const curToken = new Token(rawTokens[i], possibleList, i);
-			curToken.customize(mappingTable);
-			if(curToken.possibleList.length > 1) {
-				this._list.push(curToken);
+			if(rawTokens[i].includes("'")) {
+				const token = rawTokens[i].split("'");
+				if(token[1]?.length === 1) {
+					const curToken = new Token(token[1], ["s", "t", "d"], i);
+					this._list.push(curToken);
+				}	
 			} else {
-				knownWordsList.list[curToken.position] = curToken;
+				const possibleList = words[this.pattern(rawTokens[i])].slice(0);
+
+				this.generateWeight(possibleList, weight);
+
+				const curToken = new Token(rawTokens[i], possibleList, i);
+				curToken.customize(mappingTable);
+				if(curToken.possibleList.length > 1) {
+					this._list.push(curToken);
+				} else {
+					knownWordsList.list[curToken.position] = curToken;
+				}
 			}
 		}
     }

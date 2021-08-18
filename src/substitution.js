@@ -13,7 +13,7 @@ export class SubstitutionSolver {
 		this.threshold = threshold || 10;
 		this.maxOutput = maxOutput || 3000;
 		var text = text.toLowerCase();
-		var rawTokens = text.split(/[^a-zA-Z0-9\']+/);
+		var rawTokens = text.split(/[^a-zA-Z\']+/);
 		var mappingTable = new MappingTable();
 		var unknownWordsList = new TokenList();
 		this.globleAns = [];
