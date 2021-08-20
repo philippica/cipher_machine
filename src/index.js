@@ -1,3 +1,7 @@
-import { SubstitutionSolver } from './substitution';
+import { SubstitutionSolver } from './substitution/substitution';
+import { Nonogram } from './nonogram/nonogram';
 
-export default SubstitutionSolver;
+export {
+    SubstitutionSolver,
+    Nonogram
+}

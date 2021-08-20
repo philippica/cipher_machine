@@ -1,5 +1,5 @@
 import { Token } from './Token';
-import { words } from './dict.js';
+import { words } from '../common/dict.js';
 
 export class TokenList {
     constructor() {
