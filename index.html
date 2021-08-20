@@ -22,7 +22,7 @@
 			$("#bruteforce").click(function(){
 				var content = $("#content").val();
 				console.info(content);
-				plaintext = new Substitution.default().substituteSolver(content);
+				plaintext = new Solver.SubstitutionSolver().substituteSolver(content)
 				$("#substitution-answer").empty();
 				for(let i = 0; i < Math.min(plaintext.length, 100); i++) {
 					$("#substitution-answer").append(`<div>${plaintext[i]}</div>`);

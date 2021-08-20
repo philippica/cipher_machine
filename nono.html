@@ -11,6 +11,7 @@
 				height: 25px;
 				width: 25px;
 				border: 4px solid black;
+				background-color: rgb(204, 204, 204);
 				margin-right: -3px;
 				margin-bottom: -3px;
 			}
@@ -42,6 +43,15 @@
 			#left-bar {
 				margin-top: 1px;
 			}
+			.row-container {
+				display: flex;
+				justify-content: flex-end;
+			}
+			.col-container {
+				display: flex;
+			    flex-direction: column;
+    			justify-content: flex-end;
+			}
 			#upper-bar {
 				display: flex;
 				justify-content: flex-end;
@@ -53,9 +63,9 @@
 		<form role="form">
 			<div class="form-group">
 				<label for="name">r</label>
-				<input id="row" value="2" onchange="ModifiedCb()"/>
+				<input id="row" value="5" onchange="ModifiedCb()"/>
 				<label for="name">c</label>
-				<input id="column" value="2" onchange="ModifiedCb()"/>
+				<input id="column" value="5" onchange="ModifiedCb()"/>
 			</div>
 		</form>
 		<div id="playground">
@@ -65,22 +75,64 @@
 				<div id="board"></div>
 			</div>
 		</div>
+		<button onclick="solve()">solve</button>
 		
 		<script src="./dist/index.js"></script>
 		<script>
+			let columnArea = [];
+			let rowArea = [];
+
+			const solve = () => {
+				plaintext = new Solver.Nonogram().nonogramSolver(columnArea, rowArea)
+			}
+
+			const changeInput = (e) => {
+				const value = parseInt(e.target.innerText);
+				if(e.data && value > 0) {
+					const data = e.target.dataset;
+					console.info(data);
+					const index = parseInt(data.idx);
+					const column = parseInt(data.col);
+					const row = parseInt(data.row);
+					if(data.type === "col" && (index === columnArea[column].length)) {
+						columnArea[column].push(value);
+						console.info(columnArea);
+						$(`#col-${data.col}`).prepend(`<div id="col-cell-${data.col}-${index+1}" data-type="col" data-col=${data.col} data-idx=${index+1} contenteditable="true" oninput="changeInput(event)" class="col-input">0</div>`);
+					}
+					else if(data.type === "row" && (index === rowArea[row].length)) {
+						rowArea[row].push(value);
+						$(`#row-${data.row}`).prepend(`<div id="row-cell-${data.row}-${index+1}" data-type="row" data-row=${data.row} data-idx=${index+1} contenteditable="true" oninput="changeInput(event)" class="row-input">0</div>`);
+						console.info(rowArea);
+					} else if(data.type === "row") {
+						rowArea[row][index] = value;
+					} else {
+						columnArea[column][index] = value;
+					}
+				}
+			}
+
 			const ModifiedCb = () => {
 				let col = parseInt($("#column").val());
 				let row = parseInt($("#row").val());
+				columnArea = [];
+				rowArea = [];
+				for(let i = 0; i < col; i++) {
+					columnArea.push([]);
+				}
+				for(let i = 0; i < row; i++) {
+					rowArea.push([]);
+				}
 				$("#upper-bar").empty();
 				$("#left-bar").empty();
 				$("#board").empty();
 
 				for(let i = 0; i < col; i++) {
-					$("#upper-bar").append(`<div id="col-${i}" contenteditable="true" class="col-input">0</div>`);
+					$("#upper-bar").append(`<div id="col-${i}" class="col-container"></div>`);
+					$(`#col-${i}`).append(`<div id="col-cell-${i}-0" data-type="col" data-col=${i} data-idx=0 contenteditable="true" oninput="changeInput(event)" class="col-input">0</div>`);
 				}
 				for(let i = 0; i < row; i++) {
-					$("#left-bar").append(`<div id="row-${i}" contenteditable="true" class="row-input">0</div>`);
-					$(`#row-${i}`).append("");	
+					$("#left-bar").append(`<div id="row-${i}" class="row-container"></div>`);
+					$(`#row-${i}`).append(`<div id="row-cell-${i}-0" contenteditable="true" data-type="row" data-row=${i} data-idx=0 oninput="changeInput(event)" class="row-input">0</div>`);
 					$("#board").append(`<div id="row-${i}" class="row-board"></div>`);
 					// $(`#board #row-${i}`).append(`<div contenteditable="true" class="row-input"></div>`);
 					for(let j = 0; j < col; j++) {
