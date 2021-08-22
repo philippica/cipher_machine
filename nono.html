@@ -82,8 +82,18 @@
 			let columnArea = [];
 			let rowArea = [];
 
+			const setTile = (x, y, color) => {
+				console.info(x, y, color);
+				if(color === 2) {
+					$(`#cell-${x}-${y}`).css("background-color", "white")
+				}
+				if(color === 1) {
+					$(`#cell-${x}-${y}`).css("background-color", "black")
+				}
+			}
+
 			const solve = () => {
-				plaintext = new Solver.Nonogram().nonogramSolver(columnArea, rowArea)
+				plaintext = new Solver.Nonogram().nonogramSolver(columnArea, rowArea, setTile)
 			}
 
 			const changeInput = (e) => {
