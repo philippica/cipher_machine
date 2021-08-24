@@ -33,19 +33,42 @@ export class Nonogram {
 
 		const isFinishedRow = [];
 		const isFinishedCol = [];
-		const isChangedRow = [];
-		const isChangedCol = [];
+		const isChangedRow = new Set();
+		const isChangedCol = new Set();
 
 		for(let i = 0; i < row; i++) {
 			const { isFinished, isChanged } = this.solveLine(Board.linePropety.row, i, setRowByLine);
 			isFinishedRow.push(isFinished);
-			isChangedRow.push(isChanged);
 		}
 
 		for(let i = 0; i < col; i++) {
-			const { isFinished, isChanged } = this.solveLine(Board.linePropety.column, i, setRowByLine);
+			const { isFinished, isChanged, changedIndex } = this.solveLine(Board.linePropety.column, i, setRowByLine);
 			isFinishedCol.push(isFinished);
-			isChangedCol.push(isChanged);
+			for(let index of changedIndex) {
+				if(isFinishedRow[index])continue;
+				isChangedRow.add(index);
+			}
+		}
+
+		while(isChangedRow.size > 0 || isChangedCol.size > 0) {
+			for(let index of isChangedCol) {
+				isChangedCol.delete(index);
+				const { isFinished, isChanged, changedIndex } = this.solveLine(Board.linePropety.column, index, setRowByLine);
+				isFinishedCol[index] = isFinished;
+				for(let index of changedIndex) {
+					if(isFinishedRow[index])continue;
+					isChangedRow.add(index);
+				}
+			}
+			for(let index of isChangedRow) {
+				isChangedRow.delete(index);
+				const { isFinished, isChanged, changedIndex } = this.solveLine(Board.linePropety.row, index, setRowByLine);
+				isFinishedRow[index] = isFinished;
+				for(let index of changedIndex) {
+					if(isFinishedCol[index])continue;
+					isChangedCol.add(index);
+				}
+			}
 		}
 
 		

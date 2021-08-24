@@ -35,24 +35,27 @@ export class Board {
     setByLine(line, len, index, setElement, getCoordinate) {
         let isFinished = true;
         let isChanged = false;
+        const changedIndex = [];
         for(let i = 0; i < len; i++) {
             if(line.white[i] === Line.probability.possible) {
                 if(this.board[getCoordinate(i, index).x][getCoordinate(i, index).y] === Line.cellStatus.unknown) {
                     setElement(getCoordinate(i, index).x, getCoordinate(i, index).y, Line.cellStatus.white);
                     this.board[getCoordinate(i, index).x][getCoordinate(i, index).y] = Line.cellStatus.white;
                     isChanged = true;
+                    changedIndex.push(i);
                 }
             } else if(line.black[i] === Line.probability.possible) {
                 if(this.board[getCoordinate(i, index).x][getCoordinate(i, index).y] === Line.cellStatus.unknown) {
                     setElement(getCoordinate(i, index).x, getCoordinate(i, index).y, Line.cellStatus.black);
                     this.board[getCoordinate(i, index).x][getCoordinate(i, index).y]= Line.cellStatus.black;
                     isChanged = true;
+                    changedIndex.push(i);
                 }
             } else {
                 isFinished = false;
             }
         }
-        return {isFinished, isChanged};
+        return {isFinished, isChanged, changedIndex};
     }
 
     setRowByLine(line, len, index, setElement) {
