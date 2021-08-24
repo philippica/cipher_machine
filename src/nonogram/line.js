@@ -29,6 +29,9 @@ export class Line {
                 return false;
             }
         }
+        if(line[start + fillLength] === Line.cellStatus.black) {
+            return false;
+        }
         for(let i = 0; i < fillLength; i++) {
             line[start+i] = Line.cellStatus.black; 
         }
@@ -61,6 +64,9 @@ export class Line {
                 this.dfs(i + number + 1, len, dummmyLine);
             }
             this.numbers.push(number);
+            if(line[i] === Line.cellStatus.black) {
+                break;
+            }
         }
     }
     calculate() {

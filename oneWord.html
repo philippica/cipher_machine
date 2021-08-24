@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>CCBC</title>
+		<link rel="stylesheet" href="./bootstrap.min.css">
+		<script src="./jquery.min.js"></script>
+		<script src="./bootstrap.min.js"></script>
+	</head>
+	<body>
+		<textarea id="content"></textarea>
+		<select>
+			<option value ="volvo">正则</option>
+			<option value ="saab">包含</option>
+		</select>
+		<button id="bruteforce">solve</button>
+		<div id="substitution-answer"></div>
+		
+		<script src="./dist/index.js"></script>
+		<script>
+			$("#bruteforce").click(function(){
+				var content = $("#content").val();
+				new Solver.OneWord().findByRegularExpression(content)
+			});
+		</script>
+	</body>
+</html>

@@ -32,37 +32,40 @@ export class Board {
         return line;
     }
 
-    setRowByLine(line, len, index, setElement) {
+    setByLine(line, len, index, setElement, getCoordinate) {
+        let isFinished = true;
+        let isChanged = false;
         for(let i = 0; i < len; i++) {
             if(line.white[i] === Line.probability.possible) {
-                if(this.board[index][i] === Line.cellStatus.unknown) {
-                    setElement(index, i, Line.cellStatus.white);
-                    this.board[index][i] = Line.cellStatus.white;
+                if(this.board[getCoordinate(i, index).x][getCoordinate(i, index).y] === Line.cellStatus.unknown) {
+                    setElement(getCoordinate(i, index).x, getCoordinate(i, index).y, Line.cellStatus.white);
+                    this.board[getCoordinate(i, index).x][getCoordinate(i, index).y] = Line.cellStatus.white;
+                    isChanged = true;
                 }
-            }
-            if(line.black[i] === Line.probability.possible) {
-                if(this.board[index][i] === Line.cellStatus.unknown) {
-                    setElement(index, i, Line.cellStatus.black);
-                    this.board[index][i] = Line.cellStatus.black;
+            } else if(line.black[i] === Line.probability.possible) {
+                if(this.board[getCoordinate(i, index).x][getCoordinate(i, index).y] === Line.cellStatus.unknown) {
+                    setElement(getCoordinate(i, index).x, getCoordinate(i, index).y, Line.cellStatus.black);
+                    this.board[getCoordinate(i, index).x][getCoordinate(i, index).y]= Line.cellStatus.black;
+                    isChanged = true;
                 }
+            } else {
+                isFinished = false;
             }
         }
+        return {isFinished, isChanged};
+    }
+
+    setRowByLine(line, len, index, setElement) {
+        const getCoordinate = (_x, _y) => {
+            return {x: _y, y: _x};
+        }
+        return this.setByLine(line, len, index, setElement, getCoordinate);
     }
 
     setColumnByLine(line, len, index, setElement) {
-        for(let i = 0; i < len; i++) {
-            if(line.white[i] === Line.probability.possible) {
-                if(this.board[i][index] === Line.cellStatus.unknown) {
-                    setElement(i, index, Line.cellStatus.white);
-                    this.board[i][index] = Line.cellStatus.white;
-                }
-            }
-            if(line.black[i] === Line.probability.possible) {
-                if(this.board[i][index] === Line.cellStatus.unknown) {
-                    setElement(i, index, Line.cellStatus.black);
-                    this.board[i][index] = Line.cellStatus.black;
-                }
-            }
+        const getCoordinate = (_x, _y) => {
+            return {x: _x, y: _y};
         }
+        return this.setByLine(line, len, index, setElement, getCoordinate);
     }
 }
