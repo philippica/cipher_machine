@@ -47,8 +47,13 @@ export class Line {
         }
     }
 
-    dfs(currentPosition, len, line) {
+    dfs(currentPosition, len, line, leftSpaces) {
         if(this.numbers.length === 0) {
+            for(let i = currentPosition; i < len; i++) {
+                if(line[i] === Line.cellStatus.black) {
+                    return;
+                }
+            }
             for(let i = 0; i < len; i++) {
                 if(line[i] === Line.cellStatus.unknown) {
                     line[i] = Line.cellStatus.white;
@@ -57,27 +62,33 @@ export class Line {
             this.update(line, this.white);
             return;
         }
+        const number = this.numbers.pop();
+        const leftSpace = leftSpaces.pop();
         for(let i = currentPosition; i < line.length; i++) {
-            const number = this.numbers.pop();
             const dummmyLine = line.slice(0);
             if(this.fill(dummmyLine, i, number)) {
-                this.dfs(i + number + 1, len, dummmyLine);
+                this.dfs(i + number + 1, len, dummmyLine, leftSpaces);
             }
-            this.numbers.push(number);
             if(line[i] === Line.cellStatus.black) {
                 break;
             }
         }
+        this.numbers.push(number);
+        leftSpaces.push(leftSpace);
     }
     calculate() {
         const len = this._line.length;
+        const leftSpace = this.numbers.slice(0);
+        for(let i = 1; i < this.numbers.length; i++) {
+            leftSpace[i] += leftSpace[i-1] + 1;
+        }
         this.white = [];
         this.black = [];
         for(let i = 0; i < len; i++) {
             this.white.push(Line.probability.possible);
             this.black.push(Line.probability.possible);
         }
-        this.dfs(0, len, this._line.slice(0), this.numbers.slice(0));
+        this.dfs(0, len, this._line.slice(0), this.numbers.slice(0), leftSpace);
     }
 
 }

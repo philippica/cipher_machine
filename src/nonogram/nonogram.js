@@ -50,16 +50,7 @@ export class Nonogram {
 			}
 		}
 
-		while(isChangedRow.size > 0 || isChangedCol.size > 0) {
-			for(let index of isChangedCol) {
-				isChangedCol.delete(index);
-				const { isFinished, isChanged, changedIndex } = this.solveLine(Board.linePropety.column, index, setRowByLine);
-				isFinishedCol[index] = isFinished;
-				for(let index of changedIndex) {
-					if(isFinishedRow[index])continue;
-					isChangedRow.add(index);
-				}
-			}
+		while(isChangedRow.size > 0) {
 			for(let index of isChangedRow) {
 				isChangedRow.delete(index);
 				const { isFinished, isChanged, changedIndex } = this.solveLine(Board.linePropety.row, index, setRowByLine);
@@ -67,6 +58,15 @@ export class Nonogram {
 				for(let index of changedIndex) {
 					if(isFinishedCol[index])continue;
 					isChangedCol.add(index);
+				}
+			}
+			for(let index of isChangedCol) {
+				isChangedCol.delete(index);
+				const { isFinished, isChanged, changedIndex } = this.solveLine(Board.linePropety.column, index, setRowByLine);
+				isFinishedCol[index] = isFinished;
+				for(let index of changedIndex) {
+					if(isFinishedRow[index])continue;
+					isChangedRow.add(index);
 				}
 			}
 		}
