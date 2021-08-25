@@ -64,7 +64,7 @@ export class Line {
         }
         const number = this.numbers.pop();
         const leftSpace = leftSpaces.pop();
-        for(let i = currentPosition; i < line.length; i++) {
+        for(let i = currentPosition; i < line.length-leftSpace+1; i++) {
             const dummmyLine = line.slice(0);
             if(this.fill(dummmyLine, i, number)) {
                 this.dfs(i + number + 1, len, dummmyLine, leftSpaces);
