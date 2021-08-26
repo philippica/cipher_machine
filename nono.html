@@ -93,6 +93,24 @@
 			}
 
 			const solve = () => {
+				let columnSum = 0;
+				for(let line of columnArea) {
+					for(let number of line) {
+						columnSum += number;
+					}
+				}
+
+				let rowSum = 0;
+				for(let line of rowArea) {
+					for(let number of line) {
+						rowSum += number;
+					}
+				}
+
+				if(rowSum != columnSum) {
+					alert(`左半部分的和为${rowSum}, 右半部分的和为${columnSum}， 两者不相等，检查一下`);
+					return;
+				}
 				plaintext = new Solver.Nonogram().nonogramSolver(columnArea, rowArea, setTile)
 			}
 

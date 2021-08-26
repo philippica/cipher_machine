@@ -9,12 +9,14 @@
 	</head>
 	<body>
 		<textarea id="content"></textarea>
-		<select onchange="changeMethod()" id="find-method">
-			<option value ="findByWildcard">通配符</option>
-			<option value ="findByRegularExpression">正则</option>
-			<option value ="contains">包含</option>
-			<option value ="findSimilarity">寻找相似单词</option>
-		</select>
+		<div id="method-select">
+			<select onchange="changeMethod()" id="find-method">
+				<option value ="findByWildcard">通配符</option>
+				<option value ="findByRegularExpression">正则</option>
+				<option value ="contains">包含</option>
+				<option value ="findSimilarity">寻找相似单词</option>
+			</select>
+		</div>
 		<button id="find-words">solve</button>
 		<div id="words-list"></div>
 		
@@ -25,10 +27,23 @@
 			const changeMethod = () => {
 				const methodStr = $("#find-method").val()
 				method = methodStr;
+				if(method === "findSimilarity") {
+					$("#method-select").append("<input id='similarityDegree' placeholder='相似度' value='1'/>");
+				} else {
+					if($("#similarityDegree").length > 0) {
+						$("#similarityDegree").remove();
+					}
+				}
 			}
 			$("#find-words").click(function(){
 				var content = $("#content").val();
-				const answer = new Solver.OneWord()[method].bind(solver)(content)
+				let answer;
+				if(method === "findSimilarity") {
+					const similarityDegree = parseInt($("#similarityDegree").val());
+					answer = new Solver.OneWord()[method].bind(solver)(content, similarityDegree)
+				} else {
+					answer = new Solver.OneWord()[method].bind(solver)(content)
+				}
 				$("#words-list").empty();
 				for(let i = 0; i < Math.min(answer.length, 1000); i++) {
 					$("#words-list").append(`<div>${answer[i]}</div>`);

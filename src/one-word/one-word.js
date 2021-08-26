@@ -55,12 +55,101 @@ export class OneWord {
         return this.findByRegularExpression(`^${regx}$`);
     }
 
-    contains(letterSet) {
+    makeLetterSet(str) {
+        const letterSet = [];
+        for(let i = 0; i < str.length; i++) {
+            if(!letterSet[str[i]]) {
+                letterSet[str[i]] = 0;
+            }
+            letterSet[str[i]]++;
+        }
+        return letterSet;
+    }
+
+    onlyContains(letters) {
         const answer = [];
+        const letterSet = this.makeLetterSet(letters);
+        const containsHelp = (letterSet, str) => {
+            const letterCount = [];
+            for(let i = 0; i < str.length; i++) {
+                if(!letterSet[str[i]]) {
+                    return false;
+                }
+                if(!letterCount[str[i]]){
+                    letterCount[str[i]] = 0;
+                }
+                letterCount[str[i]]++;
+            }
+            return true;
+        }
         for(let patten in words) {
             if(!patten)continue;
             for(let word of words[patten]) {
-                if(regularExpression.test(word)) {
+                if(containsHelp(letterSet, word)) {
+                    console.info(word);
+                    answer.push(word);
+                }
+            }
+        }
+        return answer;
+    }
+
+    permutation(letters) {
+        const answer = [];
+        const letterSet = this.makeLetterSet(letters);
+        const containsHelp = (letterSet, str) => {
+            const letterCount = [];
+            for(let i = 0; i < str.length; i++) {
+                if(!letterSet[str[i]]) {
+                    return false;
+                }
+                if(!letterCount[str[i]]){
+                    letterCount[str[i]] = 0;
+                }
+                letterCount[str[i]]++;
+            }
+            for(let letter in letterSet) {
+                if(!letterCount[letter] || letterSet[letter] != letterCount[letter]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        for(let patten in words) {
+            if(!patten)continue;
+            for(let word of words[patten]) {
+                if(containsHelp(letterSet, word)) {
+                    console.info(word);
+                    answer.push(word);
+                }
+            }
+        }
+        return answer;
+    }
+
+    contains(letters) {
+        const answer = [];
+        const letterSet = this.makeLetterSet(letters);
+        const containsHelp = (letterSet, str) => {
+            const letterCount = [];
+            for(let i = 0; i < str.length; i++) {
+                if(!letterSet[str[i]])continue;
+                if(!letterCount[str[i]]){
+                    letterCount[str[i]] = 0;
+                }
+                letterCount[str[i]]++;
+            }
+            for(let letter in letterSet) {
+                if(!letterCount[letter] || letterSet[letter] - letterCount[letter] > 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        for(let patten in words) {
+            if(!patten)continue;
+            for(let word of words[patten]) {
+                if(containsHelp(letterSet, word)) {
                     console.info(word);
                     answer.push(word);
                 }
@@ -71,12 +160,16 @@ export class OneWord {
 
 
 
-    findSimilarity(str) {
+    findSimilarity(str, similarityDegree) {
         const answer = [];
+        if(!similarityDegree) {
+            similarityDegree = 1;
+        }
         for(let patten in words) {
             if(!patten)continue;
+            if(Math.abs(patten.length-str.length) > similarityDegree)continue;
             for(let word of words[patten]) {
-                if(this.editDistance(str, word) <= 1) {
+                if(this.editDistance(str, word) <= similarityDegree) {
                     console.info(word);
                     answer.push(word);
                 }
