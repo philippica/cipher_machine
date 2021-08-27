@@ -128,7 +128,7 @@ export class OneWord {
     }
 
     contains(letters) {
-        const answer = [];
+        const answers = [];
         const letterSet = this.makeLetterSet(letters);
         const containsHelp = (letterSet, str) => {
             const letterCount = [];
@@ -140,7 +140,7 @@ export class OneWord {
                 letterCount[str[i]]++;
             }
             for(let letter in letterSet) {
-                if(!letterCount[letter] || letterSet[letter] - letterCount[letter] > 0) {
+                if(!letterCount[letter] || letterSet[letter] > letterCount[letter]) {
                     return false;
                 }
             }
@@ -151,11 +151,11 @@ export class OneWord {
             for(let word of words[patten]) {
                 if(containsHelp(letterSet, word)) {
                     console.info(word);
-                    answer.push(word);
+                    answers.push(word);
                 }
             }
         }
-        return answer;
+        return answers;
     }
 
 
