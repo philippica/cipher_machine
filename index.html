@@ -1,35 +1,261 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<meta charset="utf-8">
-		<title>CCBC</title>
+		-<meta charset="utf-8">
+-		<title>焖肉面 - puzzle hunt工具集</title>
+		<style>
+			.capsule{
+				background-color: #9eddff;
+				width: 100%;
+				height: 20px;
+				border-radius: 10px;
+				text-align: center;
+				margin:2px;
+				cursor: pointer;
+				margin: 5px;
+			}
+			.capsule:hover{
+				-webkit-transform: translateX(-3px);
+				transform: translateX(-3px);
+				transition: .5s ease;
+			}
+			.content-area {
+				height: fit-content;
+			}
+			.container {
+				width: 50%;
+			}
+			.content-area textarea {
+				background-color: #f8f8f8;
+  				font-size: 16px;
+				margin: 10px;
+			}
+			#help-content {
+				font-size: 12px;
+    			color: #adabab;
+			}
+
+		</style>
+		<link rel="stylesheet" href="./nonogram.css">
 		<link rel="stylesheet" href="./bootstrap.min.css">
-		<script src="./jquery.min.js"></script>
-		<script src="./bootstrap.min.js"></script>
 	</head>
 	<body>
-		<a href="./nono.html">nonogram</a>
-		<a href="./oneWord.html">一个词的暴力</a>
-		<form role="form">
-			<div class="form-group">
-				<label for="name">单表暴力</label>
-				<textarea id="content" class="form-control" rows="20"></textarea>
-				<button id="bruteforce" type="button">单表暴力</button>
+		<div class="container">
+			<div id="substitution-container">
+				<div id="substitution-capsule" class="capsule" data-expend=true>单表替换</div>
+				<div id="substitution-main" class="content-area">
+					<form role="form">
+						<div class="form-group">
+							<div>单表暴力</div>
+							<textarea id="content" class="form-control" rows="20" placeholder="请输入单表密文"></textarea>
+							<div>
+								<button id="substitution-solver-btn" type="button">单表暴力</button>
+							</div>
+						</div>
+					</form>
+					<div>以下为可能结果:</div>
+					<div id="substitution-answer"></div>
+				</div>
 			</div>
-		</form>
-		<div id="substitution-answer"></div>
-		
+			<div id="nonogram-container">
+				<div id="nonogram-capsule" class="capsule" data-expend=true>nonogram</div>
+				<div id="nonogram-main" class="content-area" style="display: none;">
+					<form role="form">
+						<div class="form-group">
+							<label for="name">行</label>
+							<input id="row" value="5" onchange="ModifiedCb()"/>
+							<label for="name">列</label>
+							<input id="column" value="5" onchange="ModifiedCb()"/>
+						</div>
+					</form>
+					<div id="playground">
+						<div id="upper-bar"></div>
+						<div id="bottom">
+							<div id="left-bar"></div>
+							<div id="board"></div>
+						</div>
+					</div>
+					<button onclick="solve()">solve</button>
+				</div>
+			</div>
+			<div id="word-container">
+				<div id="word-capsule" class="capsule" data-expend=true>找单词</div>
+				<div id="word-main" class="content-area" style="display: none;">
+					<textarea id="one-word-content" class="form-control" placeholder="请输入要查询的单词"></textarea>
+					<div id="method-select">
+						<select onchange="changeMethod()" id="find-method">
+							<option value ="findByWildcard">通配符</option>
+							<option value ="findByRegularExpression">正则</option>
+							<option value ="contains">包含</option>
+							<option value ="findSimilarity">寻找相似单词</option>
+						</select>
+					</div>
+					<div id="help-content"></div>
+					<button id="find-words">solve</button>
+					<div>以下为可能结果:</div>
+					<div id="words-list"></div>
+				</div>
+			</div>
+		</div>
+
+		<script src="./jquery.min.js"></script>
 		<script src="./dist/index.js"></script>
 		<script>
-			$("#bruteforce").click(function(){
+			// substitution
+			$(".capsule").click((e) => {
+				const target = e.target;
+				const content = $(target.parentElement.lastElementChild);
+				if(content.is(":visible")) {
+					content.hide("fast", "linear");
+				} else {
+					content.show("fast", "linear");
+				}
+			});
+
+			$("#substitution-solver-btn").click(function(){
 				var content = $("#content").val();
 				console.info(content);
 				plaintext = new Solver.SubstitutionSolver().substituteSolver(content)
 				$("#substitution-answer").empty();
+				if(plaintext.length === 0) {
+
+				}
 				for(let i = 0; i < Math.min(plaintext.length, 100); i++) {
-					$("#substitution-answer").append(`<div>${plaintext[i]}</div>`);
+					$("#substitution-answer").append(`<div><b>${plaintext[i]}</b></div>`);
 				}
 			});
+
+			// nono
+			let columnArea = [];
+			let rowArea = [];
+
+			const setTile = (x, y, color) => {
+				console.info(x, y, color);
+				if(color === 2) {
+					$(`#cell-${x}-${y}`).css("background-color", "white")
+				}
+				if(color === 1) {
+					$(`#cell-${x}-${y}`).css("background-color", "black")
+				}
+			}
+
+			const solve = () => {
+				let columnSum = 0;
+				for(let line of columnArea) {
+					for(let number of line) {
+						columnSum += number;
+					}
+				}
+
+				let rowSum = 0;
+				for(let line of rowArea) {
+					for(let number of line) {
+						rowSum += number;
+					}
+				}
+
+				if(rowSum != columnSum) {
+					alert(`左半部分的和为${rowSum}, 右半部分的和为${columnSum}， 两者不相等，检查一下`);
+					return;
+				}
+				plaintext = new Solver.Nonogram().nonogramSolver(columnArea, rowArea, setTile)
+			}
+
+			const changeInput = (e) => {
+				const value = parseInt(e.target.innerText);
+				if(e.data && value > 0) {
+					const data = e.target.dataset;
+					console.info(data);
+					const index = parseInt(data.idx);
+					const column = parseInt(data.col);
+					const row = parseInt(data.row);
+					if(data.type === "col" && (index === columnArea[column].length)) {
+						columnArea[column].push(value);
+						console.info(columnArea);
+						$(`#col-${data.col}`).prepend(`<div id="col-cell-${data.col}-${index+1}" data-type="col" data-col=${data.col} data-idx=${index+1} contenteditable="true" oninput="changeInput(event)" class="col-input">0</div>`);
+					}
+					else if(data.type === "row" && (index === rowArea[row].length)) {
+						rowArea[row].push(value);
+						$(`#row-${data.row}`).prepend(`<div id="row-cell-${data.row}-${index+1}" data-type="row" data-row=${data.row} data-idx=${index+1} contenteditable="true" oninput="changeInput(event)" class="row-input">0</div>`);
+						console.info(rowArea);
+					} else if(data.type === "row") {
+						rowArea[row][index] = value;
+					} else {
+						columnArea[column][index] = value;
+					}
+				}
+			}
+
+			const ModifiedCb = () => {
+				let col = parseInt($("#column").val());
+				let row = parseInt($("#row").val());
+				columnArea = [];
+				rowArea = [];
+				for(let i = 0; i < col; i++) {
+					columnArea.push([]);
+				}
+				for(let i = 0; i < row; i++) {
+					rowArea.push([]);
+				}
+				$("#upper-bar").empty();
+				$("#left-bar").empty();
+				$("#board").empty();
+
+				for(let i = 0; i < col; i++) {
+					$("#upper-bar").append(`<div id="col-${i}" class="col-container"></div>`);
+					$(`#col-${i}`).append(`<div id="col-cell-${i}-0" data-type="col" data-col=${i} data-idx=0 contenteditable="true" oninput="changeInput(event)" class="col-input">0</div>`);
+				}
+				for(let i = 0; i < row; i++) {
+					$("#left-bar").append(`<div id="row-${i}" class="row-container"></div>`);
+					$(`#row-${i}`).append(`<div id="row-cell-${i}-0" contenteditable="true" data-type="row" data-row=${i} data-idx=0 oninput="changeInput(event)" class="row-input">0</div>`);
+					$("#board").append(`<div id="row-${i}" class="row-board"></div>`);
+					// $(`#board #row-${i}`).append(`<div contenteditable="true" class="row-input"></div>`);
+					for(let j = 0; j < col; j++) {
+						$(`#board #row-${i}`).append(`<div id="cell-${i}-${j}" class="cell"></div>`);
+					}
+				}
+			}
+			ModifiedCb();
+
+			// one word
+			const solver = new Solver.OneWord();
+			const oneWordHelpContent = {
+				"findByWildcard": "当前是通配符模式 - 你可以使用#表示一个单词或者*表示多个单词 例如 bo##ke*r 可以匹配到bookkeeper",
+				"findByRegularExpression": "当前是正则表达式模式 - 如果你熟悉正则表达式，那它将会是一个非常强大的工具 例如^[abcd][ef].*[aeiou]$ 能够搜到第一个字母为abcd中一个，第二个字母为ef中一个，并且以元音结尾的所有单词",
+				"contains": "当前是包含模式 - 能够搜出所有包含这些字母的单词，例如abbccc会找到所有包含一个a两个b和三个c的单词",
+				"findSimilarity": "当前是相似度模式-给出单词找到与它相想的单词，两个词相似度即编辑距离，如果能通过一次添加一个字母，替换一个字母或删除一个字母能从一个单词变成另一个单词，那它们的相似度为1",
+			};
+			let method = "findByWildcard";
+			$("#help-content").text(oneWordHelpContent[method]);
+			const changeMethod = () => {
+				const methodStr = $("#find-method").val()
+				method = methodStr;
+				if(method === "findSimilarity") {
+					$("#method-select").append("<input id='similarityDegree' placeholder='相似度' value='1'/>");
+				} else {
+					if($("#similarityDegree").length > 0) {
+						$("#similarityDegree").remove();
+					}
+				}
+				$("#help-content").text(oneWordHelpContent[method]);
+			}
+			$("#find-words").click(function(){
+				var content = $("#one-word-content").val();
+				let answer;
+				if(method === "findSimilarity") {
+					const similarityDegree = parseInt($("#similarityDegree").val());
+					answer = new Solver.OneWord()[method].bind(solver)(content, similarityDegree)
+				} else {
+					answer = new Solver.OneWord()[method].bind(solver)(content)
+				}
+				$("#words-list").empty();
+				for(let i = 0; i < Math.min(answer.length, 1000); i++) {
+					$("#words-list").append(`<div>${answer[i]}</div>`);
+				}
+			});
+
 		</script>
+
+		</div>
 	</body>
 </html>

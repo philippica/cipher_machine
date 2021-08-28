@@ -1,0 +1,18 @@
+{
+  "name": "cipher_machine",
+  "version": "1.0.0",
+  "description": "Set of tools for puzzle hunt game.",
+  "dependencies": {},
+  "devDependencies": {
+    "html-webpack-plugin": "^5.3.2",
+    "webpack": "^5.51.1",
+    "webpack-cli": "^4.8.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "author": "Yuanjie Pu",
+  "license": "BSD-2-Clause",
+  "homepage": "https://github.com/philippica/cipher_machine#readme"
+}

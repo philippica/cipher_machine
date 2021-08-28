@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>CCBC</title>
+		<link rel="stylesheet" href="./bootstrap.min.css">
+		<script src="./jquery.min.js"></script>
+		<script src="./bootstrap.min.js"></script>
+	</head>
+	<body>
+		<a href="./nono.html">nonogram</a>
+		<a href="./oneWord.html">一个词的暴力</a>
+		<form role="form">
+			<div class="form-group">
+				<label for="name">单表暴力</label>
+				<textarea id="content" class="form-control" rows="20"></textarea>
+				<button id="bruteforce" type="button">单表暴力</button>
+			</div>
+		</form>
+		<div id="substitution-answer"></div>
+		
+		<script src="./dist/index.js"></script>
+		<script>
+			$("#bruteforce").click(function(){
+				var content = $("#content").val();
+				console.info(content);
+				plaintext = new Solver.SubstitutionSolver().substituteSolver(content)
+				$("#substitution-answer").empty();
+				for(let i = 0; i < Math.min(plaintext.length, 100); i++) {
+					$("#substitution-answer").append(`<div>${plaintext[i]}</div>`);
+				}
+			});
+		</script>
+	</body>
+</html>
