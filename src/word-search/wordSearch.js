@@ -80,17 +80,16 @@ export class WordSearch {
     buildMatrix(str, row, column) {
         let strWithOnlyEnglishLetter = str.replace(/[^A-Za-z\n]/g, '').toLowerCase();
         const returnMat = [];
+        row = 0;
         if(!row || !column) {
-            const strSplit = str.split("\n");
+            const strSplit = strWithOnlyEnglishLetter.split("\n");
             strWithOnlyEnglishLetter = strWithOnlyEnglishLetter.replace(/[\n]/g, '')
-            while(strSplit.length > 0) {
-                if(strSplit[strSplit.length - 1]) {
-                    break;
+            for(let line of strSplit) {
+                if(line) {
+                    column = line.length;
+                    row++;
                 }
-                strSplit.pop();
             }
-            row = strSplit.length;
-            column = strSplit[0].length;
         }
         let index = 0;
 
@@ -111,8 +110,3 @@ export class WordSearch {
     }
 
 }
-
-const aa = new WordSearch();
-const mat = aa.buildMatrix("abc\ndef\nghi")
-console.info(mat);
-aa.wordSearch(mat);
