@@ -283,6 +283,7 @@
 				console.info(content);
 				const mat = new Solver.WordSearch().buildMatrix(content);
 				const answers = new Solver.WordSearch().wordSearch(mat);
+				answers.sort((a, b) => b.word.length - a.word.length);
 				for(let answer of answers) {
 					let dirFirst = "";
 					let dirSecond = "";
