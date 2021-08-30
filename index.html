@@ -30,9 +30,13 @@
   				font-size: 16px;
 				margin: 10px;
 			}
-			#help-content {
+			.help-content {
 				font-size: 12px;
     			color: #adabab;
+			}
+			#word-search-content {
+				width: 40%;
+				height: 400px;
 			}
 
 		</style>
@@ -90,12 +94,31 @@
 							<option value ="findSimilarity">寻找相似单词</option>
 						</select>
 					</div>
-					<div id="help-content"></div>
+					<div id="help-content" class="help-content"></div>
 					<button id="find-words">solve</button>
 					<div>以下为可能结果:</div>
 					<div id="words-list"></div>
 				</div>
 			</div>
+			<div id="word-search-container">
+				<div id="word-search-capsule" class="capsule" data-expend=true>Word Search</div>
+				<div id="word-search-main" class="content-area" style="display: none;">
+					<div class="help-content">Word Search是一个找词游戏，给出一个n*m的字母方阵，要求在横竖斜的方向上找到英语单词</div>
+					<div class="help-content">在下面文本框内填入要word search的字母方阵，例如</div>
+					<div class="help-content">abc</div>
+					<div class="help-content">ddf</div>
+					<div class="help-content">ghi</div>
+					<div>
+						<textarea id="word-search-content" class="form-control" placeholder="请输出字母方阵,用空行隔开"></textarea>
+						<button onclick="wordSearch()">Solver</button>
+					</div>
+					<div id="word-search-ansers" style="display: flex">
+						<div id="word-search-ansers-list"></div>
+						<div id="word-search-ansers-position" style="margin-left: 40px"></div>
+					</div>
+				</div>
+			</div>
+
 		</div>
 
 		<script src="./jquery.min.js"></script>
@@ -253,6 +276,32 @@
 					$("#words-list").append(`<div>${answer[i]}</div>`);
 				}
 			});
+
+			// word search
+			wordSearch = () => {
+				var content = $("#word-search-content").val();
+				console.info(content);
+				const mat = new Solver.WordSearch().buildMatrix(content);
+				const answers = new Solver.WordSearch().wordSearch(mat);
+				for(let answer of answers) {
+					let dirFirst = "";
+					let dirSecond = "";
+					if(answer.dy === 1) {
+						dirFirst = "右";
+					} else if(answer.dy === -1) {
+						dirFirst = "左";
+					}
+					if(answer.dx === 1) {
+						dirSecond = "下";
+					} else if(answer.dx === -1) {
+						dirSecond = "上";
+					}
+					$("#word-search-ansers-list").append(`<div>${answer.word}</div>`);
+					$("#word-search-ansers-position").append(
+						`<div>出现在第${answer.x+1}行，第${answer.y+1}列，向${dirFirst}${dirSecond}方向</div>`
+					);
+				}
+			}
 
 		</script>
 
