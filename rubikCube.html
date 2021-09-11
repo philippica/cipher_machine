@@ -15,7 +15,7 @@
 		</style>
 	</head>
 	<body>
-		<canvas id="rubik-cube" height="300px" width="300px"></canvas>
+		<canvas id="rubik-cube" height="230px" width="230px"></canvas>
 		<button onclick="rubicCubeStage.front(1)">front</button>
 		<button onclick="rubicCubeStage.up(1)">up</button>
 		<button onclick="rubicCubeStage.back(1)">back</button>
@@ -123,6 +123,10 @@ class Point3D {
 		this.y = yy;
 		this.z = zz;
 	}
+	resetRotation() {
+		this.mat = [[1,0,0],[0,1,0],[0,0,1]];
+		this.rotate("x", 0);
+	}
 }
 
 class Rectangle {
@@ -156,6 +160,7 @@ class Rectangle {
 		ctx.lineTo(this.points[2].y+100, this.points[2].z+100);
 		ctx.lineTo(this.points[3].y+100, this.points[3].z+100);
 		ctx.lineTo(this.points[0].y+100, this.points[0].z+100);
+		ctx.lineWidth = 1;
 		ctx.stroke();
 		let u = Math.sqrt((p1.x-p4.x)*(p1.x-p4.x)+(p1.y-p4.y)*(p1.y-p4.y))/this.len;
 		u = (p1.y-p4.y)/this.len;
@@ -238,6 +243,11 @@ class Cube {
 			point.rotate(angle, axis, op);
 		}
 	}
+	resetRotation() {
+		for(let point of this.points) {
+			point.resetRotation();
+		}
+	}
 }
 
 class Scene {
@@ -284,7 +294,6 @@ class RubikCube {
 					if(i != 0) colors[3] = null;
 					if(j != degree-1) colors[4] = null;
 					if(j != 0) colors[5] = null;
-					//if(i != degree-1) colors[2] = null;
 					const cube = new Cube(pos, this.blockSize, colors, index++);
 					this.cubes.push(cube);
 				}
@@ -304,44 +313,64 @@ class RubikCube {
 			cube.rotate(angle, axis);
 		}
 	}
+	resetRotation() {
+		for(let cube of this.cubes) {
+			cube.resetRotation();
+		}
+	}
+	permutation(permutationTable) {
+		for(let item of permutationTable) {
+			const len = item.length;
+			for(let i = 0; i < len-1; i++) {
+				const tmp = this.cubes[item[i]];
+				this.cubes[item[i]] = this.cubes[item[i+1]];
+				this.cubes[item[i+1]] = tmp;
+			}
+		}
+	}
+	rotateLayer(permutationTable, inverse, axis) {
+		for(let item of permutationTable) {
+			const len = item.length;
+			for(let i = 0; i < len; i++) {
+				this.cubes[item[i]].rotate(90*inverse, axis, true);
+			}
+		}
+	}
 	front(inverse) {
-		this.cubes[0].rotate(90*inverse, "x", true);
-		this.cubes[1].rotate(90*inverse, "x", true);
-		this.cubes[2].rotate(90*inverse, "x", true);
-		this.cubes[3].rotate(90*inverse, "x", true);
-		this.cubes[4].rotate(90*inverse, "x", true);
-		this.cubes[5].rotate(90*inverse, "x", true);
-		this.cubes[6].rotate(90*inverse, "x", true);
-		this.cubes[7].rotate(90*inverse, "x", true);
-		this.cubes[8].rotate(90*inverse, "x", true);
+		const permutationTable = [[2,8,6,0],[1,5,7,3],[4]];
+		this.rotateLayer(permutationTable, inverse, "x");
+		this.permutation(permutationTable);
 	}
 	up(inverse) {
-		this.cubes[0].rotate(90*inverse, "z", true);
-		this.cubes[3].rotate(90*inverse, "z", true);
-		this.cubes[6].rotate(90*inverse, "z", true);
-		this.cubes[9].rotate(90*inverse, "z", true);
-		this.cubes[12].rotate(90*inverse, "z", true);
-		this.cubes[14].rotate(90*inverse, "z", true);
-		this.cubes[17].rotate(90*inverse, "z", true);
-		this.cubes[20].rotate(90*inverse, "z", true);
-		this.cubes[23].rotate(90*inverse, "z", true);
+		const permutationTable = [[0,6,23,17],[3,14,20,9],[12]];
+		this.rotateLayer(permutationTable, inverse, "z");
+		this.permutation(permutationTable);
 	}
 	back(inverse) {
-		this.cubes[17].rotate(90*inverse, "x", true);
-		this.cubes[18].rotate(90*inverse, "x", true);
-		this.cubes[19].rotate(90*inverse, "x", true);
-		this.cubes[20].rotate(90*inverse, "x", true);
-		this.cubes[21].rotate(90*inverse, "x", true);
-		this.cubes[22].rotate(90*inverse, "x", true);
-		this.cubes[23].rotate(90*inverse, "x", true);
-		this.cubes[24].rotate(90*inverse, "x", true);
-		this.cubes[25].rotate(90*inverse, "x", true);
+		const permutationTable = [[22,24,20,18],[19,25,23,17],[21]];
+		this.rotateLayer(permutationTable, inverse, "x");
+		this.permutation(permutationTable);
+	}
+	bottom(inverse) {
+		const permutationTable = [[11,5,16,22],[19,2,8,25],[13]];
+		this.rotateLayer(permutationTable, inverse, "z");
+		this.permutation(permutationTable);
+	}
+	left(inverse) {
+		const permutationTable = [[0,17,19,2],[1,9,18,11],[10]];
+		this.rotateLayer(permutationTable, inverse, "y");
+		this.permutation(permutationTable);
+	}
+	right(inverse) {
+		const permutationTable = [[8,6,23,25],[16,7,14,24],[15]];
+		this.rotateLayer(permutationTable, inverse, "y");
+		this.permutation(permutationTable);
 	}
 
 }
 
 
-let rotationAngle = {x: 10,y:10, z:10};
+
 class RubikCubeStage {
 	constructor() {
 		this.rotationAngle = {x: 10,y:10, z:10};
@@ -351,7 +380,11 @@ class RubikCubeStage {
 		this.draw(this.rotationAngle);
 	}
 	rotate(rotationAngle) {
-		this.rotationAngle = rotationAngle;
+		this.rotationAngle =  {
+			x: (this.rotationAngle.x+rotationAngle.x),
+			y: (this.rotationAngle.y+rotationAngle.y),
+			z: (this.rotationAngle.z+rotationAngle.z),
+		};
 		const cube = this.cube;
 		cube.rotate(rotationAngle.x, 'x');
 		cube.rotate(rotationAngle.y, 'y');
@@ -369,6 +402,9 @@ class RubikCubeStage {
 		scene.add(cube);
 		scene.render();
 	}
+	resetRotation() {
+		this.cube.resetRotation();
+	}
 	front(inverse) {
 		if(!inverse)inverse = 1;
 		this.cube.front(inverse);
@@ -384,6 +420,22 @@ class RubikCubeStage {
 		this.cube.back(inverse);
 		this.draw();
 	}
+	bottom(inverse) {
+		if(!inverse)inverse = 1;
+		this.cube.bottom(inverse);
+		this.draw();
+	}
+	left(inverse) {
+		if(!inverse)inverse = 1;
+		this.cube.left(inverse);
+		this.draw();
+	}
+	right(inverse) {
+		if(!inverse)inverse = 1;
+		this.cube.right(inverse);
+		this.draw();
+	}
+
 }
 
 const rubicCubeStage = new RubikCubeStage();
@@ -415,23 +467,28 @@ $('#rubik-cube').mousedown((e) => {
     }
 });
 
-$('#rubik-cube').mouseup((e) => {
-    ppMousePressed = false;
-});
-
-$('#rubik-cube').mousemove((e) => {
-    if(ppMousePressed === true)
-    {
-		let mouseX = e.pageX;
-        let mouseY = e.pageY;
-		let diffX = (mouseX - originCoordinate.x) / 2;
-		let diffY = (mouseY - originCoordinate.y) / 2;
-		if(diffX < 1 && diffY < 1)return;
-		rotationAngle.y -= diffX;
-		rotationAngle.y += diffY;
+$('body').mouseup((e) => {
+	if(ppMousePressed === true) {
+		ppMousePressed = false;
+		rubicCubeStage.resetRotation();
+		const rotationAngle = {x: 10,y:10, z:10};
 		rubicCubeStage.rotate(rotationAngle);
 		rubicCubeStage.draw();
-		console.info(diffX);
+	}
+});
+
+$('body').mousemove((e) => {
+    if(ppMousePressed === true)
+    {
+		const rotationAngle = {x:0, y:0, z:0};
+		let mouseX = e.pageX;
+        let mouseY = e.pageY;
+		let diffX = (mouseX - originCoordinate.x);
+		let diffY = (mouseY - originCoordinate.y);
+		rotationAngle.z = -diffX;
+		rotationAngle.y = diffY;
+		rubicCubeStage.rotate(rotationAngle);
+		rubicCubeStage.draw();
 		originCoordinate.x = mouseX;
 		originCoordinate.y = mouseY;
     }

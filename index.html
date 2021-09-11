@@ -118,6 +118,20 @@
 					</div>
 				</div>
 			</div>
+			<div id="rubik-cube-container">
+				<div id="rubik-cube-capsule" class="capsule" data-expend=true>魔方</div>
+				<div id="rubik-cube-main" class="content-area" style="display: none;">
+					<canvas id="rubik-cube" height="230px" width="230px"></canvas>
+					<div>
+						<button onclick="window.rubicCube.front(1)">front</button>
+						<button onclick="window.rubicCube.up(1)">up</button>
+						<button onclick="window.rubicCube.back(1)">back</button>
+						<button onclick="window.rubicCube.bottom(1)">bottom</button>
+						<button onclick="window.rubicCube.left(1)">left</button>
+						<button onclick="window.rubicCube.right(1)">right</button>
+					</div>
+				</div>
+			</div>
 
 		</div>
 
@@ -132,6 +146,14 @@
 					content.hide("fast", "linear");
 				} else {
 					content.show("fast", "linear");
+				}
+			});
+
+			$("#rubik-cube-capsule").click((e) => {
+				if(!window.rubicCube) {
+					var canvas = document.getElementById('rubik-cube'),
+					ctx = canvas.getContext('2d');
+					window.rubicCube = new Solver.RubikCubeStage(ctx, canvas.width, canvas.height);
 				}
 			});
 
