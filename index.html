@@ -128,18 +128,28 @@
 			<div id="rubik-cube-container">
 				<div id="rubik-cube-capsule" class="capsule" data-expend=true>魔方</div>
 				<div id="rubik-cube-main" class="content-area" style="display: none;">
+					<div class="help-content">请拖动魔方观看所有面:</div>
 					<canvas id="rubik-cube" height="230px" width="230px"></canvas>
 					<div>
-						<button onclick="window.rubicCube.front(1)">front</button>
-						<button onclick="window.rubicCube.up(1)">up</button>
-						<button onclick="window.rubicCube.back(1)">back</button>
-						<button onclick="window.rubicCube.bottom(1)">bottom</button>
-						<button onclick="window.rubicCube.left(1)">left</button>
-						<button onclick="window.rubicCube.right(1)">right</button>
+						<div>顺时针</div>
+						<button onclick="window.rubicCube.front(1)">前面(F)</button>
+						<button onclick="window.rubicCube.up(1)">顶面(U)</button>
+						<button onclick="window.rubicCube.back(-1)">背面(B)</button>
+						<button onclick="window.rubicCube.bottom(-1)">底面(D)</button>
+						<button onclick="window.rubicCube.left(1)">左边(L)</button>
+						<button onclick="window.rubicCube.right(-1)">右面(R)</button>
+					</div>
+					<div>
+						<div>逆时针</div>
+						<button onclick="window.rubicCube.front(-1)">前面(F')</button>
+						<button onclick="window.rubicCube.up(-1)">顶面(U')</button>
+						<button onclick="window.rubicCube.back(1)">背面(B')</button>
+						<button onclick="window.rubicCube.bottom(1)">底面(D')</button>
+						<button onclick="window.rubicCube.left(-1)">左边(L')</button>
+						<button onclick="window.rubicCube.right(1)">右面(R')</button>
 					</div>
 				</div>
 			</div>
-
 		</div>
 		<div id="footer"> power by -- philippica (Contact me: philippicapyj@gmail.com)</div>
 
