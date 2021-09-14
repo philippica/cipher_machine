@@ -7,12 +7,13 @@ export class RubikCube {
 		if(index===this.degree-1)return true;
 		return false;
 	}
-	constructor(position, len, degree) {
+	constructor(position, len, degree, materials) {
 		if(!degree) {
 			degree = 3;
 		}
 		this.degree = degree;
 		this.blockSize = len / degree;
+		this.materials = materials;
 		this.cubes = [];
 		const defaultColor = ["white", "orange", "yellow", "red", "blue", "green"];
 		let index = 0;
@@ -41,7 +42,8 @@ export class RubikCube {
 		const cubes = this.cubes.slice(0);
 		cubes.sort((a,b)=>b.points[0].x - a.points[0].x);
 		for(let cube of cubes) {
-			cube.render(ctx);
+			const material = this.materials ? this.materials[cube.index]:null; 
+			cube.render(ctx, material);
 		}
 	}
 	rotate(angle, axis) {

@@ -21,17 +21,58 @@ class Scene {
 
 
 export class RubikCubeStage {
-	constructor(ctx, width, height) {
+	constructor(ctx, width, height, blocks) {
         this.ctx = ctx;
         this.width = width;
         this.height = height;
 		this.rotationAngle = {x: 20,y:20, z:20};
-		const len = 90;
-		this.cube = new RubikCube(new Point3D(-len/2,-len/2,-len/2), len);
+		const len = 150;
+        const materials = this.makeMaterials(blocks);
+		this.cube = new RubikCube(new Point3D(-len/2,-len/2,-len/2), len, 3, materials);
 		this.rotate(this.rotationAngle);
 		this.draw(this.rotationAngle);
         this.register();
 	}
+
+    makeMaterials(blocks) {
+        const blockIndexMap = [
+            {index: 0, arr: [6, 18, 11]},
+            {index: 1, arr: [21, 14]},
+            {index: 2, arr: [36, 24, 17]},
+            {index: 3, arr: [7, 19]},
+            {index: 4, arr: [22]},
+            {index: 5, arr: [37, 25]},
+            {index: 6, arr: [8, 20, 27]},
+            {index: 7, arr: [23, 30]},
+            {index: 8, arr: [38, 26, 33]},
+            {index: 9, arr: [3, 10]},
+            {index: 10, arr: [13]},
+            {index: 11, arr: [39, 16]},
+            {index: 12, arr: [4]},
+            {index: 13, arr: [40]},
+            {index: 14, arr: [5, 28]},
+            {index: 15, arr: [31]},
+            {index: 16, arr: [41, 34]},
+            {index: 17, arr: [0, 51,9]},
+            {index: 18, arr: [48, 12]},
+            {index: 19, arr: [45, 42,15]},
+
+            {index: 20, arr: [1, 52]},
+            {index: 21, arr: [49]},
+            {index: 22, arr: [46,43]},
+            {index: 23, arr: [2, 53, 29]},
+            {index: 24, arr: [50,32]},
+            {index: 25, arr: [47,44,35]},
+        ];
+        const ret = [];
+        for(let blockIndexs of blockIndexMap) {
+            ret[blockIndexs.index] = [];
+            for(let blockIndex of blockIndexs.arr) {
+                ret[blockIndexs.index].push(blocks[blockIndex]);
+            }
+        }
+        return ret;
+    }
 	rotate(rotationAngle) {
 		this.rotationAngle =  {
 			x: (this.rotationAngle.x+rotationAngle.x),
@@ -135,6 +176,7 @@ export class RubikCubeStage {
                 originCoordinate.y = mouseY;
             }
             ppMousePressed = true;
+            e.preventDefault();
         
         });
         
@@ -145,6 +187,7 @@ export class RubikCubeStage {
                 const rotationAngle = {x: 20,y:20, z:20};
                 rubicCubeStage.rotate(rotationAngle);
                 rubicCubeStage.draw();
+                e.preventDefault();
             }
         });
         $('#rubik-cube').on("touchmove", function(e) {
@@ -155,13 +198,59 @@ export class RubikCubeStage {
                 var mouseY = e.originalEvent.changedTouches[0].pageY;
                 let diffX = (mouseX - originCoordinate.x);
                 let diffY = (mouseY - originCoordinate.y);
-                rotationAngle.z -= diffX;
-                rotationAngle.y -= diffY;
+                rotationAngle.z = -diffX;
+                rotationAngle.y = diffY;
                 rubicCubeStage.rotate(rotationAngle);
                 rubicCubeStage.draw();
                 console.info(diffX);
                 originCoordinate.x = mouseX;
                 originCoordinate.y = mouseY;
+            }
+        });
+
+
+        var ppPoint = function(x, y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+        let blockMousePressed = false;
+        let ppPointArray = new Array();
+        $('.cube-block').mousedown(function(e)
+        {
+            if(e.which == 1)// 如果是左键
+            {
+                blockMousePressed = true;
+                var mouseX = e.pageX - this.offsetLeft;
+                var mouseY = e.pageY - this.offsetTop;
+                ppPointArray.push(new ppPoint(mouseX, mouseY));
+            }
+        });
+        
+        $(window).mouseup(function(e){
+            blockMousePressed = false;
+        });
+        
+        function ppDrawLine(curX, curY, context)
+        {
+            context.beginPath();
+            var ppLastPoint = ppPointArray[ppPointArray.length - 1];
+            context.moveTo(ppLastPoint.x, ppLastPoint.y);
+            context.lineTo(curX, curY);
+            context.closePath();
+            context.fillStyle = "black";
+            context.stroke();
+            context.fillStyle = "black";
+            ppPointArray.push(new ppPoint(curX, curY));
+        }
+        
+        $('.cube-block').mousemove(function(e)
+        {
+            if(blockMousePressed)
+            {
+                var mouseX = e.pageX - this.offsetLeft;
+                var mouseY = e.pageY - this.offsetTop;
+                ppDrawLine(mouseX, mouseY, e.currentTarget.getContext("2d"));
             }
         });
     }

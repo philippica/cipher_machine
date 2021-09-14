@@ -21,6 +21,7 @@ export class Cube {
 		this.faces = [];
 		const faceIndexCount = faceIndex.length;
 		const isPointUsed = [];
+		let faceIndexNum = 0;
 		for(let i = 0; i < faceIndexCount; i++) {
 			if(colors[i] === null) {
 				continue;
@@ -35,7 +36,8 @@ export class Cube {
 				points[faceIndex[i][2]],
 				points[faceIndex[i][3]],
 				len,
-				colors[i]
+				colors[i],
+				faceIndexNum++
 			);
 			this.faces.push(face);
 		}
@@ -47,9 +49,10 @@ export class Cube {
 
 		}
 	}
-	render(ctx) {
+	render(ctx, materials) {
 		for(let face of this.faces) {
-			face.render(ctx, this.index);
+			let material = materials?materials[face.index]:null;
+			face.render(ctx, this.index, material);
 		}
 	}
 	rotate(angle, axis, op) {

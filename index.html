@@ -44,6 +44,26 @@
 				display: flex;
 				justify-content: space-around;
 			}
+			.face-container {
+				width: fit-content;
+				display: flex;
+				width: 100%;
+				justify-content: space-around;
+			}
+			#expand {
+				width: fit-content;
+				margin: 10px;
+			}
+			.face {
+				height: 200px;
+				width: 200px;
+
+			}
+			.cube-block {
+				background-color: gray;
+				vertical-align: bottom;
+				border: 1px solid;
+			}
 
 		</style>
 		<link rel="stylesheet" href="./nonogram.css">
@@ -129,7 +149,7 @@
 				<div id="rubik-cube-capsule" class="capsule" data-expend=true>魔方</div>
 				<div id="rubik-cube-main" class="content-area" style="display: none;">
 					<div class="help-content">请拖动魔方观看所有面:</div>
-					<canvas id="rubik-cube" height="230px" width="230px"></canvas>
+					<canvas id="rubik-cube" height="300px" width="300px"></canvas>
 					<div>
 						<div>顺时针</div>
 						<button onclick="window.rubicCube.front(1)">前面(F)</button>
@@ -148,6 +168,7 @@
 						<button onclick="window.rubicCube.left(-1)">左边(L')</button>
 						<button onclick="window.rubicCube.right(1)">右面(R')</button>
 					</div>
+					<div id="expand"></div>
 				</div>
 			</div>
 		</div>
@@ -169,9 +190,10 @@
 
 			$("#rubik-cube-capsule").click((e) => {
 				if(!window.rubicCube) {
-					var canvas = document.getElementById('rubik-cube'),
-					ctx = canvas.getContext('2d');
-					window.rubicCube = new Solver.RubikCubeStage(ctx, canvas.width, canvas.height);
+					const materias = initExpand();
+					const rubikCanvas = document.getElementById('rubik-cube'),
+					rubikCtx = rubikCanvas.getContext('2d');
+					window.rubicCube = new Solver.RubikCubeStage(rubikCtx, rubikCanvas.width, rubikCanvas.height, materias);
 				}
 			});
 
@@ -343,6 +365,40 @@
 					);
 				}
 			}
+
+			// rubik cube
+			initExpand = () => {
+				const blocks = [];
+				for(let i = 0; i < 4; i++) {
+					$('#expand').append(`<div id="expand-${i}" class="face-container"></div>`);
+				}
+				$('#expand-0').append(`<div id="face-${0}" class="face"></div>`);
+				$('#expand-1').append(`<div id="face-${1}" class="face"></div>`);
+				$('#expand-1').append(`<div id="face-${2}" class="face"></div>`);
+				$('#expand-1').append(`<div id="face-${3}" class="face"></div>`);
+				$('#expand-2').append(`<div id="face-${4}" class="face"></div>`);
+				$('#expand-3').append(`<div id="face-${5}" class="face"></div>`);
+				const width = Math.floor($('#face-1').width() / 3-4);
+				const height = Math.floor($('#face-1').height() / 3-4);
+				const blockNum = 9;
+				const colors = ["white", "green", "red", "blue", "yellow", "orange"]
+				for(let i = 0; i < 6; i++) {
+					for(let j = 0; j < blockNum; j++) {
+						$(`#face-${i}`).append(`<canvas id="block-${i*blockNum+j}" width="${width}px" height="${height}px" class="cube-block"></canvas>`);
+						let canvas = document.getElementById(`block-${i*blockNum+j}`);
+						let ctx=canvas.getContext("2d");
+						ctx.fillStyle=colors[i];
+						ctx.fillRect(0,0,width,height);
+						const index = i*blockNum+j;
+						ctx.fillStyle="black";
+						ctx.font="20px Georgia";
+						ctx.fillText (index.toString(), 20,20);
+						blocks.push(canvas);
+					}
+				}
+				return blocks;
+			}
+
 
 		</script>
 
