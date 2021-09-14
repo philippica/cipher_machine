@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>music</title>
+		<link rel="stylesheet" href="./bootstrap.min.css">
+		<script src="./jquery.min.js"></script>
+		<script src="./bootstrap.min.js"></script>
+	</head>
+	<body>
+		<button onclick="playSound(261.63, 2000)">C</button>
+		<button onclick="playSound(293.66, 2000)">D</button>
+		<button onclick="playSound(329.63, 2000)">E</button>
+		<button onclick="playSound(349.23, 2000)">F</button>
+		<button onclick="playSound(392.00, 2000)">G</button>
+		<button onclick="playSound(440, 2000)">A</button>
+		<button onclick="playSound(493.88, 2000)">B</button>
+		<textarea></textarea>
+		
+		<script src="./dist/index.js"></script>
+		<script>
+			const playSound = (frequency, timeInMillisecont) => {
+				const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+				// create Oscillator node
+				const oscillator = audioCtx.createOscillator();
+				oscillator.type = 'sine';
+				oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime); // value in hertz
+				oscillator.connect(audioCtx.destination);
+				oscillator.start();
+				setTimeout(()=>{
+					oscillator.stop();
+				}, timeInMillisecont);
+			}
+		</script>
+	</body>
+</html>

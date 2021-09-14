@@ -229,18 +229,21 @@ export class RubikCubeStage {
         
         $(window).mouseup(function(e){
             blockMousePressed = false;
+            rubicCubeStage.draw();
         });
         
         function ppDrawLine(curX, curY, context)
         {
+            const color = $('#penColor').val();
+            context.strokeStyle = color;
+            const width = $('#penWidth').val();
+            context.lineWidth = parseInt(width);
             context.beginPath();
             var ppLastPoint = ppPointArray[ppPointArray.length - 1];
             context.moveTo(ppLastPoint.x, ppLastPoint.y);
             context.lineTo(curX, curY);
             context.closePath();
-            context.fillStyle = "black";
             context.stroke();
-            context.fillStyle = "black";
             ppPointArray.push(new ppPoint(curX, curY));
         }
         

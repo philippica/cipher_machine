@@ -64,6 +64,9 @@
 				vertical-align: bottom;
 				border: 1px solid;
 			}
+			#rubik-cube{
+				border: 5px solid;
+			}
 
 		</style>
 		<link rel="stylesheet" href="./nonogram.css">
@@ -168,14 +171,30 @@
 						<button onclick="window.rubicCube.left(-1)">左边(L')</button>
 						<button onclick="window.rubicCube.right(1)">右面(R')</button>
 					</div>
+					<br/>
+					<div class="help-content">在下面魔方展开图中可用鼠标绘制任意图案颜色(注:画笔颜色既可以是颜色英文，例如red, blue, orange, 也可是#开头的RGB,例如#FFABCD)</div>
+					<label>画笔颜色</label><input id="penColor" value="black"/>
+					<label>画笔粗细</label><input id="penWidth" value="3"/>
 					<div id="expand"></div>
+				</div>
+			</div>
+			<div id="music-container">
+				<div id="music-capsule" class="capsule" data-expend=true>音乐</div>
+				<div id="music-main" class="content-area" style="display: none;">
+					<button onclick="playSound(261.63, 2000)">C</button>
+					<button onclick="playSound(293.66, 2000)">D</button>
+					<button onclick="playSound(329.63, 2000)">E</button>
+					<button onclick="playSound(349.23, 2000)">F</button>
+					<button onclick="playSound(392.00, 2000)">G</button>
+					<button onclick="playSound(440, 2000)">A</button>
+					<button onclick="playSound(493.88, 2000)">B</button>
 				</div>
 			</div>
 		</div>
 		<div id="footer"> power by -- philippica (Contact me: philippicapyj@gmail.com)</div>
 
 		<script src="./jquery.min.js"></script>
-		<script src="./dist/index.v1.0.0.js"></script>
+		<script src="./dist/index.v1.0.1.js"></script>
 		<script>
 			// substitution
 			$(".capsule").click((e) => {
@@ -397,6 +416,20 @@
 					}
 				}
 				return blocks;
+			}
+
+			//music
+			const playSound = (frequency, timeInMillisecont) => {
+				const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+				// create Oscillator node
+				const oscillator = audioCtx.createOscillator();
+				oscillator.type = 'sine';
+				oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime); // value in hertz
+				oscillator.connect(audioCtx.destination);
+				oscillator.start();
+				setTimeout(()=>{
+					oscillator.stop();
+				}, timeInMillisecont);
 			}
 
 
