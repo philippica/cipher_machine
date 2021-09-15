@@ -226,6 +226,32 @@ export class RubikCubeStage {
                 ppPointArray.push(new ppPoint(mouseX, mouseY));
             }
         });
+
+        $('.cube-block').on("touchstart",function(e)
+        {
+            var mouseX = e.originalEvent.changedTouches[0].pageX - this.offsetLeft;
+            var mouseY = e.originalEvent.changedTouches[0].pageY - this.offsetTop;
+            blockMousePressed = true;
+            ppPointArray.push(new ppPoint(mouseX, mouseY));
+            e.preventDefault();
+        });
+
+        $('.cube-block').on("touchend",function(e)
+        {
+            blockMousePressed = false;
+            rubicCubeStage.draw();
+            e.preventDefault();
+        });
+
+        $('.cube-block').on("touchmove",function(e)
+        {
+            if(blockMousePressed)
+            {
+                var mouseX = e.originalEvent.changedTouches[0].pageX- this.offsetLeft;
+                var mouseY = e.originalEvent.changedTouches[0].pageY - this.offsetTop;
+                ppDrawLine(mouseX, mouseY, e.currentTarget.getContext("2d"));
+            }
+        });
         
         $(window).mouseup(function(e){
             blockMousePressed = false;
