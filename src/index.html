@@ -244,19 +244,23 @@
 			<div id="blind-container">
 				<div id="blind-capsule" class="capsule" data-expend=true>盲文&旗语</div>
 				<div id="blind-main" class="content-area" style="display: none;">
-					<div style="display: flex;">
-						<div>
-							<div class="blind-dot" data-index=0 ></div>
-							<div class="blind-dot" data-index=1 ></div>
-							<div class="blind-dot" data-index=2 ></div>
+					<div id="demo-blind-letter" style="margin-right: 5px;">
+						<div style="display: flex;">
+							<div>
+								<div class="blind-dot" data-index=0 ></div>
+								<div class="blind-dot" data-index=1 ></div>
+								<div class="blind-dot" data-index=2 ></div>
+							</div>
+							<div>
+								<div class="blind-dot" data-index=3 ></div>
+								<div class="blind-dot" data-index=4 ></div>
+								<div class="blind-dot" data-index=5 ></div>
+							</div>
 						</div>
-						<div>
-							<div class="blind-dot" data-index=3 ></div>
-							<div class="blind-dot" data-index=4 ></div>
-							<div class="blind-dot" data-index=5 ></div>
-						</div>
+						<div id="blind-letter"></div>
 					</div>
-					<div id="blind-letter"></div>
+					<button onclick="confirmBlind()" style="margin: 20px;">确认</button>
+					<div id="history-blind-area" style="display: flex;"></div>
 				</div>
 			</div>
 		</div>
@@ -551,6 +555,10 @@
 
 				$("#blind-letter").text(braille[code]??"Unknown");
 			});
+
+			const confirmBlind = () => {
+				$("#history-blind-area").append($("#demo-blind-letter").clone());
+			}
 
 
 		</script>
