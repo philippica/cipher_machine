@@ -94,6 +94,13 @@
 				background-color: black;
 				color: white;
 			}
+			.blind-dot {
+				border-radius: 50%;
+				width: 30px;
+				height: 30px;
+				border: 1px solid;
+				margin: 10px 2px 2px 10px;
+			}
 		</style>
 		<link rel="stylesheet" href="./static/nonogram.css">
 		<link rel="stylesheet" href="./static/bootstrap.min.css">
@@ -227,6 +234,24 @@
 							<div class="pianoBlackKey">D#</div>
 						</div>
 					</div>
+				</div>
+			</div>
+			<div id="blind-container">
+				<div id="blind-capsule" class="capsule" data-expend=true>盲文&旗语</div>
+				<div id="blind-main" class="content-area" style="display: none;">
+					<div style="display: flex;">
+						<div>
+							<div class="blind-dot" data-index=0 ></div>
+							<div class="blind-dot" data-index=1 ></div>
+							<div class="blind-dot" data-index=2 ></div>
+						</div>
+						<div>
+							<div class="blind-dot" data-index=3 ></div>
+							<div class="blind-dot" data-index=4 ></div>
+							<div class="blind-dot" data-index=5 ></div>
+						</div>
+					</div>
+					<div id="blind-letter"></div>
 				</div>
 			</div>
 		</div>
@@ -469,6 +494,58 @@
 					oscillator.stop();
 				}, timeInMillisecont);
 			}
+
+			// blind
+			const currentBlindState = [0,0,0,0,0,0];
+			const braille = [];
+			braille[1] = 'a';
+			braille[3] = 'b';
+			braille[9] = 'c';
+			braille[25] = 'd';
+			braille[17] = 'e';
+			braille[11] = 'f';
+			braille[27] = 'g';
+			braille[19] = 'h';
+			braille[10] = 'i';
+			braille[26] = 'j';
+			braille[5] = 'k';
+
+			braille[7] = 'l';
+			braille[13] = 'm';
+			braille[29] = 'n';
+			braille[21] = 'o';
+			braille[15] = 'p';
+			braille[31] = 'q';
+			braille[23] = 'r';
+			braille[14] = 's';
+			braille[30] = 't';
+			braille[37] = 'u';
+			braille[39] = 'v';
+			braille[58] = 'w';
+			braille[45] = 'x';
+			braille[61] = 'y';
+			braille[53] = 'z';
+
+
+			$('.blind-dot').on("click",function(e)
+			{
+				const idx = parseInt(e.target.dataset.index);
+				if(currentBlindState[idx]) {
+					e.target.style.backgroundColor=""
+				} else {
+					e.target.style.backgroundColor="black"
+				}
+				currentBlindState[idx] ^= 1;
+
+				let code = 0;
+				for(let i = 0; i < 6; i++) {
+					code += currentBlindState[i] * (1<<i);
+				}
+				console.info(code);
+
+
+				$("#blind-letter").text(braille[code]??"Unknown");
+			});
 
 
 		</script>
