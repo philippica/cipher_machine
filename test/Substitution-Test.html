@@ -8,26 +8,32 @@
 		
 		<script src="../dist/index.js"></script>
 		<script>
-			const ans1 = new Substitution.default().substituteSolver("i am a boy");
+			const ans1 = new Solver.SubstitutionSolver().substituteSolver("i am a boy");
 			if(ans1.length === 2012) {
 				console.info("Test1 pass.");
+				document.write("Test1 pass.\n");
 			} else {
 				console.error("Test1 failed.");
+				document.write("Test1 failed.");
 			}
 
-			const ans2 = new Substitution.default().substituteSolver("i am a boy and", 20000, 2);
-			const ans3 = new Substitution.default().substituteSolver("i am a boy and", 20000, 3);
+			const ans2 = new Solver.SubstitutionSolver().substituteSolver("i am a boy and", 20000, 2);
+			const ans3 = new Solver.SubstitutionSolver().substituteSolver("i am a boy and", 20000, 3);
 			if(ans2.length === ans3.length && ans2.length === 15035) {
 				console.info("Test2 pass.");
+				document.write("<div>Test2 pass.</div>");
 			} else {
 				console.error("Test2 failed.");
+				document.write("Test2 failed.\n");
 			}
 
-			const ans4 = new Substitution.default().substituteSolver("i. am\" a boy\", and", 20000, 3);
+			const ans4 = new Solver.SubstitutionSolver().substituteSolver("i. am\" a boy\", and", 20000, 3);
 			if(ans4.length === 15035) {
 				console.info("Test3 pass.");
+				document.write("Test3 pass.\n");
 			} else {
 				console.error("Test3 failed.");
+				document.write("Test3 failed.");
 			}
 		</script>
 	</body>
