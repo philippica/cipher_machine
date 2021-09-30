@@ -359,6 +359,22 @@
 					} else {
 						columnArea[column][index] = value;
 					}
+				} else {
+					const data = e.target.dataset;
+					const index = parseInt(data.idx);
+					const column = parseInt(data.col);
+					const row = parseInt(data.row);
+					if(data.type === "row") {
+						while(rowArea[row].length > index) {
+							rowArea[row].pop();
+							$(`#row-${data.row}`).children().eq(0).remove();
+						}
+					} else {
+						while(columnArea[column].length > index) {
+							columnArea[column].pop();
+							$(`#col-${data.col}`).children().eq(0).remove();
+						}
+					}
 				}
 			}
 
