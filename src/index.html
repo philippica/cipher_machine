@@ -14,6 +14,17 @@
 				cursor: pointer;
 				margin: 5px;
 			}
+			.flag-shape {
+                margin: 10px;
+                width: 0;
+                height: 0;
+                border-left: 10px solid transparent;
+                border-right: 10px solid transparent;
+                border-bottom: 30px solid #000000;
+			}
+			.transparent {
+				opacity: .1;
+			}
 			.capsule:hover{
 				font-weight: bold;
 				-webkit-transform: translateX(-3px);
@@ -101,7 +112,7 @@
 				border: 1px solid;
 				margin: 10px 2px 2px 10px;
 			}
-			#blind-letter{
+			#blind-letter, #flag-letter{
 				font-size: 20px;
 				margin-left: 40px;
 				margin-top: 20px;
@@ -244,6 +255,7 @@
 			<div id="blind-container">
 				<div id="blind-capsule" class="capsule" data-expend=true>盲文&旗语</div>
 				<div id="blind-main" class="content-area" style="display: none;">
+					<div>盲文:</div>
 					<div id="demo-blind-letter" style="margin-right: 5px;">
 						<div style="display: flex;">
 							<div>
@@ -261,6 +273,27 @@
 					</div>
 					<button onclick="confirmBlind()" style="margin: 20px;">确认</button>
 					<div id="history-blind-area" style="display: flex;"></div>
+					<div >旗语:</div>
+					<div id="demo-flag">
+						<div style="display: flex;">
+							<div class="flag-shape " style="transform: rotate(-45deg);" data-index=0></div>
+							<div class="flag-shape" data-index=1></div>
+							<div class="flag-shape transparent" style="transform: rotate(45deg);" data-index=2></div>
+						</div>
+						<div style="display: flex;">
+							<div class="flag-shape transparent" style="transform: rotate(-90deg);" data-index=3></div>
+							<div style="width: 40px; height: 50px;" ></div>
+							<div class="flag-shape transparent" style="transform: rotate(90deg);" data-index=4></div>
+						</div>
+						<div style="display: flex;">
+							<div class="flag-shape transparent" style="transform: rotate(-135deg);" data-index=5></div>
+							<div class="flag-shape transparent" style="transform: rotate(180deg);" data-index=6></div>
+							<div class="flag-shape transparent" style="transform: rotate(135deg);" data-index=7></div>
+						</div>
+						<div id="flag-letter"></div>
+					</div>
+					<button onclick="confirmFlag()" style="margin: 20px;">确认</button>
+					<div id="history-flag-area" style="display: flex;"></div>
 				</div>
 			</div>
 		</div>
@@ -523,33 +556,19 @@
 			// blind
 			const currentBlindState = [0,0,0,0,0,0];
 			const braille = [];
-			braille[1] = 'a';
-			braille[3] = 'b';
-			braille[9] = 'c';
-			braille[25] = 'd';
-			braille[17] = 'e';
-			braille[11] = 'f';
-			braille[27] = 'g';
-			braille[19] = 'h';
-			braille[10] = 'i';
-			braille[26] = 'j';
-			braille[5] = 'k';
-
-			braille[7] = 'l';
-			braille[13] = 'm';
-			braille[29] = 'n';
-			braille[21] = 'o';
-			braille[15] = 'p';
-			braille[31] = 'q';
-			braille[23] = 'r';
-			braille[14] = 's';
-			braille[30] = 't';
-			braille[37] = 'u';
-			braille[39] = 'v';
-			braille[58] = 'w';
-			braille[45] = 'x';
-			braille[61] = 'y';
-			braille[53] = 'z';
+			braille[1] = 'a';braille[3] = 'b';
+			braille[9] = 'c';braille[25] = 'd';
+			braille[17] = 'e';braille[11] = 'f';
+			braille[27] = 'g';braille[19] = 'h';
+			braille[10] = 'i';braille[26] = 'j';
+			braille[5] = 'k';braille[7] = 'l';
+			braille[13] = 'm';braille[29] = 'n';
+			braille[21] = 'o';braille[15] = 'p';
+			braille[31] = 'q';braille[23] = 'r';
+			braille[14] = 's';braille[30] = 't';
+			braille[37] = 'u';braille[39] = 'v';
+			braille[58] = 'w';braille[45] = 'x';
+			braille[61] = 'y';braille[53] = 'z';
 
 
 			$('.blind-dot').on("click",function(e)
@@ -566,8 +585,6 @@
 				for(let i = 0; i < 6; i++) {
 					code += currentBlindState[i] * (1<<i);
 				}
-				console.info(code);
-
 
 				$("#blind-letter").text(braille[code]??"Unknown");
 			});
@@ -575,6 +592,54 @@
 			const confirmBlind = () => {
 				$("#history-blind-area").append($("#demo-blind-letter").clone());
 			}
+			const confirmFlag = () => {
+				$("#history-flag-area").append($("#demo-flag").clone());
+			}
+
+			const flagState = [0, 1];
+			const flagMap = [];
+			flagMap[51] = 'a';
+			flagMap[33] = 'b';
+			flagMap[6] = 'c';
+			flagMap[15] = 'd';
+			flagMap[24] = 'e';
+			flagMap[42] = 'f';
+			flagMap[61] = 'g';
+			flagMap[32] = 'h';
+			flagMap[5] = 'i';
+			flagMap[13] = 'j';
+			flagMap[14] = 'k';
+			flagMap[23] = 'l';
+			flagMap[41] = 'm';
+			flagMap[52] = 'n';
+			flagMap[3] = 'o';
+			flagMap[12] = 'p';
+			flagMap[21] = 'q';
+			flagMap[31] = 'r';
+			flagMap[34] = 's';
+			flagMap[1] = 't';
+			flagMap[2] = 'u';
+			flagMap[16] = 'v';
+
+			flagMap[22] = 'w';
+			flagMap[25] = 'x';
+			flagMap[4] = 'y';
+			flagMap[43] = 'z';
+
+
+			$('.flag-shape').on("click",function(e)
+			{
+				const idx = parseInt(e.target.dataset.index);
+				if(flagState[0] === idx || flagState[1] === idx)return;
+				e.target.style.opacity=1;
+				$(`.flag-shape[data-index=${flagState[0]}]`)[0].style.opacity=0.1;
+				flagState[0] = flagState[1];
+				flagState[1] = idx;
+
+				const code = Math.min(flagState[0], flagState[1])*9 + Math.max(flagState[0], flagState[1]);
+				console.info(code);
+				$("#flag-letter").text(flagMap[code]??"Unknown");
+			});
 
 
 		</script>
