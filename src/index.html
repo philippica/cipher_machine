@@ -296,6 +296,23 @@
 					<div id="history-flag-area" style="display: flex;"></div>
 				</div>
 			</div>
+			<div id="cipher-container">
+				<div id="cipher-capsule" class="capsule" data-expend=true>古典密码</div>
+				<div id="cipher-main" class="content-area" style="display: none;">
+					<div id="cipher-tools">
+						<button id="caeser-brute-force" style="margin: 20px;">暴力凯撒</button>
+						<button id="QWE" style="margin: 20px;">QWE</button>
+						<div id="general-substitute-cipher">
+							<select onchange="changeMethod()" id="find-method">
+								<option value ="QWECipher">QWE</option>
+							</select>
+						</div>
+						<input id="autoDecode" type="checkbox" onclick="autoCheckClick()"/> 自动暴力
+					</div>
+					<textarea id="cipher-code-textarea" class="form-control" rows="20" placeholder="请输入密文" oninput="onTypePlainCode()"></textarea>
+					<div id="plain-code-area"></div>
+				</div>
+			</div>
 		</div>
 		<div id="footer"> power by -- philippica (Contact me: philippicapyj@gmail.com)</div>
 
@@ -598,34 +615,19 @@
 
 			const flagState = [0, 1];
 			const flagMap = [];
-			flagMap[51] = 'a';
-			flagMap[33] = 'b';
-			flagMap[6] = 'c';
-			flagMap[15] = 'd';
-			flagMap[24] = 'e';
-			flagMap[42] = 'f';
-			flagMap[61] = 'g';
-			flagMap[32] = 'h';
-			flagMap[5] = 'i';
-			flagMap[13] = 'j';
-			flagMap[14] = 'k';
-			flagMap[23] = 'l';
-			flagMap[41] = 'm';
-			flagMap[52] = 'n';
-			flagMap[3] = 'o';
-			flagMap[12] = 'p';
-			flagMap[21] = 'q';
-			flagMap[31] = 'r';
-			flagMap[34] = 's';
-			flagMap[1] = 't';
-			flagMap[2] = 'u';
-			flagMap[16] = 'v';
-
-			flagMap[22] = 'w';
-			flagMap[25] = 'x';
-			flagMap[4] = 'y';
-			flagMap[43] = 'z';
-
+			flagMap[51] = 'a';flagMap[33] = 'b';
+			flagMap[6] = 'c';flagMap[15] = 'd';
+			flagMap[24] = 'e';flagMap[42] = 'f';
+			flagMap[61] = 'g';flagMap[32] = 'h';
+			flagMap[5] = 'i';flagMap[13] = 'j';
+			flagMap[14] = 'k';flagMap[23] = 'l';
+			flagMap[41] = 'm';flagMap[52] = 'n';
+			flagMap[3] = 'o';flagMap[12] = 'p';
+			flagMap[21] = 'q';flagMap[31] = 'r';
+			flagMap[34] = 's';flagMap[1] = 't';
+			flagMap[2] = 'u';flagMap[16] = 'v';
+			flagMap[22] = 'w';flagMap[25] = 'x';
+			flagMap[4] = 'y';flagMap[43] = 'z';
 
 			$('.flag-shape').on("click",function(e)
 			{
@@ -640,6 +642,54 @@
 				console.info(code);
 				$("#flag-letter").text(flagMap[code]??"Unknown");
 			});
+
+			// classic Code
+
+			const caeser = (str, offset) => {
+				let ans = "";
+				for(let ch of str) {
+					let base;
+					if(ch.charCodeAt() >= 65 && ch.charCodeAt() <= 90) {
+						base = 65;
+					} else if (ch.charCodeAt() >= 97 && ch.charCodeAt() <= 122) {
+						base = 97;
+					} else {
+						ans += ch;
+					}
+					ans += String.fromCharCode((ch.charCodeAt() - base + offset) % 26 + base);
+				}
+				return ans;
+			}
+
+			const caeserProcess = () => {
+				const cipherCode = $("#cipher-code-textarea").val();
+				$('#plain-code-area').empty();
+				for(let i = 1; i <= 25; i++) {
+					const pt = caeser(cipherCode, i)
+					$('#plain-code-area').append(`<div style="display:flex;"><div>凯撒${i}： </div><div>${pt}</div></div>`);
+				}
+			}
+
+			$('#caeser-brute-force').on("click",function(e)
+			{
+				caeserProcess();
+			});
+
+			const onTypePlainCode = (e) => {
+				const isAutoDecode = $('#autoDecode').get(0).checked;
+				if(!isAutoDecode)return;
+				caeserProcess();
+			}
+
+			const autoCheckClick = (e) => {
+				const isAutoDecode = $('#autoDecode').get(0).checked;
+				if(isAutoDecode) {
+					$('#cipher-code-textarea')[0].style.borderColor = 'red';
+					caeserProcess();
+				} else {
+					$('#cipher-code-textarea')[0].style.borderColor = '';
+				}
+			}
 
 
 		</script>
