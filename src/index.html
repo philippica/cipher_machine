@@ -117,7 +117,17 @@
 				margin-left: 40px;
 				margin-top: 20px;
 			}
-		</style>
+			.map-unit {
+				width: 25px;
+			}
+			.map-unit input{
+				width: 22px;
+				background-color: #80808036;
+			}
+			.map-unit div {
+				margin-left: 4px;
+			}
+ 		</style>
 		<link rel="stylesheet" href="./static/nonogram.css">
 		<link rel="stylesheet" href="./static/bootstrap.min.css">
 	</head>
@@ -303,9 +313,13 @@
 						<button id="caeser-brute-force" style="margin: 20px;">暴力凯撒</button>
 						<button id="QWE" style="margin: 20px;">QWE</button>
 						<div id="general-substitute-cipher">
-							<select onchange="changeMethod()" id="find-method">
-								<option value ="QWECipher">QWE</option>
+							<select onchange="changeSubstitutionMethod()" id="substitution-cipher-method">
+								<option value ="QWECipher">QWE加密</option>
+								<option value ="QWECipher">QWE解密</option>
+								<option value ="QWECipher">Atbash</option>
 							</select>
+							<div id="substitute-table" style="display: flex;"></div>
+							<button onclick="solveGeneralSubstitution()">解码</button>
 						</div>
 						<input id="autoDecode" type="checkbox" onclick="autoCheckClick()"/> 自动暴力
 					</div>
@@ -670,15 +684,88 @@
 				}
 			}
 
+			
+			const substitutionTable = [
+				['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l','z','x','c','v','b','n','m'],
+				['k','x','v','m','c','n','o','p','h','q','r','s','z','y','i','j','a','d','l','e','g','w','b','u','f','t'],
+				['z','y','x','w','v','u','t','s','r','q','p','o','n','m','l','k','j','i','h','g','f','e','d','c','b','a'],
+			];
+
+			const makeMap = (mapList) => {
+				const ret = {};
+				for(let i = 0; i < 26; i++) {
+					ret[String.fromCharCode(i+97)] = mapList[i];
+				}
+				return ret;
+			} 
+
+
 			$('#caeser-brute-force').on("click",function(e)
 			{
 				caeserProcess();
 			});
+			
+			const useMethod = (index) => {
+				$("#substitute-table").empty();
+				for(let i = 0; i < 26; i++) {
+					const letter = String.fromCharCode(97 + i);
+					$("#substitute-table").append(`<div class="map-unit"><div>${letter}</div><input id="cipher-text" data-pt="${letter}" value="${substitutionTable[index][i]}"/></div>`);
+				}
+			}
+
+			const changeSubstitutionMethod = () => {
+				const methodIndex = $("#substitution-cipher-method")[0].selectedIndex;
+				useMethod(methodIndex);
+
+			}
 
 			const onTypePlainCode = (e) => {
 				const isAutoDecode = $('#autoDecode').get(0).checked;
 				if(!isAutoDecode)return;
 				caeserProcess();
+				let pt = substituteCipher($("#cipher-code-textarea").val(), makeMap(substitutionTable[0]));
+				$('#plain-code-area').append(`<div style="display:flex;"><div>QWE加密： </div><div>${pt}</div></div>`);
+
+				pt = substituteCipher($("#cipher-code-textarea").val(), makeMap(substitutionTable[1]));
+				$('#plain-code-area').append(`<div style="display:flex;"><div>QWE解密： </div><div>${pt}</div></div>`);
+
+				pt = substituteCipher($("#cipher-code-textarea").val(), makeMap(substitutionTable[2]));
+				$('#plain-code-area').append(`<div style="display:flex;"><div>Atbash： </div><div>${pt}</div></div>`);
+			}
+
+			$('#substitution-cipher-method').ready(() => {
+				useMethod(0);
+			});
+
+			const substituteCipher = (str, mapT) => {
+				const mappingTable = mapT ?? $.map($(".map-unit #cipher-text"), (element, i) => 
+					{
+						const pt = element.dataset.pt;
+						const ret = {};
+						ret[pt] = element.value;
+						return ret;
+					}
+				).reduce((pre, cur) => {
+					return Object.assign(pre, cur);
+				});
+				let ans = "";
+				for(let ch of str) {
+					if(mappingTable[ch]) {
+						ans += mappingTable[ch];
+					} else if(mappingTable[toLowerCase(ch)]) {
+						ans += mappingTable[toLowerCase(ch)];
+					} else {
+						ans += ch;
+					}
+				}
+				return ans;
+			}
+
+			const solveGeneralSubstitution = () => {
+				const cipherCode = $("#cipher-code-textarea").val();
+				$('#plain-code-area').empty();
+				const pt = substituteCipher(cipherCode);
+				$('#plain-code-area').append(`<div style="display:flex;"><div>结果: </div><div>${pt}</div></div>`);
 			}
 
 			const autoCheckClick = (e) => {
@@ -686,6 +773,8 @@
 				if(isAutoDecode) {
 					$('#cipher-code-textarea')[0].style.borderColor = 'red';
 					caeserProcess();
+					substituteCipher($("#cipher-code-textarea").val(), makeMap(substitutionTable[0]));
+
 				} else {
 					$('#cipher-code-textarea')[0].style.borderColor = '';
 				}
