@@ -327,6 +327,28 @@
 					<div id="plain-code-area"></div>
 				</div>
 			</div>
+			<div id="drop-quotes-container">
+				<div id="drop-quotes-capsule" class="capsule" data-expend=true>Drop Quotes</div>
+				<div id="drop-quotes-main" class="content-area" style="display: none;">
+					<form role="form">
+						<div class="form-group">
+							<label for="name">r</label>
+							<input id="drop-quotes-row" value="2" onchange="dropQuoteModifiedCb()"/>
+							<label for="name">c</label>
+							<input id="drop-quotes-column" value="7" onchange="dropQuoteModifiedCb()"/>
+							<input id="blackbox-seprete" type="checkbox"  checked ="checked"> 黑格子用来做单词分割
+						</div>
+					</form>
+					<div id="drop-quotes-playground">
+						<div id="drop-quotes-upper-bar"></div>
+						<div id="drop-quotes-bottom">
+							<div id="dq-board"></div>
+						</div>
+					</div>
+					<div id="drop-quote-answer"></div>
+					<button onclick="dropQuotesSolve()">solve</button>
+				</div>
+			</div>
 		</div>
 		<div id="footer"> power by -- philippica (Contact me: philippicapyj@gmail.com)</div>
 
@@ -779,7 +801,87 @@
 					$('#cipher-code-textarea')[0].style.borderColor = '';
 				}
 			}
+		
+		// drop quotes
+		let dropQuotesColumnArea = [];
+			let dropQuotesrowArea = [];
+			const dropQuotesSolve = () => {
+				const isBlackBoxSeprete = $('#blackbox-seprete').get(0).checked;
+				let col = parseInt($("#drop-quotes-column").val());
+				let row = parseInt($("#drop-quotes-row").val());
+				const grid = [];
+				for(let i = 0; i < row; i++) {
+					const line = [];
+					for(let j = 0; j < col; j++) {
+						if($(`#dq-cell-${i}-${j}`)[0].style.backgroundColor === "white") {
+							line.push(true);
+						} else {
+							line.push(false);
+						}
+					}
+					grid.push(line);
+				}
+				$("#drop-quote-answer").empty();
+				const findAnswerCb = (str) => {
+					$("#drop-quote-answer").append(`<div>${str}</div>`);
+				}
+				const answers = new Solver.DropQuote(grid, dropQuotesColumnArea, col, row).calculate(findAnswerCb, isBlackBoxSeprete);
+				console.info(answers);
+			}
 
+			const dropQuotesChangeInput = (e) => {
+				const value = e.target.innerText;
+				if(e.data && value) {
+					const data = e.target.dataset;
+					console.info(data);
+					const index = parseInt(data.idx);
+					const column = parseInt(data.col);
+					const row = parseInt(data.row);
+					if(data.type === "col" && (index === dropQuotesColumnArea[column].length)) {
+						dropQuotesColumnArea[column].push(value);
+						console.info(dropQuotesColumnArea);
+						$(`#dq-col-${data.col}`).prepend(`<div id="dq-col-cell-${data.col}-${index+1}" data-type="col" data-col=${data.col} data-idx=${index+1} contenteditable="true" oninput="dropQuotesChangeInput(event)" class="col-input">0</div>`);
+					} else {
+						dropQuotesColumnArea[column][index] = value;
+					}
+				}
+			}
+
+			const dropQuoteModifiedCb = () => {
+				let col = parseInt($("#drop-quotes-column").val());
+				let row = parseInt($("#drop-quotes-row").val());
+				dropQuotesColumnArea = [];
+				for(let i = 0; i < col; i++) {
+					dropQuotesColumnArea.push([]);
+				}
+				for(let i = 0; i < row; i++) {
+					dropQuotesrowArea.push([]);
+				}
+				$("#drop-quotes-upper-bar").empty();
+				$("#dq-board").empty();
+
+				for(let i = 0; i < col; i++) {
+					$("#drop-quotes-upper-bar").append(`<div id="dq-col-${i}" class="col-container"></div>`);
+					$(`#drop-quotes-upper-bar #dq-col-${i}`).append(`<div id="dq-col-cell-${i}-0" data-type="col" data-col=${i} data-idx=0 contenteditable="true" oninput="dropQuotesChangeInput(event)" class="col-input">0</div>`);
+				}
+				for(let i = 0; i < row; i++) {
+					$("#dq-board").append(`<div id="row-${i}" class="row-board"></div>`);
+					// $(`#board #row-${i}`).append(`<div contenteditable="true" class="row-input"></div>`);
+					for(let j = 0; j < col; j++) {
+						$(`#dq-board #row-${i}`).append(`<div id="dq-cell-${i}-${j}" class="cell" style="background: white"></div>`);
+					}
+				}
+				$("#dq-board .cell").on("click",function(e) {
+					console.info(e.target);
+					if(e.target.style.backgroundColor === "white") {
+						e.target.style.backgroundColor = "black";
+					} else {
+						e.target.style.backgroundColor = "white";
+					}
+				});
+			}
+
+			dropQuoteModifiedCb();
 
 		</script>
 

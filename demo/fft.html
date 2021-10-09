@@ -1,0 +1,152 @@
+<html>
+    <head>
+        <title>HTML5 Audio Visualizing</title>
+        <style type="text/css">
+            body {
+                background-color: #222222
+            }
+
+            input {
+                color: #ffffff
+            }
+
+            #wrapper {
+                display: table;
+                width: 100%;
+                height: 100%;
+            }
+
+            #wrapper-inner {
+                display: table-cell;
+                vertical-align: middle;
+
+            }
+
+            #tip {
+                color: #fff;
+                opacity: 0;
+                transition: opacity 1s;
+                -moz-transition: opacity 1s;
+                -webkit-transition: opacity 1s;
+                -o-transition: opacity 1s;
+            }
+
+            #tip.show {
+                opacity: 1
+            }
+        </style>
+        <script>
+            var AudioContext = window.AudioContext || window.webkitAudioContext; //Cross browser variant.
+
+            var canvas, ctx;
+            var audioContext;
+            var file;
+            var fileContent;
+            var audioBufferSourceNode;
+            var analyser;
+
+            var loadFile = function() {
+                var fileReader = new FileReader();
+                fileReader.onload = function(e) {
+                    fileContent = e.target.result;
+                    decodecFile();
+                }
+                fileReader.readAsArrayBuffer(file);
+            }
+
+            var decodecFile = function() {
+                audioContext.decodeAudioData(fileContent, function(buffer) {
+                    start(buffer);
+                });
+            }
+
+            var start = function(buffer) {
+                if(audioBufferSourceNode) {
+                    audioBufferSourceNode.stop();
+                }
+
+                audioBufferSourceNode = audioContext.createBufferSource();
+                audioBufferSourceNode.connect(analyser);
+                analyser.connect(audioContext.destination);
+                audioBufferSourceNode.buffer = buffer;
+                audioBufferSourceNode.start(0);
+                showTip(false);
+                window.requestAnimationFrame(render);
+            }
+
+            var showTip = function(show) {
+                var tip = document.getElementById('tip');
+                if (show) {
+                    tip.className = "show";
+                } else {
+                    tip.className = "";
+                }
+            }
+
+            var render = function() {
+                ctx = canvas.getContext("2d");
+                ctx.strokeStyle = "#00d0ff";
+                ctx.lineWidth = 2;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                var dataArray = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(dataArray);
+
+                for (var i in dataArray) {
+                    var energy = (dataArray[i] / 256.0) * 50;
+                    if(energy > 0) {
+                        console.info("");
+                    }
+                    ctx.beginPath();
+                    const x = 2 * i + 2;
+                    ctx.moveTo(x, 200);
+                    ctx.lineTo(x, 200 - 4 * energy);
+                    ctx.stroke();
+  
+                    if(i % 50 == 0) {
+                        ctx.fillStyle = 'white';
+                        const frequenct = audioContext.sampleRate / 2 / analyser.fftSize;
+                        console.info(frequenct);
+                        const f = frequenct * i;
+                        ctx.fillText(f.toString(), x, 220);
+
+                    }
+
+
+                }
+
+                window.requestAnimationFrame(render);
+            }
+
+            window.onload = function() {
+                audioContext = new AudioContext({
+                    sampleRate: 44100,
+                });
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+
+                var fileChooser = document.getElementById('fileChooser');
+                fileChooser.onchange = function() {
+                    if (fileChooser.files[0]) {
+                        file = fileChooser.files[0];
+                        showTip(true);
+                        loadFile();
+                    }
+                }
+
+                canvas = document.getElementById('visualizer');
+            }
+        </script>
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <div id="wrapper-inner">
+                <p id="tip">Decoding...</p>
+                <input id="fileChooser" type="file" />
+                <br>
+                <canvas id="visualizer" width="4000" height="400">Your browser does not support Canvas tag.</canvas>
+            </div>
+        </div>
+    </body>
+</html>

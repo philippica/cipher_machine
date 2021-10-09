@@ -1,4 +1,4 @@
-import { Trie } from "./Trie";
+import { Trie } from "../common/Trie";
 import { words } from '../common/dict.js';
 
 //import { words } from "../common/dict";
