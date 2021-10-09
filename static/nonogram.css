@@ -21,7 +21,7 @@
 	border: 1px solid black;
 	margin-right: -1px;
 }
-#playground {
+#playground, #drop-quotes-playground {
 	margin: 30px;
 	width: fit-content;
 }
@@ -43,7 +43,7 @@
 	flex-direction: column;
 	justify-content: flex-end;
 }
-#upper-bar {
+#drop-quotes-upper-bar, #upper-bar {
 	display: flex;
 	justify-content: flex-end;
 	margin-right: -1px;
