@@ -212,6 +212,7 @@
 				<div id="rubik-cube-main" class="content-area" style="display: none;">
 					<div class="help-content">请拖动魔方观看所有面:</div>
 					<canvas id="rubik-cube" height="300px" width="300px"></canvas>
+					<button onclick="resetRubicCube()">重置魔方</button>
 					<div>
 						<div>顺时针</div>
 						<button onclick="window.rubicCube.front(1)">前面(F)</button>
@@ -365,12 +366,16 @@
 				}
 			});
 
+
+			let rubicCubeMaterias;
+
 			$("#rubik-cube-capsule").click((e) => {
 				if(!window.rubicCube) {
 					const materias = initExpand();
+					rubicCubeMaterias = materias
 					const rubikCanvas = document.getElementById('rubik-cube'),
 					rubikCtx = rubikCanvas.getContext('2d');
-					window.rubicCube = new Solver.RubikCubeStage(rubikCtx, rubikCanvas.width, rubikCanvas.height, materias);
+					window.rubicCube = new Solver.RubikCubeStage(rubikCtx, rubikCanvas.width, rubikCanvas.height, rubicCubeMaterias);
 				}
 			});
 
@@ -590,6 +595,11 @@
 					}
 				}
 				return blocks;
+			}
+			resetRubicCube = () => {
+				const rubikCanvas = document.getElementById('rubik-cube'),
+				rubikCtx = rubikCanvas.getContext('2d');
+				window.rubicCube = new Solver.RubikCubeStage(rubikCtx, rubikCanvas.width, rubikCanvas.height, rubicCubeMaterias);
 			}
 
 			//music
