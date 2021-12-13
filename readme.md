@@ -2,6 +2,8 @@
 ### 它是啥
 puzzle hunt是一类解密比赛，它包含很多类谜题。而这个项目是纯前端开发的工具集合，包括解密中比较基础的的单表，查词，nonogram等工具。
 
+这里有个[demo](https://philippica.github.io/cipher_machine/)
+
 ### 如何编译、安装
 正如你所见的那样，本项目追求极简(~~极度原始~~)的开发风格，唯一用到的工具是用来做minification的webpack
 
