@@ -70,7 +70,7 @@ export class OneWord {
         return letterSet;
     }
 
-    onlyContains(letters) {
+    async onlyContains(letters, callback) {
         const answer = [];
         const letterSet = this.makeLetterSet(letters);
         const containsHelp = (letterSet, str) => {
@@ -88,9 +88,10 @@ export class OneWord {
         }
         for(let patten in words) {
             if(!patten)continue;
+            const len = patten.length;
             for(let word of words[patten]) {
                 if(containsHelp(letterSet, word)) {
-                    console.info(word);
+                    await callback(len, word);
                     answer.push(word);
                 }
             }
@@ -131,8 +132,11 @@ export class OneWord {
         return answer;
     }
 
-    contains(letters) {
+    async contains(letters, callback) {
         const answers = [];
+        if(!callback) {
+            callback = ()=>{};
+        }
         const letterSet = this.makeLetterSet(letters);
         const containsHelp = (letterSet, str) => {
             const letterCount = [];
@@ -152,10 +156,11 @@ export class OneWord {
         }
         for(let patten in words) {
             if(!patten)continue;
+            const len = patten.length;
             for(let word of words[patten]) {
                 if(containsHelp(letterSet, word)) {
-                    console.info(word);
                     answers.push(word);
+                    await callback(len, word);
                 }
             }
         }
