@@ -35,24 +35,28 @@ export class OneWord {
     }
 
 
-    findByRegularExpression(str) {
+    async findByRegularExpression(str, callback) {
         const regularExpression = eval(`/${str}/`);
         const answer = [];
-        for(let patten in words) {
-            if(!patten)continue;
-            for(let word of words[patten]) {
+        if(!callback) {
+            callback = ()=>{};
+        }
+        for(let pattern in words) {
+            if(!pattern)continue;
+            const len = pattern.length;
+            for(let word of words[pattern]) {
                 if(regularExpression.test(word)) {
-                    console.info(word);
                     answer.push(word);
+                    await callback(len, word);
                 }
             }
         }
         return answer;
     }
 
-    findByWildcard(wildcard) {
+    findByWildcard(wildcard, callback) {
         const regx = wildcard.replaceAll("#", ".").replaceAll('*', '.*');
-        return this.findByRegularExpression(`^${regx}$`);
+        return this.findByRegularExpression(`^${regx}$`, callback);
     }
 
     makeLetterSet(str) {
@@ -160,18 +164,23 @@ export class OneWord {
 
 
 
-    findSimilarity(str, similarityDegree) {
+    async findSimilarity(str, similarityDegree, callback) {
         const answer = [];
         if(!similarityDegree) {
             similarityDegree = 1;
         }
+        if(!callback) {
+            callback = ()=>{};
+        }
+        const strLen = str.length;
         for(let patten in words) {
             if(!patten)continue;
-            if(Math.abs(patten.length-str.length) > similarityDegree)continue;
+            const wordLen = patten.length;
+            if(Math.abs(wordLen-strLen) > similarityDegree)continue;
             for(let word of words[patten]) {
                 if(this.editDistance(str, word) <= similarityDegree) {
-                    console.info(word);
                     answer.push(word);
+                    await callback(wordLen, word);
                 }
             }
         }

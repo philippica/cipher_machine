@@ -50,6 +50,19 @@
 				width: 40%;
 				height: 400px;
 			}
+			.word-content {
+				width: 80%;
+				display: flex;
+				flex-wrap: wrap;
+				word-break: break-word;
+			}
+			.word-content > div{
+				margin: 5px
+			}
+			.word-content > b{
+				flex-basis: 100%;
+				font-size: 20px;
+			}
 			#footer, h1 {
 				margin: 40px;
 				display: flex;
@@ -134,9 +147,28 @@
 	<body>
 		<h1>焖肉面- puzzle hunt工具集</h1>
 		<div class="container">
+			<div id="word-container">
+				<div id="word-capsule" class="capsule" data-expend=true>puzzle 字典(正则匹配、anagram、通配符、编辑距离)</div>
+				<div id="word-main" class="content-area">
+					<textarea id="one-word-content" class="form-control" placeholder="请输入要查询的单词"></textarea>
+					<div id="method-select">
+						<select onchange="changeMethod()" id="find-method">
+							<option value ="findByWildcard">通配符</option>
+							<option value ="findByRegularExpression">正则</option>
+							<option value ="contains">包含</option>
+							<option value ="findSimilarity">寻找相似单词(编辑距离)</option>
+						</select>
+					</div>
+					<div id="help-content" class="help-content"></div>
+					<button id="find-words">solve</button>
+					<div>以下为可能结果:</div>
+					<div id="word-list-count"></div>
+					<div id="words-list"></div>
+				</div>
+			</div>
 			<div id="substitution-container">
 				<div id="substitution-capsule" class="capsule" data-expend=true>单表替换</div>
-				<div id="substitution-main" class="content-area">
+				<div id="substitution-main" class="content-area" style="display: none;">
 					<form role="form">
 						<div class="form-group">
 							<div>单表暴力</div>
@@ -169,24 +201,6 @@
 						</div>
 					</div>
 					<button onclick="solve()">solve</button>
-				</div>
-			</div>
-			<div id="word-container">
-				<div id="word-capsule" class="capsule" data-expend=true>找单词</div>
-				<div id="word-main" class="content-area" style="display: none;">
-					<textarea id="one-word-content" class="form-control" placeholder="请输入要查询的单词"></textarea>
-					<div id="method-select">
-						<select onchange="changeMethod()" id="find-method">
-							<option value ="findByWildcard">通配符</option>
-							<option value ="findByRegularExpression">正则</option>
-							<option value ="contains">包含</option>
-							<option value ="findSimilarity">寻找相似单词</option>
-						</select>
-					</div>
-					<div id="help-content" class="help-content"></div>
-					<button id="find-words">solve</button>
-					<div>以下为可能结果:</div>
-					<div id="words-list"></div>
 				</div>
 			</div>
 			<div id="word-search-container">
@@ -522,18 +536,36 @@
 				}
 				$("#help-content").text(oneWordHelpContent[method]);
 			}
-			$("#find-words").click(function(){
+			$("#find-words").click(async function(){
 				var content = $("#one-word-content").val();
 				let answer;
+				$("#words-list").empty();
+				for(let i = 20; i >= 1; i--) {
+				 	$("#words-list").append(`<div id="len-${i}" style="display: none;" class="word-content"><b style="display: block">长度为${i}:</b></div>`);
+				}
+				let count = 0;
+				const findWord = async (wordLength, word) => {
+					function sleep(ms) {
+						return new Promise(resolve => setTimeout(resolve, ms));
+					}
+					console.info(word);
+					const target = $(`#words-list #len-${wordLength}`);
+					if(!target.is(":visible")) {
+						target.show("fast", "linear");
+					}
+					target.append(`<div>${word}</div>`);
+					count++;
+					$('#word-list-count').html(`共${count}个`);
+					if(count % 1000 === 0) {
+						await sleep(1);
+					}
+				}
+				const solverFunc = new Solver.OneWord()[method].bind(solver);
 				if(method === "findSimilarity") {
 					const similarityDegree = parseInt($("#similarityDegree").val());
-					answer = new Solver.OneWord()[method].bind(solver)(content, similarityDegree)
+					answer = await solverFunc(content, similarityDegree, findWord)
 				} else {
-					answer = new Solver.OneWord()[method].bind(solver)(content)
-				}
-				$("#words-list").empty();
-				for(let i = 0; i < Math.min(answer.length, 1000); i++) {
-					$("#words-list").append(`<div>${answer[i]}</div>`);
+					answer = await solverFunc(content, findWord)
 				}
 			});
 

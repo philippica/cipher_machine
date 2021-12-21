@@ -1,7 +1,7 @@
 {
   "name": "cipher_machine",
   "version": "1.0.0",
-  "description": "Set of tools for puzzle hunt game.",
+  "description": "A collection of tools for puzzle hunt game.",
   "dependencies": {},
   "devDependencies": {
     "copy-webpack-plugin": "^9.0.1",
