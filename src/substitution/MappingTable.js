@@ -1,8 +1,4 @@
 export class MappingTable {
-	static guessPossible   = 3;
-	static guessImpossible = 2;
-	static possible        = 1;
-	static impossible      = 0;
 	constructor() {
 		this.mode = MappingTable.impossible;
 		this.matrix = new Array(26);
@@ -79,3 +75,8 @@ export class MappingTable {
 		return ret;
 	}
 }
+
+MappingTable.guessPossible   = 3;
+MappingTable.guessImpossible = 2;
+MappingTable.possible        = 1;
+MappingTable.impossible      = 0;

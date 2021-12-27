@@ -54,7 +54,7 @@ export class TokenList {
 			}
 			if(rawTokens[i].includes("'")) {
 				const token = rawTokens[i].split("'");
-				if(token[1]?.length === 1) {
+				if(token[1] && token[1].length === 1) {
 					const curToken = new Token(token[1], ["s", "t", "d"], i);
 					this._list.push(curToken);
 				}	

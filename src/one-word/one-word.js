@@ -55,7 +55,16 @@ export class OneWord {
     }
 
     findByWildcard(wildcard, callback) {
-        const regx = wildcard.replaceAll("#", ".").replaceAll('*', '.*');
+        let regx = '';
+        for(let x of wildcard) {
+            if(x === '#') {
+                regx += '.';
+            } else if( x === '*') {
+                regx += '.*';
+            } else {
+                regx += x;
+            }
+        }
         return this.findByRegularExpression(`^${regx}$`, callback);
     }
 

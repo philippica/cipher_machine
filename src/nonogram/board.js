@@ -1,10 +1,6 @@
 import { Line } from "./line";
 
 export class Board {
-    static linePropety = {
-        row: 0,
-        column: 1,
-    };
     constructor(row, column) {
         this.board = [];
         this.row = row;
@@ -72,3 +68,8 @@ export class Board {
         return this.setByLine(line, len, index, setElement, getCoordinate);
     }
 }
+
+Board.linePropety = {
+    row: 0,
+    column: 1,
+};

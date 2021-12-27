@@ -1,13 +1,4 @@
 export class Line {
-    static cellStatus = {
-        unknown: 0,
-        black: 1,
-        white: 2,
-    };
-    static probability = {
-        possible: 0,
-        impossible: 1,
-    }
     constructor(proprety, index, numbers) {
         this._line = [];
         this.proprety = proprety;
@@ -91,4 +82,14 @@ export class Line {
         this.dfs(0, len, this._line.slice(0), this.numbers.slice(0), leftSpace);
     }
 
+}
+
+Line.cellStatus = {
+    unknown: 0,
+    black: 1,
+    white: 2,
+};
+Line.probability = {
+    possible: 0,
+    impossible: 1,
 }

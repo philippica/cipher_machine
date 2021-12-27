@@ -726,8 +726,11 @@
 				for(let i = 0; i < 6; i++) {
 					code += currentBlindState[i] * (1<<i);
 				}
-
-				$("#blind-letter").text(braille[code]??"Unknown");
+				if(braille[code]) {
+					$("#blind-letter").text(braille[code]);
+				} else {
+					$("#blind-letter").text("Unknown");
+				}
 			});
 
 			const confirmBlind = () => {
@@ -764,7 +767,11 @@
 
 				const code = Math.min(flagState[0], flagState[1])*9 + Math.max(flagState[0], flagState[1]);
 				console.info(code);
-				$("#flag-letter").text(flagMap[code]??"Unknown");
+				if(flagMap[code]) {
+					$("#flag-letter").text(flagMap[code]);
+				} else {
+					$("#flag-letter").text("Unknown");
+				}
 			});
 
 			// classic Code
@@ -848,16 +855,20 @@
 			});
 
 			const substituteCipher = (str, mapT) => {
-				const mappingTable = mapT ?? $.map($(".map-unit #cipher-text"), (element, i) => 
-					{
-						const pt = element.dataset.pt;
-						const ret = {};
-						ret[pt] = element.value;
-						return ret;
-					}
-				).reduce((pre, cur) => {
-					return Object.assign(pre, cur);
-				});
+				let mappingTable = mapT
+				if(!mapT) {
+					mappingTable = $.map($(".map-unit #cipher-text"), (element, i) => 
+						{
+							const pt = element.dataset.pt;
+							const ret = {};
+							ret[pt] = element.value;
+							return ret;
+						}
+					).reduce((pre, cur) => {
+						return Object.assign(pre, cur);
+					});
+				}
+
 				let ans = "";
 				for(let ch of str) {
 					if(mappingTable[ch]) {
