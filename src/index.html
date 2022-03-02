@@ -522,7 +522,7 @@
 			// one word
 			const solver = new Solver.OneWord();
 			const oneWordHelpContent = {
-				"findByWildcard": "当前是通配符模式 - 你可以使用#表示一个单词或者*表示多个单词 例如 bo##ke*r 可以匹配到bookkeeper",
+				"findByWildcard": "当前是通配符模式 - 你可以使用#表示一个字母/*表示多个字母 例如 bo##ke*r 可以匹配到bookkeeper",
 				"findByRegularExpression": "当前是正则表达式模式 - 如果你熟悉正则表达式，那它将会是一个非常强大的工具 例如^[abcd][ef].*[aeiou]$ 能够搜到第一个字母为abcd中一个，第二个字母为ef中一个，并且以元音结尾的所有单词",
 				"contains": "当前是包含模式 - 能够搜出所有至少包含这些字母的单词，例如abbcc会找到所有至少包含一个a两个b和两个c的单词",
 				"findSimilarity": "当前是相似度模式-给出单词找到与它相想的单词，两个词相似度即编辑距离，如果能通过一次添加一个字母，替换一个字母或删除一个字母能从一个单词变成另一个单词，那它们的相似度为1",
