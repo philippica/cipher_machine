@@ -1,8 +1,22 @@
 import { words } from "../common/dict";
+import { Trie } from "../common/Trie";
 
 export class OneWord {
     constructor() {
+        this.initTrie();
+    }
 
+    initTrie() {
+        if(!window.Trie) {
+            window.Trie = new Trie();
+            for(let patten in words) {
+                if(!patten)continue;
+                for(let word of words[patten]) {
+                    window.Trie.insert(word);
+                }
+            }
+        }
+        this.Trie = window.Trie;
     }
 
     editDistance(s1, s2) {
@@ -200,4 +214,42 @@ export class OneWord {
         }
         return answer;
     }
+
+    async findByCode(code, callback) {
+        const answer = [];
+        if(!callback) {
+            callback = ()=>{};
+        }
+        const tools = {
+            isWord: (str) => {
+                return this.Trie.contains(str);
+            }
+        }
+        try {
+            var func = new Function(`return ${code}`)();
+            if(!func) {
+                throw new Error("没有函数");
+            }
+        } catch(e) {
+            alert(`程序错误，请仔细检查你的代码\n错误信息:\n${e.message}`);
+            throw e;
+        }
+        for(let pattern in words) {
+            if(!pattern)continue;
+            for(let word of words[pattern]) {
+                let ret;
+                try {
+                    ret = func(word, tools);
+                } catch(e) {
+                    continue;
+                }
+                if(ret) {
+                    answer.push(ret);
+                    await callback(ret.length, ret);
+                }
+            }
+        }
+        console.info(code);
+    }
+
 }
