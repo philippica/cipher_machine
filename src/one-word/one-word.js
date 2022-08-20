@@ -155,33 +155,34 @@ export class OneWord {
         return answer;
     }
 
+    stringInclude(letterSet, str) {
+        const letterCount = [];
+        for(let i = 0; i < str.length; i++) {
+            if(!letterSet[str[i]])continue;
+            if(!letterCount[str[i]]){
+                letterCount[str[i]] = 0;
+            }
+            letterCount[str[i]]++;
+        }
+        for(let letter in letterSet) {
+            if(!letterCount[letter] || letterSet[letter] > letterCount[letter]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     async contains(letters, callback) {
         const answers = [];
         if(!callback) {
             callback = ()=>{};
         }
         const letterSet = this.makeLetterSet(letters);
-        const containsHelp = (letterSet, str) => {
-            const letterCount = [];
-            for(let i = 0; i < str.length; i++) {
-                if(!letterSet[str[i]])continue;
-                if(!letterCount[str[i]]){
-                    letterCount[str[i]] = 0;
-                }
-                letterCount[str[i]]++;
-            }
-            for(let letter in letterSet) {
-                if(!letterCount[letter] || letterSet[letter] > letterCount[letter]) {
-                    return false;
-                }
-            }
-            return true;
-        }
         for(let patten in words) {
             if(!patten)continue;
             const len = patten.length;
             for(let word of words[patten]) {
-                if(containsHelp(letterSet, word)) {
+                if(this.stringInclude(letterSet, word)) {
                     answers.push(word);
                     await callback(len, word);
                 }
@@ -223,6 +224,10 @@ export class OneWord {
         const tools = {
             isWord: (str) => {
                 return this.Trie.contains(str);
+            },
+            anagram: (str, letters) => {
+                const letterSet = this.makeLetterSet(letters);
+                return this.stringInclude(letterSet, str);
             }
         }
         try {

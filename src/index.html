@@ -45,6 +45,7 @@
 			.help-content {
 				font-size: 12px;
     			color: #adabab;
+				background-color: "unset";
 			}
 			#word-search-content {
 				width: 40%;
@@ -163,7 +164,7 @@
 							<option value ="findByCode">DIY写程序查找</option>
 						</select>
 					</div>
-					<div id="help-content" class="help-content"></div>
+					<pre id="help-content" class="help-content"></pre>
 					<button id="find-words">solve</button>
 					<div>以下为可能结果:</div>
 					<div id="word-list-count"></div>
@@ -527,7 +528,7 @@
 				"findByRegularExpression": "当前是正则表达式模式 - 如果你熟悉正则表达式，那它将会是一个非常强大的工具 例如^[abcd][ef].*[aeiou]$ 能够搜到第一个字母为abcd中一个，第二个字母为ef中一个，并且以元音结尾的所有单词",
 				"contains": "当前是包含模式 - 能够搜出所有至少包含这些字母的单词，例如abbcc会找到所有至少包含一个a两个b和两个c的单词",
 				"findSimilarity": "当前是相似度模式-给出单词找到与它相想的单词，两个词相似度即编辑距离，如果能通过一次添加一个字母，替换一个字母或删除一个字母能从一个单词变成另一个单词，那它们的相似度为1",
-				"findByCode": "最灵活的找词方式，通过自己编写js代码，实现一个接受一个字符串作为参数的check函数来寻找单词"
+				"findByCode": "最灵活的找词方式，通过自己编写js代码，实现一个接受一个字符串作为参数的check函数来寻找单词\n函数同时会传入一个tool的参数，包含很多有用函数，当前包括:\n\tisWord(str: string) :bool : 判断传入字符串是否为英语单词\n\tanagram(str: string, letters: string) :bool : 判断传入字符串是否为letters参数中的字符排列组成"
 			};
 			let method = "findByWildcard";
 			$("#help-content").text(oneWordHelpContent[method]);
@@ -544,7 +545,7 @@
 				} else if(method === 'contains') {
 					$("#method-select").append("<div id='word-find-similarity-hint'>在结果中用正则查找:</div><input id='similarityRegex' placeholder='正则表达式(不填则输出所有结果)' />");
 				} else if(method === "findByCode") {
-					$("#one-word-content").val('function check(str, tools) {\n\tif(str[0]!=str[str.length-1])return null; // 如果首字母和尾字母不相等，不选这个单词\n\tif(str.length > 7 || str.length < 2)return null; // 如果单词长度大于7或者小于2，不选这个单词\n\tif(tools.isWord(str.substr(2,5)) === true){ // 如果单词第3个字符（因为下标从0开始)往后5个字母是一个英语单词\n\t\treturn str + " " + str.substr(2,5); //输出该词，并把第三个到第5个字母的字串放后面\n\t}\n}');
+					$("#one-word-content").val('function check(str, tools) {\n\tif(str[0]!=str[str.length-1])return null; // 如果首字母和尾字母不相等，不选这个单词\n\tif(str.length > 7 || str.length < 5)return null; // 如果单词长度大于7或者小于2，不选这个单词\n\tif(/^a.*b$/.test(str))return null;// 如果满足正则^a.*b$ 不选这个单词\n\tif(tools.anagram(str.substr(2,3), "guo") === false)return null; // 如果从第3个字符起往后3个字母不是由abc组成的，不选这个单词\n\tif(tools.isWord(str.substr(2,5)) === true){ // 如果单词第3个字符（因为下标从0开始)往后5个字母是一个英语单词\n\t\treturn str + " " + str.substr(2,5); //输出该词，并把第三个到第5个字母的字串放后面\n\t}\n}');
 					$("#one-word-content").height(400);
 				}
 				$("#help-content").text(oneWordHelpContent[method]);
