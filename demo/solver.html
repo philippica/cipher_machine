@@ -10,7 +10,16 @@
 	<textarea id="rules" cols="50" rows="50"></textarea>
 	<script>
 
-$('#rules').val('每一格是从1到9的数字\n每一行互不相同\n第1列互不相同\n第[1,3,4]格互不相同\n第1格是1');
+
+let initStr = '每一格是从1到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
+initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
+initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n';
+initStr += '第1格是5\n第3格是8\n第8格是6\n第11格是4\n第12格是2\n第15格是8\n第18格是3\n第19格是6\n第21格是3\n第23格是4\n第24格是9\n第27格是7\n';
+initStr += '第28格是8\n第30格是9\n第32格是3\n第37格是3\n第38格是7\n第40格是2\n第42格是1\n第44格是4\n第45格是8\n第50格是8\n第52格是3\n第54格是2\n';
+initStr += '第74格是5\n第64格是1\n';
+$('#rules').val(initStr);
+
+console.info('start');
 const rulesStr = $('#rules').val().split('\n');
 
 const n = 9;
@@ -142,7 +151,7 @@ const getRules = (str, start) => {
 
 const globalRules = [];
 const parseLine = (lineStr) => {
-  console.info(lineStr);
+  if(lineStr === "")return;
   const restrictAreas = getRestrictAreas(lineStr, 0);
   const rules = getRules(lineStr, restrictAreas.stopPos);
   for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
@@ -156,7 +165,6 @@ const parseLine = (lineStr) => {
 const relaxRule = (rule, origin) => {
   const getDifference = (setA, setB) => new Set([...setA, ...setB].filter(element => !setB.has(element) || !setA.has(element)));
   if (rule.rules.isDifferent) {
-    console.info(rule);
     const fixed = [];
     const areas = rule.restrictAreas;
 
@@ -184,13 +192,11 @@ const relaxRule = (rule, origin) => {
       }
     });
 
-
     for (let i = 0; i < areas.length; i++) {
       if (possibleArray[areas[i]].size === 1) {
         fixed.push(possibleArray[areas[i]].values().next().value);
       }
     }
-
 
     for (let j = 0; j < fixed.length; j++) {
       for (let i = 0; i < areas.length; i++) {
@@ -225,9 +231,53 @@ const mergeSet = (pos, set) => {
   }
 };
 
-const dfs = (grid) => {
-  console.info(grid);
-  console.info(possibleArray);
+const getSmallestGrid = () => {
+  let smallestGridIndex = -1;
+  let smallestGridSize = 128;
+  for(let i = 0; i < possibleArray.length; i++) {
+    currentSetSize = possibleArray[i].size;
+    if(currentSetSize === 1)continue;
+    if(currentSetSize < smallestGridSize) {
+      smallestGridSize = currentSetSize;
+      smallestGridIndex = i;
+    }
+    if(smallestGridSize === 2) {
+      return smallestGridIndex;
+    }
+  }
+  return smallestGridIndex;
+}
+
+const resumePossible = (origin) => {
+  origin.forEach((set, index) => {
+    possibleArray[index] = set;
+  });
+}
+
+const dfs = () => {
+  const smallestGridIndex = getSmallestGrid();
+  if(smallestGridIndex === -1) {
+    return -1;
+  }
+  const set = possibleArray[smallestGridIndex];
+
+  for (const item of set.values()) {
+    possibleArray[smallestGridIndex] = new Set([item]);
+    const origin = [];
+    if(connectedRules[smallestGridIndex]){
+      for(let i = 0; i < connectedRules[smallestGridIndex].length; i++) {
+        relaxRule(globalRules[connectedRules[smallestGridIndex][i]], origin);
+      }
+    }
+
+    const result = dfs();
+    if(result === -1) {
+      return result;
+    }
+    resumePossible(origin);
+  }
+  possibleArray[smallestGridIndex] = set;
+
 };
 
 
@@ -260,6 +310,7 @@ const main = () => {
   }
   relax();
   dfs();
+  console.info("end");
 };
 
 
