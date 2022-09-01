@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>NONOGRAM</title>
+		<link rel="stylesheet" href="../dist/static/nonogram.css">
+		<link rel="stylesheet" href="../dist/static/bootstrap.min.css">
+		<script src="../dist/static/jquery.min.js"></script>
+		<script src="../dist/static/bootstrap.min.js"></script>
+	</head>
+	<body>
+		<canvas id="function-canvas" width="400" height="400"></canvas>
+		<textarea></textarea>
+		
+		<script>
+			var canvas = document.getElementById('function-canvas');
+			var ctx = canvas.getContext('2d');
+			const f = (x) => {
+				return 100*Math.sin(0.1*x)+ 50*Math.cos(x) + x*x;
+			}
+			ctx.lineWidth = 1;
+			ctx.moveTo(0,f(0));
+			for(let i = 0; i < canvas.width; i++) {
+				ctx.lineTo(i, canvas.height / 2 - f(i));
+				ctx.stroke();
+			}
+
+
+		</script>
+	</body>
+</html>

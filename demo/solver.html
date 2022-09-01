@@ -286,19 +286,18 @@ const relaxRule = (rule, origin) => {
         }
       }
     }
-  }
-
-  fixed = [];
-  for (let i = 0; i < areas.length; i++) {
-    if (possibleArray[areas[i]].size === 1) {
-      const number = possibleArray[areas[i]].values().next().value;
-      if(fixed.includes(number)) {
-        return -1;
+    fixed = [];
+    for (let i = 0; i < areas.length; i++) {
+      if (possibleArray[areas[i]].size === 1) {
+        const number = possibleArray[areas[i]].values().next().value;
+        if(fixed.includes(number)) {
+          return -1;
+        }
+        fixed.push(number);
       }
-      fixed.push(number);
     }
-
   }
+
   for(const rules of ruleSet) {
     const result = relaxRule(globalRules[rules], origin);
     if(result === -1)return -1;
