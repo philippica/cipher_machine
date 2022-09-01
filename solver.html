@@ -11,7 +11,7 @@
   <span>列: </span> <span id="col" contenteditable="true">9</span>
   <div style="display: flex;">
   	<textarea id="rules" cols="50" rows="50"></textarea>
-    <div>
+    <div style="margin: 20px;">
       <div id="sudokuContainer"></div>
       <pre id="sudokuAnswer"></pre>
     </div>
@@ -26,7 +26,6 @@
       margin-bottom: -1px;
     }
     #sudokuContainer {
-      margin: 20px;
       display: flex;
       flex-wrap: wrap;
       align-content: flex-start;
@@ -37,7 +36,7 @@
     }
     .sudoku-index {
       font-size: 12;
-      opacity: 0.3;
+      opacity: 0.2;
       position: absolute;
     }
   </style>
@@ -48,9 +47,7 @@
 let initStr = '每一格是从1到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
 initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
 initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5';
-//initStr += '第1格是5\n第3格是8\n第8格是6\n第11格是4\n第12格是2\n第15格是8\n第18格是3\n第19格是6\n第21格是3\n第23格是4\n第24格是9\n第27格是7\n';
-//initStr += '第28格是8\n第30格是9\n第32格是3\n第37格是3\n第38格是7\n第40格是2\n第42格是1\n第44格是4\n第45格是8\n第50格是8\n第52格是3\n第54格是2\n';
-//initStr += '第74格是5\n第64格是1\n';
+
 $('#rules').val(initStr);
 
 console.info('start');
