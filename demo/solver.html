@@ -7,16 +7,46 @@
   crossorigin="anonymous"></script>
 	</head>
 	<body>
-	<textarea id="rules" cols="50" rows="50"></textarea>
+  <div style="display: flex;">
+  	<textarea id="rules" cols="50" rows="50"></textarea>
+    <div>
+      <div id="sudokuContainer"></div>
+      <pre id="sudokuAnswer"></pre>
+    </div>
+  </div>
+  <button id="solveSudoku">solve</button>
+  <style>
+    .sudoku-grid {
+      width: 30px;
+      height: 30px;
+      border: 1px solid;
+      margin-right: -1px;
+      margin-bottom: -1px;
+    }
+    #sudokuContainer {
+      margin: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+    }
+    .sudoku-grid-content {
+      height: 28px;
+      text-align: center;
+    }
+    .sudoku-index {
+      font-size: 12;
+      opacity: 0.3;
+      position: absolute;
+    }
+  </style>
 	<script>
-
 
 let initStr = '每一格是从1到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
 initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
-initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n';
-initStr += '第1格是5\n第3格是8\n第8格是6\n第11格是4\n第12格是2\n第15格是8\n第18格是3\n第19格是6\n第21格是3\n第23格是4\n第24格是9\n第27格是7\n';
-initStr += '第28格是8\n第30格是9\n第32格是3\n第37格是3\n第38格是7\n第40格是2\n第42格是1\n第44格是4\n第45格是8\n第50格是8\n第52格是3\n第54格是2\n';
-initStr += '第74格是5\n第64格是1\n';
+initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5';
+//initStr += '第1格是5\n第3格是8\n第8格是6\n第11格是4\n第12格是2\n第15格是8\n第18格是3\n第19格是6\n第21格是3\n第23格是4\n第24格是9\n第27格是7\n';
+//initStr += '第28格是8\n第30格是9\n第32格是3\n第37格是3\n第38格是7\n第40格是2\n第42格是1\n第44格是4\n第45格是8\n第50格是8\n第52格是3\n第54格是2\n';
+//initStr += '第74格是5\n第64格是1\n';
 $('#rules').val(initStr);
 
 console.info('start');
@@ -24,8 +54,8 @@ const rulesStr = $('#rules').val().split('\n');
 
 const n = 9;
 const m = 9;
-const possibleArray = [];
-const connectedRules = [];
+let possibleArray = [];
+let connectedRules = [];
 
 const getNumber = (str, start) => {
   const number = str.substr(start).match(/^\d+/);
@@ -146,29 +176,57 @@ const getRules = (str, start) => {
     return {
       set: getSet(str, start + 1),
     };
+  } else if (str[start] === '大') {
+    return {
+      largerThan: getNumber(str, start + 2).value,
+    };
+  } else if (str[start] === '大' && str[start+2] === '等') {
+    return {
+      largerThan: getNumber(str, start + 4).value-1,
+    };
+  } else if (str[start] === '小') {
+    return {
+      smallerThan: getNumber(str, start + 2).value,
+    };
+  } else if (str[start] === '小' && str[start+2] === '等') {
+    return {
+      smallerThan: getSet(str, start + 4).value+1,
+    };
   }
 };
 
-const globalRules = [];
+let globalRules = [];
+let globalFinalRules = [];
 const parseLine = (lineStr) => {
   if(lineStr === "")return;
   const restrictAreas = getRestrictAreas(lineStr, 0);
   const rules = getRules(lineStr, restrictAreas.stopPos);
-  for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
-    globalRules.push({
-      restrictAreas: restrictAreas.restrictArea[i],
-      rules,
-    });
+  if(rules.smallerThan || rules.largerThan) {
+    for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
+      globalFinalRules.push({
+        restrictAreas: restrictAreas.restrictArea[i],
+        rules,
+      });
+    }
+  } else {
+    for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
+      globalRules.push({
+        restrictAreas: restrictAreas.restrictArea[i],
+        rules,
+      });
+    }
   }
 };
 
 const relaxRule = (rule, origin) => {
   const getDifference = (setA, setB) => new Set([...setA, ...setB].filter(element => !setB.has(element) || !setA.has(element)));
+  const ruleSet = new Set([]);
+  const areas = rule.restrictAreas;
   if (rule.rules.isDifferent) {
-    const fixed = [];
-    const areas = rule.restrictAreas;
+    let fixed = [];
 
     const mp = new Map();
+
     for (let i = 0; i < areas.length; i++) {
 	    const possibleList = [...possibleArray[areas[i]]];
       for(let j = 0; j < possibleList.length; j++) {
@@ -184,9 +242,14 @@ const relaxRule = (rule, origin) => {
       if(val === 1) {
         fixed.push(key);
         for (let i = 0; i < areas.length; i++) {
-          if (possibleArray[areas[i]].has(key)) {
-            origin[areas[i]] = possibleArray[areas[i]];
+          if (possibleArray[areas[i]].has(key) && possibleArray[areas[i]].size > 1) {
+            if(!origin[areas[i]]) {
+              origin[areas[i]] = new Set(possibleArray[areas[i]]);
+            }
             possibleArray[areas[i]] = new Set([key]);
+            for(const connectedRule of connectedRules[areas[i]]) {
+              ruleSet.add(connectedRule);
+            }
           }
         }
       }
@@ -203,9 +266,16 @@ const relaxRule = (rule, origin) => {
         const possibleList = possibleArray[areas[i]];
         if (possibleList.has(fixed[j]) && possibleList.size > 1) {
           if(!origin[areas[i]]) {
-            origin[areas[i]] = possibleList;
+            origin[areas[i]] = new Set(possibleList);
           }
           possibleList.delete(fixed[j]);
+          if (possibleList.size === 0) {
+            console.info("No");
+            return -1;
+          }
+          for(const connectedRule of connectedRules[areas[i]]) {
+            ruleSet.add(connectedRule);
+          }
           if (possibleList.size === 1) {
             fixed.push(possibleList.values().next().value);
           }
@@ -213,12 +283,29 @@ const relaxRule = (rule, origin) => {
       }
     }
   }
+
+  fixed = [];
+  for (let i = 0; i < areas.length; i++) {
+    if (possibleArray[areas[i]].size === 1) {
+      const number = possibleArray[areas[i]].values().next().value;
+      if(fixed.includes(number)) {
+        return -1;
+      }
+      fixed.push(number);
+    }
+
+  }
+  for(const rules of ruleSet) {
+    const result = relaxRule(globalRules[rules], origin);
+    if(result === -1)return -1;
+  }
+  return 1;
 };
 
 const relax = () => {
   for (let i = 0; i < globalRules.groupRules.length; i++) {
     const rule = globalRules[globalRules.groupRules[i]];
-    relaxRule(rule, []);
+    relaxRule(rule, [], i);
   }
 };
 
@@ -257,16 +344,37 @@ const resumePossible = (origin) => {
 const dfs = () => {
   const smallestGridIndex = getSmallestGrid();
   if(smallestGridIndex === -1) {
+    const result = [];
+    let answer = "";
+    let temp = [];
+    for(let i = 0; i < possibleArray.length; i++) {
+      const number = possibleArray[i].values().next().value;
+      temp.push(number);
+      answer += number + ' ';
+      if(i % m === m-1) {
+        result.push(temp);
+        answer += '\n';
+        temp = [];
+      }
+    }
+    console.info(result);
+    console.info(answer);
+    $('#sudokuAnswer').html(answer);
     return -1;
   }
   const set = possibleArray[smallestGridIndex];
 
   for (const item of set.values()) {
-    possibleArray[smallestGridIndex] = new Set([item]);
     const origin = [];
+    origin[smallestGridIndex] = new Set(possibleArray[smallestGridIndex]);
+    possibleArray[smallestGridIndex] = new Set([item]);
     if(connectedRules[smallestGridIndex]){
       for(let i = 0; i < connectedRules[smallestGridIndex].length; i++) {
-        relaxRule(globalRules[connectedRules[smallestGridIndex][i]], origin);
+        const result = relaxRule(globalRules[connectedRules[smallestGridIndex][i]], origin, connectedRules[smallestGridIndex][i]);
+        if(result === -1) {
+          resumePossible(origin);
+          return -2;
+        }
       }
     }
 
@@ -279,9 +387,31 @@ const dfs = () => {
   possibleArray[smallestGridIndex] = set;
 
 };
+const largerSet = (list, num) => {
+  const ret = new Set([]);
+  for(const x of list) {
+    if(x > num) {
+      ret.add(x);
+    }
+  }
+  return ret;
+}
 
+const smallSet = (list, num) => {
+  const ret = new Set([]);
+  for(const x of list) {
+    if(x < num) {
+      ret.add(x);
+    }
+  }
+  return ret;
+}
 
-const main = () => {
+const solve = (rulesStr) => {
+  possibleArray = [];
+  connectedRules = [];
+  globalRules = [];
+  globalFinalRules = [];
   for (let i = 0; i < rulesStr.length; i++) {
     parseLine(rulesStr[i].replace(/\s/g, ''));
   }
@@ -308,14 +438,64 @@ const main = () => {
       }
     }
   }
+
+  for (let i = 0; i < globalFinalRules.length; i++) {
+    const rule = globalFinalRules[i];
+    const { restrictAreas } = rule;
+    if (rule.rules?.largerThan) {
+      for (let j = 0; j < restrictAreas.length; j++) {
+        possibleArray[restrictAreas[j]] = largerSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
+      }
+    } else if(rule.rules?.smallerThan) {
+      for (let j = 0; j < restrictAreas.length; j++) {
+        possibleArray[restrictAreas[j]] = smallSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
+      }
+    }
+  }
   relax();
   dfs();
   console.info("end");
 };
 
+const generate = (n, m) => {
+  $('#sudokuContainer').innerHTML = "";
+  $('#sudokuContainer').width(m*30 + m);
+  $('#sudokuContainer').height(n*30 + n);
+  for(let i = 0; i < n*m; i++) {
+    $('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
+  }
+  $('.sudoku-grid-content').on('focus', function() {
+    before = $(this).html();
+  }).on('blur keyup paste', function() { 
+    if (before != $(this).html()) { before = $(this).html(); $(this).trigger('change'); }
+  });
 
-main();
+  $('.sudoku-grid-content').on('change', (e) =>{
+    console.info(e.target.innerText);
+    const text = e.target.innerText;
+    const number = parseInt(e.currentTarget.id);
+    console.info(number);
+    const rulesStr = $('#rules').val().split('\n');
+    let content = "";
+    for(let i = 0; i < rulesStr.length; i++) {
+      rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
+      if(rulesWithoutSpace.includes(`第${number+1}格是`)) {
+        continue;
+      }
+      content += `${rulesWithoutSpace}\n`;
+    }
+    if(text != '') {
+      content += `第${number+1}格是${text}\n`;
+    }
+    $('#rules').val(content);
+  });
 
+}
+generate(n, m);
+
+$('#solveSudoku').click(() => {
+  solve($('#rules').val().split('\n'));
+})
 
 	</script>
 	</body>
