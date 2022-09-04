@@ -1,61 +1,6 @@
-<html>
-	<head>
-	<meta charset="UTF-8">
-		<script
-  src="https://code.jquery.com/jquery-3.6.0.min.js"
-  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-  crossorigin="anonymous"></script>
-	</head>
-	<body>
-  <span>行: </span> <span id="sudoku-row" contenteditable="true">9</span>
-  <span>列: </span> <span id="sudoku-col" contenteditable="true">9</span>
-  <a href="https://github.com/philippica/cipher_machine/wiki/%E7%84%96%E8%82%89%E9%9D%A2%E8%84%9A%E6%9C%AC%E6%96%87%E6%A1%A3">脚本规则说明</a>
-  <div style="display: flex;">
-  	<textarea id="rules" cols="50" rows="50"></textarea>
-    <div style="margin: 20px;">
-      <div id="sudokuContainer"></div>
-      <pre id="sudokuAnswer"></pre>
-    </div>
-  </div>
-  <button id="solveSudoku">solve</button>
-  <style>
-    .sudoku-grid {
-      width: 30px;
-      height: 30px;
-      border: 1px solid;
-      margin-right: -1px;
-      margin-bottom: -1px;
-    }
-    #sudokuContainer {
-      display: flex;
-      flex-wrap: wrap;
-      align-content: flex-start;
-    }
-    .sudoku-grid-content {
-      height: 28px;
-      text-align: center;
-    }
-    .sudoku-index {
-      font-size: 12;
-      opacity: 0.2;
-      position: absolute;
-    }
-  </style>
-	<script>
-
-
-
-let initStr = '每一格是从1到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
-initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
-initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5';
-
-$('#rules').val(initStr);
-
-console.info('start');
-const rulesStr = $('#rules').val().split('\n');
-
-let n = 9;
-let m = 9;
+// TODO: Need to be refacted, the code here is tooooo terrible
+let n;
+let m;
 let possibleArray = [];
 let connectedRules = [];
 
@@ -392,7 +337,7 @@ const getSmallestGrid = () => {
   let smallestGridIndex = -1;
   let smallestGridSize = 128;
   for(let i = 0; i < possibleArray.length; i++) {
-    currentSetSize = possibleArray[i].size;
+    const currentSetSize = possibleArray[i].size;
     if(currentSetSize === 1)continue;
     if(currentSetSize < smallestGridSize) {
       smallestGridSize = currentSetSize;
@@ -468,103 +413,58 @@ const smallSet = (list, num) => {
   return ret;
 }
 
-const solve = (rulesStr) => {
-  possibleArray = [];
-  connectedRules = [];
-  globalRules = [];
-  globalFinalRules = [];
-  for (let i = 0; i < rulesStr.length; i++) {
-    parseLine(rulesStr[i].replace(/\s/g, ''));
-  }
-  for (let i = 0; i < n * m; i++) {
-    possibleArray.push(undefined);
-    connectedRules.push([]);
-  }
 
-  globalRules.descriptionRules = [];
-  globalRules.groupRules = [];
-  for (let i = 0; i < globalRules.length; i++) {
-    const rule = globalRules[i];
-    const { restrictAreas } = rule;
-    const letterSet = rule.rules?.set;
-    if (letterSet) {
-      globalRules.descriptionRules.push(i);
-      for (let j = 0; j < restrictAreas.length; j++) {
-        mergeSet(restrictAreas[j], letterSet);
-      }
-    } else {
-      globalRules.groupRules.push(i);
-      for (let j = 0; j < restrictAreas.length; j++) {
-        connectedRules[restrictAreas[j]].push(i);
-      }
+export class Sudoku {
+    constructor() {
     }
-  }
-
-  for (let i = 0; i < globalFinalRules.length; i++) {
-    const rule = globalFinalRules[i];
-    const { restrictAreas } = rule;
-    if (rule.rules?.largerThan) {
-      for (let j = 0; j < restrictAreas.length; j++) {
-        possibleArray[restrictAreas[j]] = largerSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
-      }
-    } else if(rule.rules?.smallerThan) {
-      for (let j = 0; j < restrictAreas.length; j++) {
-        possibleArray[restrictAreas[j]] = smallSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
-      }
+    sovler(rulesStr, row, col) {
+        n = row;
+        m = col;
+        possibleArray = [];
+        connectedRules = [];
+        globalRules = [];
+        globalFinalRules = [];
+        for (let i = 0; i < rulesStr.length; i++) {
+          parseLine(rulesStr[i].replace(/\s/g, ''));
+        }
+        for (let i = 0; i < n * m; i++) {
+          possibleArray.push(undefined);
+          connectedRules.push([]);
+        }
+      
+        globalRules.descriptionRules = [];
+        globalRules.groupRules = [];
+        for (let i = 0; i < globalRules.length; i++) {
+          const rule = globalRules[i];
+          const { restrictAreas } = rule;
+          const letterSet = rule.rules? rule.rules.set : undefined;
+          if (letterSet) {
+            globalRules.descriptionRules.push(i);
+            for (let j = 0; j < restrictAreas.length; j++) {
+              mergeSet(restrictAreas[j], letterSet);
+            }
+          } else {
+            globalRules.groupRules.push(i);
+            for (let j = 0; j < restrictAreas.length; j++) {
+              connectedRules[restrictAreas[j]].push(i);
+            }
+          }
+        }
+      
+        for (let i = 0; i < globalFinalRules.length; i++) {
+          const rule = globalFinalRules[i];
+          const { restrictAreas } = rule;
+          if (rule.rules && rule.rules.largerThan) {
+            for (let j = 0; j < restrictAreas.length; j++) {
+              possibleArray[restrictAreas[j]] = largerSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
+            }
+          } else if(rule.rules && rule.rules.smallerThan) {
+            for (let j = 0; j < restrictAreas.length; j++) {
+              possibleArray[restrictAreas[j]] = smallSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
+            }
+          }
+        }
+        relax();
+        dfs();
     }
-  }
-  relax();
-  dfs();
 };
-
-const generate = (n, m) => {
-  $('#sudokuContainer').html("");
-  $('#sudokuContainer').width(m*30 + m);
-  $('#sudokuContainer').height(n*30 + n);
-  for(let i = 0; i < n*m; i++) {
-    $('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
-  }
-  $('.sudoku-grid-content,#row,#col').on('focus', function() {
-    before = $(this).html();
-  }).on('blur keyup paste', function() { 
-    if (before != $(this).html()) { before = $(this).html(); $(this).trigger('change'); }
-  });
-
-  $('#col,#row').on('change', (e) =>{
-    n = parseInt($("#sudoku-row").html());
-    m = parseInt($("#sudoku-col").html());
-    generate(n,m);
-  });
-
-  $('.sudoku-grid-content').on('change', (e) =>{
-    console.info(e.target.innerText);
-    const text = e.target.innerText;
-    const number = parseInt(e.currentTarget.id);
-    console.info(number);
-    const rulesStr = $('#rules').val().split('\n');
-    let content = "";
-    for(let i = 0; i < rulesStr.length; i++) {
-      rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
-      if(rulesWithoutSpace.includes(`第${number+1}格是`)) {
-        continue;
-      }
-      content += `${rulesWithoutSpace}\n`;
-    }
-    if(text != '') {
-      content += `第${number+1}格是${text}\n`;
-    }
-    $('#rules').val(content);
-  });
-
-}
-generate(n, m);
-
-$('#solveSudoku').click(() => {
-  n = parseInt($("#sudoku-row").html());
-  m = parseInt($("#sudoku-col").html());
-  solve($('#rules').val().split('\n'));
-})
-
-	</script>
-	</body>
-</html>

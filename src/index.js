@@ -4,6 +4,7 @@ import { OneWord } from './one-word/one-word';
 import { WordSearch } from './word-search/wordSearch';
 import { RubikCubeStage } from './rubic-cube/index';
 import { DropQuote } from './drop-quote/dropQuote';
+import { Sudoku } from './sudoku/index';
 
 export {
     SubstitutionSolver,
@@ -11,5 +12,6 @@ export {
     Nonogram,
     WordSearch,
     RubikCubeStage,
-    DropQuote
+    DropQuote,
+    Sudoku
 }
