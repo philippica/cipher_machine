@@ -7,8 +7,8 @@
   crossorigin="anonymous"></script>
 	</head>
 	<body>
-  <span>行: </span> <span id="row" contenteditable="true">9</span>
-  <span>列: </span> <span id="col" contenteditable="true">9</span>
+  <span>行: </span> <span id="sudoku-row" contenteditable="true">9</span>
+  <span>列: </span> <span id="sudoku-col" contenteditable="true">9</span>
   <a href="https://github.com/philippica/cipher_machine/wiki/%E7%84%96%E8%82%89%E9%9D%A2%E8%84%9A%E6%9C%AC%E6%96%87%E6%A1%A3">脚本规则说明</a>
   <div style="display: flex;">
   	<textarea id="rules" cols="50" rows="50"></textarea>
@@ -169,6 +169,25 @@ const getSet = (str, start) => {
   }
 };
 
+const print = () => {
+  const result = [];
+    let answer = "";
+    let temp = [];
+    for(let i = 0; i < possibleArray.length; i++) {
+      const number = possibleArray[i].values().next().value;
+      temp.push(number);
+      answer += number + ' ';
+      if(i % m === m-1) {
+        result.push(temp);
+        answer += '\n';
+        temp = [];
+      }
+    }
+    console.info(result);
+    console.info(answer);
+    $('#sudokuAnswer').html(answer);
+}
+
 const getRules = (str, start) => {
   if (str[start] === '互') {
     return {
@@ -194,6 +213,14 @@ const getRules = (str, start) => {
     return {
       smallerThan: getSet(str, start + 4).value+1,
     };
+  } else if(str[start] === '的' && str[start+1] === '和') {
+    return {
+      sum: getNumber(str, start + 3).value,
+    };
+  } else if(str[start] === '的' && str[start+1] === '系') {
+    return {
+      sum: getNumber(str, start + 3).value,
+    };
   }
 };
 
@@ -203,6 +230,10 @@ const parseLine = (lineStr) => {
   if(lineStr === "")return;
   const restrictAreas = getRestrictAreas(lineStr, 0);
   const rules = getRules(lineStr, restrictAreas.stopPos);
+  if(rules === undefined) {
+    alert(`我不认识"${lineStr}"的规则，请仔细检查`);
+    return;
+  }
   if(rules.smallerThan || rules.largerThan) {
     for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
       globalFinalRules.push({
@@ -284,19 +315,56 @@ const relaxRule = (rule, origin) => {
         }
       }
     }
-  }
+    fixed = [];
+    for (let i = 0; i < areas.length; i++) {
+      if (possibleArray[areas[i]].size === 1) {
+        const number = possibleArray[areas[i]].values().next().value;
+        if(fixed.includes(number)) {
+          return -1;
+        }
+        fixed.push(number);
+      }
 
-  fixed = [];
-  for (let i = 0; i < areas.length; i++) {
-    if (possibleArray[areas[i]].size === 1) {
-      const number = possibleArray[areas[i]].values().next().value;
-      if(fixed.includes(number)) {
+    }
+  } else if (rule.rules.sum) {
+    const sum = rule.rules.sum;
+
+    let currentSum = undefined;
+    let currentSum2 = 0;
+    let fixedCount = areas.length;
+    let unknowList = 0;
+    for (let i = 0; i < areas.length; i++) {
+	    const possibleList = [...possibleArray[areas[i]]];
+      if(possibleList.length === 0) {
         return -1;
       }
-      fixed.push(number);
+      if(possibleList.length > 1) {
+        unknowList = areas[i];
+        currentSum = undefined;
+        break;
+      }
+      currentSum = currentSum?currentSum+possibleList[0] : possibleList[0];
+      fixedCount--;
+      currentSum2 += possibleList[0];
     }
-
+    if(currentSum !== undefined && currentSum !== sum) {
+      return -1;
+    }
+    if(fixedCount === 1) {
+      if(possibleArray[unknowList].has(sum - currentSum2)) {
+        if(!origin[unknowList]) {
+          origin[unknowList] = new Set(possibleList);
+        }
+        for(const connectedRule of connectedRules[unknowList]) {
+          ruleSet.add(connectedRule);
+        }
+        possibleArray[unknowList] = new Set([sum - currentSum2]);
+      } else {
+        return -1;
+      }
+    }
   }
+
   for(const rules of ruleSet) {
     const result = relaxRule(globalRules[rules], origin);
     if(result === -1)return -1;
@@ -343,25 +411,11 @@ const resumePossible = (origin) => {
   });
 }
 
+
 const dfs = () => {
   const smallestGridIndex = getSmallestGrid();
   if(smallestGridIndex === -1) {
-    const result = [];
-    let answer = "";
-    let temp = [];
-    for(let i = 0; i < possibleArray.length; i++) {
-      const number = possibleArray[i].values().next().value;
-      temp.push(number);
-      answer += number + ' ';
-      if(i % m === m-1) {
-        result.push(temp);
-        answer += '\n';
-        temp = [];
-      }
-    }
-    console.info(result);
-    console.info(answer);
-    $('#sudokuAnswer').html(answer);
+    print();
     return -1;
   }
   const set = possibleArray[smallestGridIndex];
@@ -371,12 +425,17 @@ const dfs = () => {
     origin[smallestGridIndex] = new Set(possibleArray[smallestGridIndex]);
     possibleArray[smallestGridIndex] = new Set([item]);
     if(connectedRules[smallestGridIndex]){
+      let flag = false;
       for(let i = 0; i < connectedRules[smallestGridIndex].length; i++) {
         const result = relaxRule(globalRules[connectedRules[smallestGridIndex][i]], origin, connectedRules[smallestGridIndex][i]);
         if(result === -1) {
           resumePossible(origin);
-          return -2;
+          flag = true;
+          break;
         }
+      }
+      if (flag === true) {
+        continue;
       }
     }
 
@@ -456,20 +515,25 @@ const solve = (rulesStr) => {
   }
   relax();
   dfs();
-  console.info("end");
 };
 
 const generate = (n, m) => {
-  $('#sudokuContainer').innerHTML = "";
+  $('#sudokuContainer').html("");
   $('#sudokuContainer').width(m*30 + m);
   $('#sudokuContainer').height(n*30 + n);
   for(let i = 0; i < n*m; i++) {
     $('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
   }
-  $('.sudoku-grid-content').on('focus', function() {
+  $('.sudoku-grid-content,#row,#col').on('focus', function() {
     before = $(this).html();
   }).on('blur keyup paste', function() { 
     if (before != $(this).html()) { before = $(this).html(); $(this).trigger('change'); }
+  });
+
+  $('#col,#row').on('change', (e) =>{
+    n = parseInt($("#sudoku-row").html());
+    m = parseInt($("#sudoku-col").html());
+    generate(n,m);
   });
 
   $('.sudoku-grid-content').on('change', (e) =>{
@@ -496,6 +560,8 @@ const generate = (n, m) => {
 generate(n, m);
 
 $('#solveSudoku').click(() => {
+  n = parseInt($("#sudoku-row").html());
+  m = parseInt($("#sudoku-col").html());
   solve($('#rules').val().split('\n'));
 })
 
