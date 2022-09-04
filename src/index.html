@@ -1030,13 +1030,13 @@
 		for(let i = 0; i < n*m; i++) {
 			$('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
 		}
-		$('.sudoku-grid-content,#row,#col').on('focus', function() {
+		$('.sudoku-grid-content,#sudoku-row,#sudoku-col').on('focus', function() {
 			before = $(this).html();
 		}).on('blur keyup paste', function() { 
 			if (before != $(this).html()) { before = $(this).html(); $(this).trigger('change'); }
 		});
 
-		$('#col,#row').on('change', (e) =>{
+		$('#sudoku-col,#sudoku-row').on('change', (e) =>{
 			n = parseInt($("#sudoku-row").html());
 			m = parseInt($("#sudoku-col").html());
 			generate(n,m);
