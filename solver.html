@@ -97,12 +97,8 @@ class SolverParser {
     }
   };
 
-  getRules(str, start) {
-    if (str[start] === '互') {
-      return {
-        isDifferent: true,
-      };
-    } else if (str[start] === '是') {
+  parseRelativeSign(str, start) {
+    if (str[start] === '是') {
       return {
         set: this.getSet(str, start + 1),
       };
@@ -122,6 +118,17 @@ class SolverParser {
       return {
         smallerThan: this.getNumber(str, start + 4).value+1,
       };
+    }
+  }
+
+  getRules(str, start) {
+    let temp;
+    if (str[start] === '互') {
+      return {
+        isDifferent: true,
+      };
+    } else if (temp = this.parseRelativeSign(str, start)) {
+      return temp
     } else if(str[start] === '的' && str[start+1] === '和') {
       return {
         sum: this.getNumber(str, start + 3).value,
@@ -158,7 +165,7 @@ class SolverParser {
     }
   };
 
-  getRestrictAreas(str, start) {
+  getOriginAreas(str, start) {
     const ret = [];
     if (str[0] === '每') {
       if (str.substr(1, 2) === '一行') {
@@ -221,6 +228,23 @@ class SolverParser {
       };
     }
   };
+
+
+
+  modifyArea(str, start, origin) {
+    if(str[start] === '[') {
+    }
+  }
+
+
+  getRestrictAreas(str, start) {
+    const ret = this.getOriginAreas(str, start);
+    console.info(str[ret.stopPos]);
+    if(str[ret.stopPos] === "的") {
+      this.modifyArea(str, ret.stopPos +1, ret)
+    }
+    return ret;
+  }
 
 
   getSet(str, start) {
@@ -625,7 +649,7 @@ generate(n, m);
 $('#solveSudoku').click(() => {
   n = parseInt($("#sudoku-row").html());
   m = parseInt($("#sudoku-col").html());
-  new SudokuSolver(($('#rules').val().split('\n')));
+  new SudokuSolver(($('#rules').val().split('\n')), n, m);
 })
 
 
