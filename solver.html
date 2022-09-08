@@ -45,10 +45,10 @@
 
 
 
-let initStr = '每一格是从1到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
-initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
-initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5\n';
-initStr += '第[1,2,3,4,5,6]格的和是30';
+//let initStr = '每一格是1或从2到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
+//initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
+//initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5\n';
+let initStr = '每一格是黑格或白格\n第3格的[上,下,左,右]的黑格的数量是6';
 
 $('#rules').val(initStr);
 
@@ -136,6 +136,25 @@ class SolverParser {
     } else if(str[start] === '的' && str[start+1] === '系') {
       return {
         sum: this.getNumber(str, start + 3).value,
+      };
+    } else if(str[start] === '的') { // 的（黑格/1/2/3）的数量(是)
+      const lineToken = this.getNumber(str, start+1);
+      let currentPos;
+      let item;
+      if(lineToken) {
+        currentPos = lineToken.stopPos+3;
+        item = lineToken.value;
+      } else if(str[start+1] === '黑') {
+        currentPos = start+6;
+        item = "black";
+      }
+      const result = this.parseRelativeSign(str, currentPos);
+
+      return {
+        count: {
+          item,
+          ...result
+        }
       };
     }
   };
@@ -229,10 +248,60 @@ class SolverParser {
     }
   };
 
-
+  getDir(str, start) {
+    if(str[start] === '本') { // 本格
+      return {
+        stopPos: start+2,
+        diff: {
+          dr: 0,
+          dc: 0
+        }
+      }
+    }
+    let currentPos = start;
+    let dr = 0;
+    let dc = 0;
+    while(1) {
+      let flag = 0;
+      switch(str[currentPos]) {
+      case '上':
+        dr--;
+        break;
+      case '下':
+        dr++;
+        break;
+      case '左':
+        dc--;
+        break;
+      case '右':
+        dc++;
+        break;
+      default:
+        flag = 1;
+      }
+      if(flag === 1)break;
+      currentPos++;
+    }
+    return {
+      stopPos: currentPos,
+      diff: {
+        dr,
+        dc
+      }
+    }
+  }
 
   modifyArea(str, start, origin) {
     if(str[start] === '[') {
+      let currentPos = start + 1;
+      const diffs = [];
+      while(1) {
+        const result = this.getDir(str, currentPos);
+        diffs.push(result.diff);
+        currentPos = result.stopPos + 1;
+        if(str[result.stopPos] === ']')break;
+      }
+      return {diffs, stopPos: currentPos};
     }
   }
 
@@ -241,30 +310,59 @@ class SolverParser {
     const ret = this.getOriginAreas(str, start);
     console.info(str[ret.stopPos]);
     if(str[ret.stopPos] === "的") {
-      this.modifyArea(str, ret.stopPos +1, ret)
+      let result = this.modifyArea(str, ret.stopPos +1, ret);
+      const modifiedArea = ret.restrictArea[0].map((x) => {
+        let c = x % this.m;
+        let r = parseInt(x / this.m);
+        const temp = [];
+        for(const d of result.diffs) {
+          const nc = c+d.dc;
+          const nr = r+d.dr;
+          if(nc < 0 || nc >= this.m || nr < 0 || nr >= this.n)continue;
+          temp.push(nr*this.m+nc);
+        }
+        return temp;
+      });
+      ret.restrictArea = modifiedArea;
+      ret.stopPos = result.stopPos;
+      console.info(modifiedArea);
     }
     return ret;
   }
 
 
   getSet(str, start) {
-    const numberToken = this.getNumber(str, start);
+    const ret = [];
+    let currentPos = start;
+    while(1) {
+      const numberToken = this.getNumber(str, currentPos);
 
-    if (numberToken) {
-      return [numberToken.value];
-    }
-    if (str[start] === '从') {
-      const firstToken = this.getNumber(str, start + 1);
-      let secondToken;
-      if (str[firstToken.stopPos] === '到') {
-        secondToken = this.getNumber(str, firstToken.stopPos + 1);
+      if (numberToken) {
+        ret.push(numberToken.value);
+        currentPos = numberToken.stopPos;
+      } else if (str[currentPos] === '从') {
+        const firstToken = this.getNumber(str, currentPos + 1);
+        let secondToken;
+        if (str[firstToken.stopPos] === '到') {
+          secondToken = this.getNumber(str, firstToken.stopPos + 1);
+        }
+        for (let i = firstToken.value; i <= secondToken.value; i++) {
+          ret.push(i);
+        }
+        currentPos = secondToken.stopPos+3;
+      } else if (str[currentPos] === '或') {
+        currentPos++;
+      } else if(str[currentPos] === '黑') {
+        ret.push('black');
+        currentPos += 2;
+      } else if(str[currentPos] === '白') {
+        ret.push('white');
+        currentPos += 2;
+      } else {
+        break;
       }
-      const ret = [];
-      for (let i = firstToken.value; i <= secondToken.value; i++) {
-        ret.push(i);
-      }
-      return ret;
     }
+    return ret;
   };
 
   specialRule(lineStr) {
@@ -465,6 +563,20 @@ class SudokuSolver {
     return 1;
   }
 
+  relaxCount(areas, origin, rule) {
+    let cnt = 0;
+    for (let i = 0; i < areas.length; i++) {
+      const possibleList = [...this.possibleArray[areas[i]]];
+      if(possibleList.length < 0)return false;
+      if(possibleList.length === 1) {
+        if(possibleList[0] === rule.item){
+          cnt++;
+        }
+      }
+    }
+    console.info(cnt);
+  }
+
   relaxRule(rule, origin) {
     const ruleSet = new Set([]);
     const areas = rule.restrictAreas;
@@ -473,6 +585,9 @@ class SudokuSolver {
       if(ret === -1)return -1;
     } else if (rule.rules.sum) {
       const ret = this.relaxSum(areas, origin, ruleSet, rule);
+      if(ret === -1)return -1;
+    } else if(rule.rules.count) {
+      const ret = this.relaxCount(areas, origin, rule.rules.count);
       if(ret === -1)return -1;
     }
 
@@ -602,8 +717,8 @@ class SudokuSolver {
 
 
 
-let n = 5;
-let m = 5;
+let n = parseInt($("#sudoku-row").html());
+let m = parseInt($("#sudoku-col").html());
 const generate = (n, m) => {
   $('#sudokuContainer').html("");
   $('#sudokuContainer').width(m*30 + m);
