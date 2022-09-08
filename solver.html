@@ -48,7 +48,7 @@
 //let initStr = '每一格是1或从2到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
 //initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
 //initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5\n';
-let initStr = '每一格是黑格或白格\n第3格的[上,下,左,右]的黑格的数量是6';
+let initStr = '每一格是黑格或白格\n第3格的[上,下,左,右]的黑格的数量是2';
 
 $('#rules').val(initStr);
 
@@ -565,16 +565,24 @@ class SudokuSolver {
 
   relaxCount(areas, origin, rule) {
     let cnt = 0;
+    let isFixed = true;
     for (let i = 0; i < areas.length; i++) {
       const possibleList = [...this.possibleArray[areas[i]]];
-      if(possibleList.length < 0)return false;
+      if(possibleList.length < 0)return -1;
       if(possibleList.length === 1) {
         if(possibleList[0] === rule.item){
           cnt++;
         }
+      } else {
+        isFixed = false;
       }
     }
-    console.info(cnt);
+    if(rule.set) {
+      const u = rule.set[0];
+      if(isFixed && cnt !== u) {
+        return -1;
+      }
+    }
   }
 
   relaxRule(rule, origin) {
