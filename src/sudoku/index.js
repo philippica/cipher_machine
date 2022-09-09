@@ -1,212 +1,72 @@
 // TODO: Need to be refacted, the code here is tooooo terrible
-let n;
-let m;
-let possibleArray = [];
-let connectedRules = [];
+import { SolverParser } from './solverParser';
+export class SudokuSolver {
+  constructor(rulesList, n, m) {
+    this.n = n;
+    this.m = m;
 
-const getNumber = (str, start) => {
-  const number = str.substr(start).match(/^\d+/);
-  if (!number) return null;
-  return {
-    value: parseInt(number[0]),
-    stopPos: start + number[0].length,
+    this.possibleArray = [];
+    this.connectedRules = [];
+    this.globalRules = [];
+    this.globalFinalRules = [];
+    this.solve(rulesList, n, m);
+  }
+
+  solve(rulesList, n, m) {
+    const possibleArray = this.possibleArray;
+    const connectedRules = this.connectedRules;
+    const globalRules = this.globalRules;
+    const globalFinalRules = this.globalFinalRules;
+    
+    new SolverParser(rulesList, n, m, globalRules, globalFinalRules);
+
+    for (let i = 0; i < n * m; i++) {
+      possibleArray.push(undefined);
+      connectedRules.push([]);
+    }
+
+    globalRules.descriptionRules = [];
+    globalRules.groupRules = [];
+    for (let i = 0; i < globalRules.length; i++) {
+      const rule = globalRules[i];
+      const { restrictAreas } = rule;
+      const letterSet = rule.rules ? rule.rules.set : undefined;
+      if (letterSet) {
+        globalRules.descriptionRules.push(i);
+        for (let j = 0; j < restrictAreas.length; j++) {
+          this.mergeSet(restrictAreas[j], letterSet);
+        }
+      } else {
+        globalRules.groupRules.push(i);
+        for (let j = 0; j < restrictAreas.length; j++) {
+          connectedRules[restrictAreas[j]].push(i);
+        }
+      }
+    }
+
+    for (let i = 0; i < globalFinalRules.length; i++) {
+      const rule = globalFinalRules[i];
+      const { restrictAreas } = rule;
+      if (rule.rules && rule.rules.largerThan) {
+        for (let j = 0; j < restrictAreas.length; j++) {
+          possibleArray[restrictAreas[j]] = this.largerSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
+        }
+      } else if(rule.rules && rule.rules.smallerThan) {
+        for (let j = 0; j < restrictAreas.length; j++) {
+          possibleArray[restrictAreas[j]] = this.smallSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
+        }
+      }
+    }
+    this.relax();
+    this.dfs();
   };
-};
-
-const getNumberList = (str, start) => {
-  let index = start + 1;
-  const ret = [];
-  while (1) {
-    const numberToken = getNumber(str, index);
-    index = numberToken.stopPos + 1;
-    ret.push(numberToken.value - 1);
-    if (str[numberToken.stopPos] === ']') {
-      return {
-        stopPos: numberToken.stopPos + 1,
-        set: ret,
-      };
-    }
-  }
-};
-
-const getRestrictAreas = (str, start) => {
-  const ret = [];
-  if (str[0] === '每') {
-    if (str.substr(1, 2) === '一行') {
-      for (let row = 0; row < n; row++) {
-        ret.push([]);
-        for (let col = 0; col < m; col++) {
-          ret[row].push(row * m + col);
-        }
-      }
-      return {
-        stopPos: 3,
-        restrictArea: ret,
-      };
-    } else if (str.substr(1, 2) === '一列') {
-      for (let col = 0; col < n; col++) {
-        ret.push([]);
-        for (let row = 0; row < m; row++) {
-          ret[col].push(row * m + col);
-        }
-      }
-      return {
-        stopPos: 3,
-        restrictArea: ret,
-      };
-    } else if (str.substr(1, 2) === '一格') {
-      for (let row = 0; row < n; row++) {
-        for (let col = 0; col < m; col++) {
-          ret.push(row * m + col);
-        }
-      }
-      return {
-        stopPos: 3,
-        restrictArea: [ret],
-      };
-    }
-  } else if (str[0] === '第') {
-    const lineToken = getNumber(str, 1);
-    if (lineToken) {
-      if (str[lineToken.stopPos] === '行') {
-        for (let col = 0; col < m; col++) {
-          ret.push((lineToken.value - 1) * m + col);
-        }
-      } else if (str[lineToken.stopPos] === '列') {
-        for (let row = 0; row < n; row++) {
-          ret.push(row * m + (lineToken.value - 1));
-        }
-      } else if (str[lineToken.stopPos] === '格') {
-        ret.push(lineToken.value - 1);
-      }
-    } else if (str[start + 1] === '[') {
-      const list = getNumberList(str, start + 1);
-      return {
-        stopPos: list.stopPos + 1,
-        restrictArea: [list.set],
-      };
-    }
-    return {
-      stopPos: lineToken.stopPos + 1,
-      restrictArea: [ret],
-    };
-  }
-};
 
 
-const getSet = (str, start) => {
-  const numberToken = getNumber(str, start);
-
-  if (numberToken) {
-    return [numberToken.value];
-  }
-  if (str[start] === '从') {
-    const firstToken = getNumber(str, start + 1);
-    let secondToken;
-    if (str[firstToken.stopPos] === '到') {
-      secondToken = getNumber(str, firstToken.stopPos + 1);
-    }
-    const ret = [];
-    for (let i = firstToken.value; i <= secondToken.value; i++) {
-      ret.push(i);
-    }
-    return ret;
-  }
-};
-
-const print = () => {
-  const result = [];
-    let answer = "";
-    let temp = [];
-    for(let i = 0; i < possibleArray.length; i++) {
-      const number = possibleArray[i].values().next().value;
-      temp.push(number);
-      answer += number + ' ';
-      if(i % m === m-1) {
-        result.push(temp);
-        answer += '\n';
-        temp = [];
-      }
-    }
-    console.info(result);
-    console.info(answer);
-    $('#sudokuAnswer').html(answer);
-}
-
-const getRules = (str, start) => {
-  if (str[start] === '互') {
-    return {
-      isDifferent: true,
-    };
-  } else if (str[start] === '是') {
-    return {
-      set: getSet(str, start + 1),
-    };
-  } else if (str[start] === '大') {
-    return {
-      largerThan: getNumber(str, start + 2).value,
-    };
-  } else if (str[start] === '大' && str[start+2] === '等') {
-    return {
-      largerThan: getNumber(str, start + 4).value-1,
-    };
-  } else if (str[start] === '小') {
-    return {
-      smallerThan: getNumber(str, start + 2).value,
-    };
-  } else if (str[start] === '小' && str[start+2] === '等') {
-    return {
-      smallerThan: getSet(str, start + 4).value+1,
-    };
-  } else if(str[start] === '的' && str[start+1] === '和') {
-    return {
-      sum: getNumber(str, start + 3).value,
-    };
-  } else if(str[start] === '的' && str[start+1] === '系') {
-    return {
-      sum: getNumber(str, start + 3).value,
-    };
-  }
-};
-
-let globalRules = [];
-let globalFinalRules = [];
-const parseLine = (lineStr) => {
-  if(lineStr === "")return;
-  const restrictAreas = getRestrictAreas(lineStr, 0);
-  const rules = getRules(lineStr, restrictAreas.stopPos);
-  if(rules === undefined) {
-    alert(`我不认识"${lineStr}"的规则，请仔细检查`);
-    return;
-  }
-  if(rules.smallerThan || rules.largerThan) {
-    for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
-      globalFinalRules.push({
-        restrictAreas: restrictAreas.restrictArea[i],
-        rules,
-      });
-    }
-  } else {
-    for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
-      globalRules.push({
-        restrictAreas: restrictAreas.restrictArea[i],
-        rules,
-      });
-    }
-  }
-};
-
-const relaxRule = (rule, origin) => {
-  const getDifference = (setA, setB) => new Set([...setA, ...setB].filter(element => !setB.has(element) || !setA.has(element)));
-  const ruleSet = new Set([]);
-  const areas = rule.restrictAreas;
-  if (rule.rules.isDifferent) {
+  relaxDifference(areas, origin, ruleSet) {
     let fixed = [];
-
     const mp = new Map();
-
     for (let i = 0; i < areas.length; i++) {
-	    const possibleList = [...possibleArray[areas[i]]];
+      const possibleList = [...this.possibleArray[areas[i]]];
       for(let j = 0; j < possibleList.length; j++) {
         const temp = mp.get(possibleList[j]);
         if(temp) {
@@ -220,12 +80,14 @@ const relaxRule = (rule, origin) => {
       if(val === 1) {
         fixed.push(key);
         for (let i = 0; i < areas.length; i++) {
-          if (possibleArray[areas[i]].has(key) && possibleArray[areas[i]].size > 1) {
-            if(!origin[areas[i]]) {
-              origin[areas[i]] = new Set(possibleArray[areas[i]]);
+          const area = areas[i];
+          const curPossibleArray = this.possibleArray[area];
+          if (curPossibleArray.size > 1 && curPossibleArray.has(key)) {
+            if(!origin[area]) {
+              origin[area] = new Set(curPossibleArray);
             }
-            possibleArray[areas[i]] = new Set([key]);
-            for(const connectedRule of connectedRules[areas[i]]) {
+            this.possibleArray[area] = new Set([key]);
+            for(const connectedRule of this.connectedRules[area]) {
               ruleSet.add(connectedRule);
             }
           }
@@ -234,15 +96,15 @@ const relaxRule = (rule, origin) => {
     });
 
     for (let i = 0; i < areas.length; i++) {
-      if (possibleArray[areas[i]].size === 1) {
-        fixed.push(possibleArray[areas[i]].values().next().value);
+      if (this.possibleArray[areas[i]].size === 1) {
+        fixed.push(this.possibleArray[areas[i]].values().next().value);
       }
     }
 
     for (let j = 0; j < fixed.length; j++) {
       for (let i = 0; i < areas.length; i++) {
-        const possibleList = possibleArray[areas[i]];
-        if (possibleList.has(fixed[j]) && possibleList.size > 1) {
+        const possibleList = this.possibleArray[areas[i]];
+        if (possibleList.size > 1 && possibleList.has(fixed[j])) {
           if(!origin[areas[i]]) {
             origin[areas[i]] = new Set(possibleList);
           }
@@ -251,7 +113,7 @@ const relaxRule = (rule, origin) => {
             console.info("No");
             return -1;
           }
-          for(const connectedRule of connectedRules[areas[i]]) {
+          for(const connectedRule of this.connectedRules[areas[i]]) {
             ruleSet.add(connectedRule);
           }
           if (possibleList.size === 1) {
@@ -262,209 +124,271 @@ const relaxRule = (rule, origin) => {
     }
     fixed = [];
     for (let i = 0; i < areas.length; i++) {
-      if (possibleArray[areas[i]].size === 1) {
-        const number = possibleArray[areas[i]].values().next().value;
+      if (this.possibleArray[areas[i]].size === 1) {
+        const number = this.possibleArray[areas[i]].values().next().value;
         if(fixed.includes(number)) {
           return -1;
         }
         fixed.push(number);
       }
-
     }
-  } else if (rule.rules.sum) {
+    return 1;
+  }
+
+  relaxSum(areas, origin, ruleSet, rule) {
     const sum = rule.rules.sum;
 
     let currentSum = undefined;
     let currentSum2 = 0;
     let fixedCount = areas.length;
     let unknowList = 0;
+    let upperBound = 0;
+    let lowerBound = 0;
+    const maxValues = [];
+    const minValues = [];
     for (let i = 0; i < areas.length; i++) {
-	    const possibleList = [...possibleArray[areas[i]]];
+      const possibleList = [...this.possibleArray[areas[i]]];
       if(possibleList.length === 0) {
         return -1;
       }
+      let currentMax = possibleList[0];
+      let currentMin = possibleList[0];
+      for(const element of possibleList) {
+        if(element > currentMax) {
+          currentMax = element;
+        }
+        if(element < currentMin) {
+          currentMin = element;
+        }
+      }
+      maxValues[i] = currentMax;
+      minValues[i] = currentMin;
+      upperBound += currentMax;
+      lowerBound += currentMin;
       if(possibleList.length > 1) {
         unknowList = areas[i];
         currentSum = undefined;
-        break;
+        continue;
       }
       currentSum = currentSum?currentSum+possibleList[0] : possibleList[0];
       fixedCount--;
       currentSum2 += possibleList[0];
     }
-    if(currentSum !== undefined && currentSum !== sum) {
-      return -1;
+    for (let i = 0; i < areas.length; i++) {
+      const possibleList = this.possibleArray[areas[i]];
+      const deleteItem = [];
+      for(const element of possibleList) {
+        if(upperBound + element - maxValues[i] < sum || lowerBound + element - minValues[i] > sum) {
+          deleteItem.push(element);
+        }
+      }
+      if(currentSum !== undefined && currentSum !== sum) {
+        return -1;
+      }
+      if(upperBound < sum || lowerBound > sum) {
+        return -1;
+      }
+      if(deleteItem.length > 0) {
+        if(!origin[areas[i]]) {
+          origin[areas[i]] = new Set(possibleList);
+        }
+        for(const connectedRule of this.connectedRules[areas[i]]) {
+          ruleSet.add(connectedRule);
+        }
+        for(const element of deleteItem) {
+          possibleList.delete(element);
+        }
+      }
     }
     if(fixedCount === 1) {
-      if(possibleArray[unknowList].has(sum - currentSum2)) {
+      if(this.possibleArray[unknowList].has(sum - currentSum2)) {
         if(!origin[unknowList]) {
           origin[unknowList] = new Set(possibleList);
         }
-        for(const connectedRule of connectedRules[unknowList]) {
+        for(const connectedRule of this.connectedRules[unknowList]) {
           ruleSet.add(connectedRule);
         }
-        possibleArray[unknowList] = new Set([sum - currentSum2]);
+        this.possibleArray[unknowList] = new Set([sum - currentSum2]);
       } else {
         return -1;
       }
     }
+    return 1;
   }
 
-  for(const rules of ruleSet) {
-    const result = relaxRule(globalRules[rules], origin);
-    if(result === -1)return -1;
-  }
-  return 1;
-};
-
-const relax = () => {
-  for (let i = 0; i < globalRules.groupRules.length; i++) {
-    const rule = globalRules[globalRules.groupRules[i]];
-    relaxRule(rule, [], i);
-  }
-};
-
-const mergeSet = (pos, set) => {
-  const getIntersection = (setA, setB) => new Set(setB.filter(element => setA.has(element)));
-  if (possibleArray[pos] === undefined) {
-    possibleArray[pos] = new Set(set);
-  } else {
-    possibleArray[pos] = getIntersection(possibleArray[pos], set);
-  }
-};
-
-const getSmallestGrid = () => {
-  let smallestGridIndex = -1;
-  let smallestGridSize = 128;
-  for(let i = 0; i < possibleArray.length; i++) {
-    const currentSetSize = possibleArray[i].size;
-    if(currentSetSize === 1)continue;
-    if(currentSetSize < smallestGridSize) {
-      smallestGridSize = currentSetSize;
-      smallestGridIndex = i;
-    }
-    if(smallestGridSize === 2) {
-      return smallestGridIndex;
-    }
-  }
-  return smallestGridIndex;
-}
-
-const resumePossible = (origin) => {
-  origin.forEach((set, index) => {
-    possibleArray[index] = set;
-  });
-}
-
-
-const dfs = () => {
-  const smallestGridIndex = getSmallestGrid();
-  if(smallestGridIndex === -1) {
-    print();
-    return -1;
-  }
-  const set = possibleArray[smallestGridIndex];
-
-  for (const item of set.values()) {
-    const origin = [];
-    origin[smallestGridIndex] = new Set(possibleArray[smallestGridIndex]);
-    possibleArray[smallestGridIndex] = new Set([item]);
-    if(connectedRules[smallestGridIndex]){
-      let flag = false;
-      for(let i = 0; i < connectedRules[smallestGridIndex].length; i++) {
-        const result = relaxRule(globalRules[connectedRules[smallestGridIndex][i]], origin, connectedRules[smallestGridIndex][i]);
-        if(result === -1) {
-          resumePossible(origin);
-          flag = true;
-          break;
+  relaxCount(areas, origin, rule) {
+    let cnt = 0;
+    let isFixed = true;
+    for (let i = 0; i < areas.length; i++) {
+      const possibleList = [...this.possibleArray[areas[i]]];
+      if(possibleList.length < 0)return -1;
+      if(possibleList.length === 1) {
+        if(possibleList[0] === rule.item){
+          cnt++;
         }
-      }
-      if (flag === true) {
-        continue;
+      } else {
+        isFixed = false;
       }
     }
-
-    const result = dfs();
-    if(result === -1) {
-      return result;
-    }
-    resumePossible(origin);
-  }
-  possibleArray[smallestGridIndex] = set;
-
-};
-const largerSet = (list, num) => {
-  const ret = new Set([]);
-  for(const x of list) {
-    if(x > num) {
-      ret.add(x);
-    }
-  }
-  return ret;
-}
-
-const smallSet = (list, num) => {
-  const ret = new Set([]);
-  for(const x of list) {
-    if(x < num) {
-      ret.add(x);
-    }
-  }
-  return ret;
-}
-
-
-export class Sudoku {
-    constructor() {
-    }
-    sovler(rulesStr, row, col) {
-        n = row;
-        m = col;
-        possibleArray = [];
-        connectedRules = [];
-        globalRules = [];
-        globalFinalRules = [];
-        for (let i = 0; i < rulesStr.length; i++) {
-          parseLine(rulesStr[i].replace(/\s/g, ''));
-        }
-        for (let i = 0; i < n * m; i++) {
-          possibleArray.push(undefined);
-          connectedRules.push([]);
-        }
-      
-        globalRules.descriptionRules = [];
-        globalRules.groupRules = [];
-        for (let i = 0; i < globalRules.length; i++) {
-          const rule = globalRules[i];
-          const { restrictAreas } = rule;
-          const letterSet = rule.rules? rule.rules.set : undefined;
-          if (letterSet) {
-            globalRules.descriptionRules.push(i);
-            for (let j = 0; j < restrictAreas.length; j++) {
-              mergeSet(restrictAreas[j], letterSet);
+    if(rule.set) {
+      const u = rule.set[0];
+      if(isFixed && cnt !== u) {
+        return -1;
+      }
+      if(!isFixed && cnt === u) {
+        for (let i = 0; i < areas.length; i++) {
+          const possibleList = this.possibleArray[areas[i]];
+          if(possibleList.length > 1 && possibleList.has(rule.item)) {
+            if(!origin[areas[i]]) {
+              origin[areas[i]] = new Set(possibleList);
             }
-          } else {
-            globalRules.groupRules.push(i);
-            for (let j = 0; j < restrictAreas.length; j++) {
-              connectedRules[restrictAreas[j]].push(i);
+            possibleList.delete(rule.item);
+            for(const connectedRule of this.connectedRules[areas[i]]) {
+              ruleSet.add(connectedRule);
             }
           }
         }
-      
-        for (let i = 0; i < globalFinalRules.length; i++) {
-          const rule = globalFinalRules[i];
-          const { restrictAreas } = rule;
-          if (rule.rules && rule.rules.largerThan) {
-            for (let j = 0; j < restrictAreas.length; j++) {
-              possibleArray[restrictAreas[j]] = largerSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
-            }
-          } else if(rule.rules && rule.rules.smallerThan) {
-            for (let j = 0; j < restrictAreas.length; j++) {
-              possibleArray[restrictAreas[j]] = smallSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
-            }
+      }
+    }
+  }
+
+  relaxRule(rule, origin) {
+    const ruleSet = new Set([]);
+    const areas = rule.restrictAreas;
+    if (rule.rules.isDifferent) {
+      const ret = this.relaxDifference(areas, origin, ruleSet);
+      if(ret === -1)return -1;
+    } else if (rule.rules.sum) {
+      const ret = this.relaxSum(areas, origin, ruleSet, rule);
+      if(ret === -1)return -1;
+    } else if(rule.rules.count) {
+      const ret = this.relaxCount(areas, origin, rule.rules.count, ruleSet);
+      if(ret === -1)return -1;
+    }
+
+    for(const rules of ruleSet) {
+      const result = this.relaxRule(this.globalRules[rules], origin);
+      if(result === -1)return -1;
+    }
+    return 1;
+  };
+
+  print() {
+    const result = [];
+      let answer = "";
+      let temp = [];
+      for(let i = 0; i < this.possibleArray.length; i++) {
+        const number = this.possibleArray[i].values().next().value;
+        if(number === "white" || number === 'black') {
+          $(`.sudoku-grid #grid-${i}`).css("background-color", number);
+        }
+        temp.push(number);
+        answer += number + ' ';
+        if(i % this.m === this.m-1) {
+          result.push(temp);
+          answer += '\n';
+          temp = [];
+        }
+      }
+      console.info(result);
+      console.info(answer);
+      $('#sudokuAnswer').html(answer);
+  }
+
+  relax() {
+    for (let i = 0; i < this.globalRules.groupRules.length; i++) {
+      const rule = this.globalRules[this.globalRules.groupRules[i]];
+      this.relaxRule(rule, [], i);
+    }
+  };
+
+  mergeSet(pos, set) {
+    const getIntersection = (setA, setB) => new Set(setB.filter(element => setA.has(element)));
+    if (this.possibleArray[pos] === undefined) {
+      this.possibleArray[pos] = new Set(set);
+    } else {
+      this.possibleArray[pos] = getIntersection(this.possibleArray[pos], set);
+    }
+  };
+
+  getSmallestGrid() {
+    let smallestGridIndex = -1;
+    let smallestGridSize = 128;
+    for(let i = 0; i < this.possibleArray.length; i++) {
+      const currentSetSize = this.possibleArray[i].size;
+      if(currentSetSize === 1)continue;
+      if(currentSetSize < smallestGridSize) {
+        smallestGridSize = currentSetSize;
+        smallestGridIndex = i;
+      }
+      if(smallestGridSize === 2) {
+        return smallestGridIndex;
+      }
+    }
+    return smallestGridIndex;
+  }
+
+  dfs() {
+    const smallestGridIndex = this.getSmallestGrid();
+    if(smallestGridIndex === -1) {
+      this.print();
+      return -1;
+    }
+    const set = this.possibleArray[smallestGridIndex];
+
+    for (const item of set.values()) {
+      const origin = [];
+      origin[smallestGridIndex] = new Set(this.possibleArray[smallestGridIndex]);
+      this.possibleArray[smallestGridIndex] = new Set([item]);
+      if(this.connectedRules[smallestGridIndex]){
+        let flag = false;
+        for(let i = 0; i < this.connectedRules[smallestGridIndex].length; i++) {
+          const result = this.relaxRule(this.globalRules[this.connectedRules[smallestGridIndex][i]], origin, this.connectedRules[smallestGridIndex][i]);
+          if(result === -1) {
+            this.resumePossible(origin);
+            flag = true;
+            break;
           }
         }
-        relax();
-        dfs();
+        if (flag === true) {
+          continue;
+        }
+      }
+
+      const result = this.dfs();
+      if(result === -1) {
+        return result;
+      }
+      this.resumePossible(origin);
     }
+    this.possibleArray[smallestGridIndex] = set;
+
+  };
+
+  resumePossible(origin) {
+    origin.forEach((set, index) => {
+      this.possibleArray[index] = set;
+    });
+  }
+
+  largerSet(list, num) {
+    const ret = new Set([]);
+    for(const x of list) {
+      if(x > num) {
+        ret.add(x);
+      }
+    }
+    return ret;
+  }
+
+  smallSet(list, num) {
+    const ret = new Set([]);
+    for(const x of list) {
+      if(x < num) {
+        ret.add(x);
+      }
+    }
+    return ret;
+  }
+
 };

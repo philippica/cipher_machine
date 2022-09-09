@@ -49,6 +49,7 @@
     .sudoku-index {
       font-size: 12;
       opacity: 0.2;
+      z-index: -1;
       position: absolute;
     }
   </style>
@@ -458,12 +459,14 @@ class SudokuSolver {
       if(val === 1) {
         fixed.push(key);
         for (let i = 0; i < areas.length; i++) {
-          if (this.possibleArray[areas[i]].has(key) && this.possibleArray[areas[i]].size > 1) {
-            if(!origin[areas[i]]) {
-              origin[areas[i]] = new Set(this.possibleArray[areas[i]]);
+          const area = areas[i];
+          const curPossibleArray = this.possibleArray[area];
+          if (curPossibleArray.size > 1 && curPossibleArray.has(key)) {
+            if(!origin[area]) {
+              origin[area] = new Set(curPossibleArray);
             }
-            this.possibleArray[areas[i]] = new Set([key]);
-            for(const connectedRule of this.connectedRules[areas[i]]) {
+            this.possibleArray[area] = new Set([key]);
+            for(const connectedRule of this.connectedRules[area]) {
               ruleSet.add(connectedRule);
             }
           }
@@ -480,7 +483,7 @@ class SudokuSolver {
     for (let j = 0; j < fixed.length; j++) {
       for (let i = 0; i < areas.length; i++) {
         const possibleList = this.possibleArray[areas[i]];
-        if (possibleList.has(fixed[j]) && possibleList.size > 1) {
+        if (possibleList.size > 1 && possibleList.has(fixed[j])) {
           if(!origin[areas[i]]) {
             origin[areas[i]] = new Set(possibleList);
           }
@@ -520,6 +523,8 @@ class SudokuSolver {
     let unknowList = 0;
     let upperBound = 0;
     let lowerBound = 0;
+    const maxValues = [];
+    const minValues = [];
     for (let i = 0; i < areas.length; i++) {
       const possibleList = [...this.possibleArray[areas[i]]];
       if(possibleList.length === 0) {
@@ -535,6 +540,8 @@ class SudokuSolver {
           currentMin = element;
         }
       }
+      maxValues[i] = currentMax;
+      minValues[i] = currentMin;
       upperBound += currentMax;
       lowerBound += currentMin;
       if(possibleList.length > 1) {
@@ -546,11 +553,31 @@ class SudokuSolver {
       fixedCount--;
       currentSum2 += possibleList[0];
     }
-    if(currentSum !== undefined && currentSum !== sum) {
-      return -1;
-    }
-    if(upperBound < sum || lowerBound > sum) {
-      return -1;
+    for (let i = 0; i < areas.length; i++) {
+      const possibleList = this.possibleArray[areas[i]];
+      const deleteItem = [];
+      for(const element of possibleList) {
+        if(upperBound + element - maxValues[i] < sum || lowerBound + element - minValues[i] > sum) {
+          deleteItem.push(element);
+        }
+      }
+      if(currentSum !== undefined && currentSum !== sum) {
+        return -1;
+      }
+      if(upperBound < sum || lowerBound > sum) {
+        return -1;
+      }
+      if(deleteItem.length > 0) {
+        if(!origin[areas[i]]) {
+          origin[areas[i]] = new Set(possibleList);
+        }
+        for(const connectedRule of this.connectedRules[areas[i]]) {
+          ruleSet.add(connectedRule);
+        }
+        for(const element of deleteItem) {
+          possibleList.delete(element);
+        }
+      }
     }
     if(fixedCount === 1) {
       if(this.possibleArray[unknowList].has(sum - currentSum2)) {
@@ -587,6 +614,20 @@ class SudokuSolver {
       if(isFixed && cnt !== u) {
         return -1;
       }
+      if(!isFixed && cnt === u) {
+        for (let i = 0; i < areas.length; i++) {
+          const possibleList = this.possibleArray[areas[i]];
+          if(possibleList.length > 1 && possibleList.has(rule.item)) {
+            if(!origin[areas[i]]) {
+              origin[areas[i]] = new Set(possibleList);
+            }
+            possibleList.delete(rule.item);
+            for(const connectedRule of this.connectedRules[areas[i]]) {
+              ruleSet.add(connectedRule);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -600,7 +641,7 @@ class SudokuSolver {
       const ret = this.relaxSum(areas, origin, ruleSet, rule);
       if(ret === -1)return -1;
     } else if(rule.rules.count) {
-      const ret = this.relaxCount(areas, origin, rule.rules.count);
+      const ret = this.relaxCount(areas, origin, rule.rules.count, ruleSet);
       if(ret === -1)return -1;
     }
 
