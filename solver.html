@@ -7,12 +7,23 @@
   crossorigin="anonymous"></script>
 	</head>
 	<body>
-  <span>行: </span> <span id="sudoku-row" contenteditable="true">9</span>
-  <span>列: </span> <span id="sudoku-col" contenteditable="true">9</span>
+  <div>
+    <select id ="solverMode" onchange="changeSolverMode()">
+      <option value ="sudoku">经典数独模式</option>
+      <option value ="mine">经典扫雷</option>
+      <option value = "magicSquare">经典幻方</option>
+    </select>
+  </div>
+  <span>行: </span> <span id="sudoku-row" style="border: 1px solid;" contenteditable="true">9</span>
+  <span>列: </span> <span id="sudoku-col" style="border: 1px solid;" contenteditable="true">9</span>
   <a href="https://github.com/philippica/cipher_machine/wiki/%E7%84%96%E8%82%89%E9%9D%A2%E8%84%9A%E6%9C%AC%E6%96%87%E6%A1%A3">脚本规则说明</a>
-  <div style="display: flex;">
+  <div style="display:flex;">
   	<textarea id="rules" cols="50" rows="50"></textarea>
-    <div style="margin: 20px;">
+    <div style="margin:20px;">
+      <div style="margin:10px;">
+        <div style="font-size: 13px;">下面格子中的内容将被替换为规则:</div>
+        <textarea id="replaceStr" cols="50"></textarea>
+      </div>
       <div id="sudokuContainer"></div>
       <pre id="sudokuAnswer"></pre>
     </div>
@@ -32,7 +43,7 @@
       align-content: flex-start;
     }
     .sudoku-grid-content {
-      height: 28px;
+      height: 30px;
       text-align: center;
     }
     .sudoku-index {
@@ -48,12 +59,6 @@
 //let initStr = '每一格是1或从2到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
 //initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
 //initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5\n';
-let initStr = '每一格是黑格或白格\n第3格的[上,下,左,右]的黑格的数量是2';
-
-$('#rules').val(initStr);
-
-console.info('start');
-const rulesStr = $('#rules').val().split('\n');
 
 
 
@@ -309,7 +314,7 @@ class SolverParser {
   getRestrictAreas(str, start) {
     const ret = this.getOriginAreas(str, start);
     console.info(str[ret.stopPos]);
-    if(str[ret.stopPos] === "的") {
+    if(str[ret.stopPos] === "的" && str[ret.stopPos+1] !== "和") {
       let result = this.modifyArea(str, ret.stopPos +1, ret);
       const modifiedArea = ret.restrictArea[0].map((x) => {
         let c = x % this.m;
@@ -612,6 +617,9 @@ class SudokuSolver {
       let temp = [];
       for(let i = 0; i < this.possibleArray.length; i++) {
         const number = this.possibleArray[i].values().next().value;
+        if(number === "white" || number === 'black') {
+          $(`.sudoku-grid #grid-${i}`).css("background-color", number);
+        }
         temp.push(number);
         answer += number + ' ';
         if(i % this.m === this.m-1) {
@@ -732,15 +740,15 @@ const generate = (n, m) => {
   $('#sudokuContainer').width(m*30 + m);
   $('#sudokuContainer').height(n*30 + n);
   for(let i = 0; i < n*m; i++) {
-    $('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
+    $('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="grid-${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
   }
-  $('.sudoku-grid-content,#sudoko-row,#sudoko-col').on('focus', function() {
+  $('.sudoku-grid-content,#sudoku-row,#sudoku-col').on('focus', function() {
     before = $(this).html();
   }).on('blur keyup paste', function() { 
     if (before != $(this).html()) { before = $(this).html(); $(this).trigger('change'); }
   });
 
-  $('#sudoko-col,#sudoko-row').on('change', (e) =>{
+  $('#sudoku-col,#sudoku-row').on('change', (e) =>{
     n = parseInt($("#sudoku-row").html());
     m = parseInt($("#sudoku-col").html());
     generate(n,m);
@@ -749,36 +757,72 @@ const generate = (n, m) => {
   $('.sudoku-grid-content').on('change', (e) =>{
     console.info(e.target.innerText);
     const text = e.target.innerText;
-    const number = parseInt(e.currentTarget.id);
+    const number = parseInt(e.currentTarget.id.substr(5)) + 1;
     console.info(number);
+    const replaceStr = $("#replaceStr").val().replace("<格子序号>", number.toString());
+    const findStr = "^" + replaceStr.replace("<格子内容>", ".*") + "$";
     const rulesStr = $('#rules').val().split('\n');
     let content = "";
     for(let i = 0; i < rulesStr.length; i++) {
       rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
-      if(rulesWithoutSpace.includes(`第${number+1}格是`)) {
+      if(new RegExp(findStr).test(rulesWithoutSpace)) {
         continue;
       }
       content += `${rulesWithoutSpace}\n`;
     }
     if(text != '') {
-      content += `第${number+1}格是${text}\n`;
+      content += replaceStr.replace("<格子内容>", text) + `\n`;
     }
     $('#rules').val(content);
   });
 
 }
-generate(n, m);
+
+const initSudoku = () => {
+  let initStr = '每一格是从1到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
+  initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
+  initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5\n';
+  $('#replaceStr').val("第<格子序号>格是<格子内容>");
+  n = 9;
+  m = 9;
+  $("#rules").val(initStr);
+  $("#sudoku-row").html(n);
+  $("#sudoku-col").html(m);
+  generate(n, m);
+}
+
+const changeSolverMode = () => {
+  const modeStr = $("#solverMode").val();
+  if(modeStr === "sudoku") {
+    initSudoku();
+  } else if (modeStr === "mine") {
+    $('#replaceStr').val("第<格子序号>格的[上,下,左,右,左上,右上,左下,右下]的黑格的数量是<格子内容>");
+    $("#rules").val('每一格是白格或黑格');
+    generate(n, m);
+  } else if (modeStr === "magicSquare") {
+    let initStr = '每一格是从1到16的数字\n每一格互不相同\n每一列的和是34\n每一行的和是34\n';
+    $("#rules").val(initStr);
+
+    n = 4;
+    m = 4;
+    $("#sudoku-row").html(n);
+    $("#sudoku-col").html(m);
+    $('#replaceStr').val("第<格子序号>格是<格子内容>");
+    generate(n, m);
+    
+  }
+}
 
 $('#solveSudoku').click(() => {
   n = parseInt($("#sudoku-row").html());
   m = parseInt($("#sudoku-col").html());
   new SudokuSolver(($('#rules').val().split('\n')), n, m);
-})
+});
+
+initSudoku();
 
 
-n = parseInt($("#sudoku-row").html());
-m = parseInt($("#sudoku-col").html());
-new SudokuSolver(($('#rules').val().split('\n')), n, m);
+
 
 	</script>
 	</body>
