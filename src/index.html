@@ -67,7 +67,7 @@
 				flex-basis: 100%;
 				font-size: 20px;
 			}
-			#footer, h1 {
+			#footer, h1, h3 {
 				margin: 40px;
 				display: flex;
 				justify-content: space-around;
@@ -172,6 +172,7 @@
 	</head>
 	<body>
 		<h1>焖肉面- puzzle hunt工具集</h1>
+		<h3>正在加载所需要的资源，暂时功能不可用,请稍等片刻，如果实在太慢，可下载本页面到电脑本地使用</h3>
 		<div class="container">
 			<div id="word-container">
 				<div id="word-capsule" class="capsule" data-expend=true>puzzle 字典(正则匹配、anagram、通配符、编辑距离)</div>
@@ -425,6 +426,7 @@
 
 		<script src="./static/jquery.min.js"></script>
 		<script>
+			$('h3').remove();
 			// substitution
 			$(".capsule").click((e) => {
 				const target = e.target;
