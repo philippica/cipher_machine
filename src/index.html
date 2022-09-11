@@ -408,11 +408,11 @@
 					<span>列: </span> <span id="sudoku-col" style="border: 1px solid;" contenteditable="true">9</span>
 					<a href="https://github.com/philippica/cipher_machine/wiki/%E7%84%96%E8%82%89%E9%9D%A2%E8%84%9A%E6%9C%AC%E6%96%87%E6%A1%A3">脚本规则说明</a>
 					<div style="display:flex;">
-						<textarea id="rules" cols="50" rows="50"></textarea>
+						<textarea id="rules" cols="50" rows="30"></textarea>
 						<div style="margin:20px;">
-							<div style="margin:10px;">
-							<div style="font-size: 13px;">下面格子中的内容将被替换为规则:</div>
-							<textarea id="replaceStr" cols="50"></textarea>
+							<div>
+								<div style="font-size: 13px;">下面格子中的内容将被替换为规则:</div>
+								<textarea id="replaceStr" cols="50"></textarea>
 							</div>
 							<div id="sudokuContainer"></div>
 							<pre id="sudokuAnswer"></pre>
@@ -1062,14 +1062,15 @@
 				const rulesStr = $('#rules').val().split('\n');
 				let content = "";
 				for(let i = 0; i < rulesStr.length; i++) {
-				rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
-				if(new RegExp(findStr).test(rulesWithoutSpace)) {
-					continue;
-				}
-				content += `${rulesWithoutSpace}\n`;
+					rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
+					if(rulesWithoutSpace === "")continue;
+					if(new RegExp(findStr.replace("[", "\\[").replace(']', "\\]")).test(rulesWithoutSpace)) {
+						continue;
+					}
+					content += `${rulesWithoutSpace}\n`;
 				}
 				if(text != '') {
-				content += replaceStr.replace("<格子内容>", text) + `\n`;
+					content += replaceStr.replace("<格子内容>", text) + `\n`;
 				}
 				$('#rules').val(content);
 			});
@@ -1094,7 +1095,7 @@
 			if(modeStr === "sudoku") {
 				initSudoku();
 			} else if (modeStr === "mine") {
-				$('#replaceStr').val("第<格子序号>格的[上,下,左,右,左上,右上,左下,右下]的黑格的数量是<格子内容>");
+				$('#replaceStr').val("第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是<格子内容>");
 				$("#rules").val('每一格是白格或黑格');
 				generate(n, m);
 			} else if (modeStr === "magicSquare") {

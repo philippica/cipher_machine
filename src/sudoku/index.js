@@ -9,6 +9,7 @@ export class SudokuSolver {
     this.connectedRules = [];
     this.globalRules = [];
     this.globalFinalRules = [];
+    this.weight = [];
     this.solve(rulesList, n, m);
   }
 
@@ -23,6 +24,7 @@ export class SudokuSolver {
     for (let i = 0; i < n * m; i++) {
       possibleArray.push(undefined);
       connectedRules.push([]);
+      this.weight.push(0);
     }
 
     globalRules.descriptionRules = [];
@@ -40,6 +42,7 @@ export class SudokuSolver {
         globalRules.groupRules.push(i);
         for (let j = 0; j < restrictAreas.length; j++) {
           connectedRules[restrictAreas[j]].push(i);
+          this.weight[restrictAreas[j]]++;
         }
       }
     }
@@ -216,14 +219,18 @@ export class SudokuSolver {
     return 1;
   }
 
-  relaxCount(areas, origin, rule) {
+  relaxCount(areas, origin, rule, ruleSet) {
     let cnt = 0;
     let isFixed = true;
+    let hasItemCount = 0;
     for (let i = 0; i < areas.length; i++) {
-      const possibleList = [...this.possibleArray[areas[i]]];
-      if(possibleList.length < 0)return -1;
-      if(possibleList.length === 1) {
-        if(possibleList[0] === rule.item){
+      const list = this.possibleArray[areas[i]];
+      if(list.size < 0)return -1;
+      if(list.has(rule.item)) {
+        hasItemCount++;
+      }
+      if(list.size === 1) {
+        if(list.values().next().value=== rule.item){
           cnt++;
         }
       } else {
@@ -232,10 +239,26 @@ export class SudokuSolver {
     }
     if(rule.set) {
       const u = rule.set[0];
+      if(hasItemCount < u) {
+        return -1;
+      }
       if(isFixed && cnt !== u) {
         return -1;
       }
-      if(!isFixed && cnt === u) {
+      if(!isFixed && hasItemCount === u) {
+        for (let i = 0; i < areas.length; i++) {
+          const possibleList = this.possibleArray[areas[i]];
+          if(possibleList.size > 1 && possibleList.has(rule.item)) {
+            if(!origin[areas[i]]) {
+              origin[areas[i]] = this.possibleArray[areas[i]];
+            }
+            for(const connectedRule of this.connectedRules[areas[i]]) {
+              ruleSet.add(connectedRule);
+            }
+            this.possibleArray[areas[i]] = new Set([rule.item]);
+          }
+        }
+      } else if(!isFixed && cnt === u) {
         for (let i = 0; i < areas.length; i++) {
           const possibleList = this.possibleArray[areas[i]];
           if(possibleList.length > 1 && possibleList.has(rule.item)) {
@@ -279,8 +302,9 @@ export class SudokuSolver {
       let temp = [];
       for(let i = 0; i < this.possibleArray.length; i++) {
         const number = this.possibleArray[i].values().next().value;
-        if(number === "white" || number === 'black') {
+        if(number === 'black') {
           $(`.sudoku-grid #grid-${i}`).css("background-color", number);
+          $(`.sudoku-grid #grid-${i}`).css("color", "white");
         }
         temp.push(number);
         answer += number + ' ';
@@ -313,15 +337,18 @@ export class SudokuSolver {
 
   getSmallestGrid() {
     let smallestGridIndex = -1;
-    let smallestGridSize = 128;
+    let smallestGridSize = 1024;
+    let largestW = 0;
     for(let i = 0; i < this.possibleArray.length; i++) {
       const currentSetSize = this.possibleArray[i].size;
+      const w = this.weight[i];
       if(currentSetSize === 1)continue;
-      if(currentSetSize < smallestGridSize) {
+      if(currentSetSize < smallestGridSize || (currentSetSize == smallestGridSize && w > largestW)) {
+        largestW = w;
         smallestGridSize = currentSetSize;
         smallestGridIndex = i;
       }
-      if(smallestGridSize === 2) {
+      if(smallestGridSize === 2 && w != 0) {
         return smallestGridIndex;
       }
     }
