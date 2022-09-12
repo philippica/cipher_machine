@@ -75,8 +75,13 @@ export class SolverParser {
           sum: this.getNumber(str, start + 3).value,
         };
       } else if(str[start] === '的' && str[start+1] === '系') {
+        const coefficient = this.getNumberList(str, start+4);
+        const number = this.getNumber(str, coefficient.stopPos+6);
         return {
-          sum: this.getNumber(str, start + 3).value,
+          linear: {
+            coefficient: coefficient.set.map(x => x+1),
+            result: number.value
+          }
         };
       } else if(str[start] === '的') { // 的（黑格/1/2/3）的数量(是)
         const lineToken = this.getNumber(str, start+1);
@@ -249,7 +254,7 @@ export class SolverParser {
     getRestrictAreas(str, start) {
       const ret = this.getOriginAreas(str, start);
       console.info(str[ret.stopPos]);
-      if(str[ret.stopPos] === "的" && str[ret.stopPos+1] !== "和") {
+      if(str[ret.stopPos] === "的" && str[ret.stopPos+1] !== "和" && str[ret.stopPos + 1] !== "系") {
         let result = this.modifyArea(str, ret.stopPos +1, ret);
         const modifiedArea = ret.restrictArea[0].map((x) => {
           let c = x % this.m;

@@ -225,7 +225,7 @@ export class SudokuSolver {
     let hasItemCount = 0;
     for (let i = 0; i < areas.length; i++) {
       const list = this.possibleArray[areas[i]];
-      if(list.size < 0)return -1;
+      if(list.size <= 0)return -1;
       if(list.has(rule.item)) {
         hasItemCount++;
       }
@@ -275,6 +275,57 @@ export class SudokuSolver {
     }
   }
 
+  relaxLinear(rule, areas, origin, ruleSet) {
+    console.info(rule);
+    let currentResult = 0;
+    let upperBound = 0;
+    let lowerBound = 0;
+    let fixedCount = areas.length;
+
+    const maxValues = [];
+    const minValues = [];
+    for (let i = 0; i < areas.length; i++) {
+      const list = this.possibleArray[areas[i]];
+      if(list.size <= 0)return -1;
+      if(list.size > 1) {
+        return;
+      }
+      
+      const number = list.values().next().value;
+      currentResult += number * rule.coefficient[i];
+    }
+    if(currentResult !== rule.result) {
+      return -1;
+    }
+
+    for (let i = 0; i < areas.length; i++) {
+      const possibleList = [...this.possibleArray[areas[i]]];
+      if(possibleList.length === 0) {
+        return -1;
+      }
+      let currentMax = possibleList[0];
+      let currentMin = possibleList[0];
+      for(const element of possibleList) {
+        const temp = element * rule.coefficient[i];
+        if(temp > currentMax) {
+          currentMax = temp;
+        }
+        if(temp < currentMin) {
+          currentMin = temp;
+        }
+      }
+      maxValues[i] = currentMax;
+      minValues[i] = currentMin;
+      upperBound += currentMax;
+      lowerBound += currentMin;
+      fixedCount--;
+    }
+    if(upperBound < rule.result || lowerBound > rule.result) {
+      return -1;
+    }
+
+  }
+
   relaxRule(rule, origin) {
     const ruleSet = new Set([]);
     const areas = rule.restrictAreas;
@@ -286,6 +337,9 @@ export class SudokuSolver {
       if(ret === -1)return -1;
     } else if(rule.rules.count) {
       const ret = this.relaxCount(areas, origin, rule.rules.count, ruleSet);
+      if(ret === -1)return -1;
+    } else if(rule.rules.linear) {
+      const ret = this.relaxLinear(rule.rules.linear, areas, origin, ruleSet);
       if(ret === -1)return -1;
     }
 
@@ -305,6 +359,9 @@ export class SudokuSolver {
         if(number === 'black') {
           $(`.sudoku-grid #grid-${i}`).css("background-color", number);
           $(`.sudoku-grid #grid-${i}`).css("color", "white");
+        } else if(number === 'white') {
+          $(`.sudoku-grid #grid-${i}`).css("background-color", number);
+          $(`.sudoku-grid #grid-${i}`).css("color", "black");
         }
         temp.push(number);
         answer += number + ' ';
