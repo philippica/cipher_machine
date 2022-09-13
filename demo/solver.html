@@ -505,7 +505,6 @@ class SudokuSolver {
     }
     mp.forEach((val, key)=>{
       if(val === 1) {
-        fixed.push(key);
         for (let i = 0; i < areas.length; i++) {
           const area = areas[i];
           const curPossibleArray = this.possibleArray[area];
@@ -524,7 +523,11 @@ class SudokuSolver {
 
     for (let i = 0; i < areas.length; i++) {
       if (this.possibleArray[areas[i]].size === 1) {
-        fixed.push(this.possibleArray[areas[i]].values().next().value);
+        const number = this.possibleArray[areas[i]].values().next().value;
+        if(fixed.includes(number)) {
+          return -1;
+        }
+        fixed.push(number);
       }
     }
 
