@@ -81,7 +81,6 @@ export class SudokuSolver {
     }
     mp.forEach((val, key)=>{
       if(val === 1) {
-        fixed.push(key);
         for (let i = 0; i < areas.length; i++) {
           const area = areas[i];
           const curPossibleArray = this.possibleArray[area];
@@ -100,7 +99,11 @@ export class SudokuSolver {
 
     for (let i = 0; i < areas.length; i++) {
       if (this.possibleArray[areas[i]].size === 1) {
-        fixed.push(this.possibleArray[areas[i]].values().next().value);
+        const number = this.possibleArray[areas[i]].values().next().value;
+        if(fixed.includes(number)) {
+          return -1;
+        }
+        fixed.push(number);
       }
     }
 
@@ -326,7 +329,87 @@ export class SudokuSolver {
 
   }
 
-  relaxRule(rule, origin) {
+
+  /*
+    -1: unknown
+    0: unsatisfied
+    1: satisfied
+  */
+  isSatisfied(areas, rule) {
+    const numbers = [];
+    for(const area of areas) {
+      if(this.possibleArray[area].size !== 1)return -1;
+      numbers.push(this.possibleArray[area].values().next().value);
+    }
+    console.info(rule);
+    if(rule.set) {
+      for(const number of numbers) {
+        if(!rule.set.includes(number)) {
+          return 0;
+        }
+      }
+    } else if(rule.largerThan) {
+      for(const number of numbers) {
+        if(number <= rule.largerThan) {
+          return 0;
+        }
+      }
+    } else if(rule.smallerThan) {
+      for(const number of numbers) {
+        if(number >= rule.smallerThan) {
+          return 0;
+        }
+      }
+    } else if(rule.sum) {
+      let currentSum = 0;
+      for(const number of numbers) {
+        currentSum += number;
+      }
+      if(currentSum !== rule.sum)return 0;
+    }
+    return 1;
+  }
+
+  relaxIfCondition(rule, areas, origin, ruleSet, newRule) {
+    if(this.isSatisfied(areas, rule.condition) === 1) {
+      for(const statement of rule.statement) {
+        const result = this.isSatisfied(statement.restrictAreas, statement.rules);
+        if(result === 0)
+        {
+          return -1;
+        } else if(result === -1) {
+          if(statement.rules.sum) {
+            this.globalRules.push(statement);
+            const ruleIndex = this.globalRules.length-1;
+            newRule[ruleIndex] = [];
+            for(const area of statement.restrictAreas) {
+              this.connectedRules[area].push(ruleIndex);
+              newRule[ruleIndex].push(area);
+            }
+          }
+          for(const area of statement.restrictAreas) {
+            if(this.possibleArray[area].size === 1)continue;
+            if(!origin[area]) {
+              origin[area] = new Set(this.possibleArray[area]);
+            }
+            for(const connectedRule of this.connectedRules[area]) {
+              ruleSet.add(connectedRule);
+            }
+
+            if(statement.rules.set) {
+              this.possibleArray[area] = new Set(statement.rules.set);
+            } else if(statement.rules.largerThan) {
+              this.possibleArray[area] = this.largerSet(this.possibleArray[area], statement.rules.largerThan);
+            } else if(statement.rules.smallerThan) {
+              this.possibleArray[area] = this.smallSet(this.possibleArray[area], statement.rules.largerThan);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  relaxRule(rule, origin, index, newRule) {
     const ruleSet = new Set([]);
     const areas = rule.restrictAreas;
     if (rule.rules.isDifferent) {
@@ -341,10 +424,13 @@ export class SudokuSolver {
     } else if(rule.rules.linear) {
       const ret = this.relaxLinear(rule.rules.linear, areas, origin, ruleSet);
       if(ret === -1)return -1;
+    } else if(rule.rules.ifCondition) {
+      const ret = this.relaxIfCondition(rule.rules.ifCondition, areas, origin, ruleSet, newRule);
+      if(ret === -1)return -1;
     }
 
     for(const rules of ruleSet) {
-      const result = this.relaxRule(this.globalRules[rules], origin);
+      const result = this.relaxRule(this.globalRules[rules], origin, newRule);
       if(result === -1)return -1;
     }
     return 1;
@@ -379,7 +465,7 @@ export class SudokuSolver {
   relax() {
     for (let i = 0; i < this.globalRules.groupRules.length; i++) {
       const rule = this.globalRules[this.globalRules.groupRules[i]];
-      this.relaxRule(rule, [], i);
+      this.relaxRule(rule, [], i, []);
     }
   };
 
@@ -422,14 +508,15 @@ export class SudokuSolver {
 
     for (const item of set.values()) {
       const origin = [];
+      const newRule = [];
       origin[smallestGridIndex] = new Set(this.possibleArray[smallestGridIndex]);
       this.possibleArray[smallestGridIndex] = new Set([item]);
       if(this.connectedRules[smallestGridIndex]){
         let flag = false;
         for(let i = 0; i < this.connectedRules[smallestGridIndex].length; i++) {
-          const result = this.relaxRule(this.globalRules[this.connectedRules[smallestGridIndex][i]], origin, this.connectedRules[smallestGridIndex][i]);
+          const result = this.relaxRule(this.globalRules[this.connectedRules[smallestGridIndex][i]], origin, this.connectedRules[smallestGridIndex][i], newRule);
           if(result === -1) {
-            this.resumePossible(origin);
+            this.resumePossible(origin, newRule);
             flag = true;
             break;
           }
@@ -443,15 +530,21 @@ export class SudokuSolver {
       if(result === -1) {
         return result;
       }
-      this.resumePossible(origin);
+      this.resumePossible(origin, newRule);
     }
     this.possibleArray[smallestGridIndex] = set;
 
   };
 
-  resumePossible(origin) {
+  resumePossible(origin, newRule) {
     origin.forEach((set, index) => {
       this.possibleArray[index] = set;
+    });
+    newRule.forEach((sets, index) => {
+      for(const index of sets) {
+        this.connectedRules[index].pop();
+      }
+      this.globalRules.pop();
     });
   }
 
@@ -476,3 +569,4 @@ export class SudokuSolver {
   }
 
 };
+

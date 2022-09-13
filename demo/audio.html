@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>music</title>
+		<link rel="stylesheet" href="../dist/static/bootstrap.min.css">
+		<script src="../dist/static/jquery.min.js"></script>
+		<script src="../dist/static/bootstrap.min.js"></script>
+		<style>
+			#view, #files {
+				margin: 30px;
+			}
+
+		</style>
+	</head>
+	<body>
+		
+    <input id="files" type="file" id="files" name="files[]" multiple />
+    <canvas id="view" height="200" width="1000"></canvas>
+    <script>
+window.AudioContext = window.AudioContext || window.webkitAudioContext;
+var source;
+
+$("#view").click((e) => {
+    console.info(e);
+})
+
+function drawBuffer( width, height, context, buffer ) {
+    var data = buffer.getChannelData( 0 );
+    var step = Math.ceil( data.length / width );
+    var amp = 600;
+    for(var i=0; i < width; i++){
+        var min = 1.0;
+        var max = -1.0;
+        for (var j=0; j<step; j++) {
+            var datum = data[(i*step)+j]; 
+            if (datum < min)
+                min = datum;
+            if (datum > max)
+                max = datum;
+        }
+        context.fillRect(i,(1+min)*amp-500,1,Math.max(1,(max-min)*amp));
+    }
+}
+
+
+function playSound(arraybuffer) {
+    var context = new window.AudioContext();
+    context.decodeAudioData(arraybuffer, function (buf) {
+        var canvas = document.getElementById("view");
+        drawBuffer( canvas.width, canvas.height, canvas.getContext('2d'), buf ); 
+    });
+}
+
+function handleFileSelect(evt) {
+    var files = evt.target.files; // FileList object
+    playFile(files[0]);
+}
+
+function playFile(file) {
+    var freader = new FileReader();
+
+    freader.onload = function (e) {
+        console.log(e.target.result);
+        playSound(e.target.result);
+    };
+    freader.readAsArrayBuffer(file);
+}
+document.getElementById('files').addEventListener('change', handleFileSelect, false);
+		</script>
+	</body>
+</html>
