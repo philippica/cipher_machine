@@ -39,7 +39,7 @@
 				width: inherit;
 				margin-left: 2px;
 				z-index:-1;
-                opacity: 0.3;
+        opacity: 0.3;
 			}
 		</style>
 	</head>
@@ -124,35 +124,48 @@ $(".line").mousedown((e)=> {
 	});
 	$(window).mouseup((e)=> {
 		movable = false;
-	})
+	});
 })
+
+var render = function() {
+    var dataArray = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(dataArray);
+
+    
+    console.info(dataArray);
+
+    window.requestAnimationFrame(render);
+}
 
 
 let audioBufferSourceNode;
 var start = function() {
-	const startL = parseInt($("#start").css("left"));
-	const endL = parseInt($("#end").css("left"));
+  const startL = parseInt($("#start").css("left"));
+  const endL = parseInt($("#end").css("left"));
 	
-	const leftLine = Math.min(startL, endL);
-	const rightLine = Math.max(startL, endL);
+  const leftLine = Math.min(startL, endL);
+  const rightLine = Math.max(startL, endL);
 
-    buffer = g_buf;
-    if(audioBufferSourceNode) {
-        audioBufferSourceNode.stop();
-    }
-    const audioContext = new AudioContext({
-        sampleRate: 44100,
-    });
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048;
-    audioBufferSourceNode = audioContext.createBufferSource();
-    audioBufferSourceNode.connect(analyser);
-    analyser.connect(audioContext.destination);
-    audioBufferSourceNode.buffer = buffer;
+  buffer = g_buf;
+  if(audioBufferSourceNode) {
+      audioBufferSourceNode.stop();
+  }
+  const audioContext = new AudioContext({
+      sampleRate: 44100,
+  });
+  const analyser = audioContext.createAnalyser();
+  analyser.fftSize = 2048;
+  audioBufferSourceNode = audioContext.createBufferSource();
+  audioBufferSourceNode.connect(analyser);
+  analyser.connect(audioContext.destination);
+  audioBufferSourceNode.buffer = buffer;
 
-	const start = audioBufferSourceNode.buffer.duration / 1000 * leftLine;
-	const length = audioBufferSourceNode.buffer.duration / 1000 * (rightLine-leftLine);
-    audioBufferSourceNode.start(audioContext.currentTime, start, length);
+  const total = $("#waveContainer").width();
+
+  const start = audioBufferSourceNode.buffer.duration / total * leftLine;
+  const length = audioBufferSourceNode.buffer.duration / total * (rightLine-leftLine);
+  audioBufferSourceNode.start(audioContext.currentTime, start, length);
+  window.requestAnimationFrame(render);
 }
 
 $("#play").click(() => {
