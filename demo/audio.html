@@ -36,7 +36,7 @@
 				height: 100%;
 				position: absolute;
 				background-color: gray;
-				width: 10px;
+				width: inherit;
 				margin-left: 2px;
 				z-index:-1;
                 opacity: 0.3;
@@ -46,12 +46,15 @@
 	<body>
 		
     <input id="files" type="file" id="files" name="files[]" multiple />
-	<div id="waveContainer" style="position: absolute">
-		<canvas id="wave"></canvas>
-		<div id="start" class="line"></div>
-		<div id="selectedArea"></div>
-		<div id="end" class="line" style="left: 100%"></div>
-	</div>
+    <div style="height: 200px;">
+    	<div id="waveContainer" style="position: absolute">
+	    	<canvas id="wave"></canvas>
+	    	<div id="start" class="line"></div>
+		    <div id="selectedArea"></div>
+		    <div id="end" class="line" style="left: 100%"></div>
+	    </div>
+    </div>
+    <button id="play">▶</button>
     <script>
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var source;
@@ -74,10 +77,11 @@ function drawBuffer( width, height, context, buffer ) {
     }
 }
 
-
+let g_buf;
 function playSound(arraybuffer) {
     var context = new window.AudioContext();
     context.decodeAudioData(arraybuffer, function (buf) {
+        g_buf = buf;
         var canvas = document.getElementById("wave");
         drawBuffer( canvas.width, canvas.height, canvas.getContext('2d'), buf ); 
     });
@@ -122,6 +126,38 @@ $(".line").mousedown((e)=> {
 		movable = false;
 	})
 })
+
+
+let audioBufferSourceNode;
+var start = function() {
+	const startL = parseInt($("#start").css("left"));
+	const endL = parseInt($("#end").css("left"));
+	
+	const leftLine = Math.min(startL, endL);
+	const rightLine = Math.max(startL, endL);
+
+    buffer = g_buf;
+    if(audioBufferSourceNode) {
+        audioBufferSourceNode.stop();
+    }
+    const audioContext = new AudioContext({
+        sampleRate: 44100,
+    });
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    audioBufferSourceNode = audioContext.createBufferSource();
+    audioBufferSourceNode.connect(analyser);
+    analyser.connect(audioContext.destination);
+    audioBufferSourceNode.buffer = buffer;
+
+	const start = audioBufferSourceNode.buffer.duration / 1000 * leftLine;
+	const length = audioBufferSourceNode.buffer.duration / 1000 * (rightLine-leftLine);
+    audioBufferSourceNode.start(audioContext.currentTime, start, length);
+}
+
+$("#play").click(() => {
+    start();
+});
 
 		</script>
 	</body>
