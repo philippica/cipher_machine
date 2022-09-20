@@ -56,6 +56,86 @@
     </div>
     <button id="play">▶</button>
     <script>
+
+
+
+
+
+function Complex(re, im) {
+    this.re = re;
+    this.im = im || 0.0;
+}
+Complex.prototype.add = function (other, dst) {
+    dst.re = this.re + other.re;
+    dst.im = this.im + other.im;
+    return dst;
+}
+Complex.prototype.sub = function (other, dst) {
+    dst.re = this.re - other.re;
+    dst.im = this.im - other.im;
+    return dst;
+}
+Complex.prototype.mul = function (other, dst) {
+    //cache re in case dst === this
+    var r = this.re * other.re - this.im * other.im;
+    dst.im = this.re * other.im + this.im * other.re;
+    dst.re = r;
+    return dst;
+}
+Complex.prototype.cexp = function (dst) {
+    var er = Math.exp(this.re);
+    dst.re = er * Math.cos(this.im);
+    dst.im = er * Math.sin(this.im);
+    return dst;
+}
+
+Complex.prototype.magnitude = function () {
+    return Math.sqrt(this.re * this.re + this.im * this.im);
+}
+
+
+const cfft = (amplitudes) => {
+	var N = amplitudes.length;
+	if (N <= 1)
+		return amplitudes;
+
+	var hN = N / 2;
+	var even = [];
+	var odd = [];
+	even.length = hN;
+	odd.length = hN;
+	for (var i = 0; i < hN; ++i) {
+		even[i] = amplitudes[i * 2];
+		odd[i] = amplitudes[i * 2 + 1];
+	}
+	even = cfft(even);
+	odd = cfft(odd);
+
+	var a = -2 * Math.PI;
+	for (var k = 0; k < hN; ++k) {
+		if (!(even[k] instanceof Complex))
+			even[k] = new Complex(even[k], 0);
+		if (!(odd[k] instanceof Complex))
+			odd[k] = new Complex(odd[k], 0);
+		var p = k / N;
+		var t = new Complex(0, a * p);
+		t.cexp(t).mul(odd[k], t);
+		amplitudes[k] = even[k].add(t, odd[k]);
+		amplitudes[k + hN] = even[k].sub(t, even[k]);
+	}
+	return amplitudes;
+}
+
+
+
+
+
+
+
+
+
+
+
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var source;
 
@@ -77,13 +157,27 @@ function drawBuffer( width, height, context, buffer ) {
     }
 }
 
+const analysis = (data) => {
+	const start = 0;
+	const ret = [];
+	for(let i = start; i < start+16384; i++) {
+		ret.push(data[i]);
+	}
+	const temp = cfft(ret);
+	for(const i in temp) {
+		temp[i] = temp[i].magnitude();
+	}
+	console.info(temp);
+}
+
 let g_buf;
 function playSound(arraybuffer) {
     var context = new window.AudioContext();
     context.decodeAudioData(arraybuffer, function (buf) {
         g_buf = buf;
         var canvas = document.getElementById("wave");
-        drawBuffer( canvas.width, canvas.height, canvas.getContext('2d'), buf ); 
+        drawBuffer( canvas.width, canvas.height, canvas.getContext('2d'), buf );
+		analysis(buf.getChannelData( 0 ));
     });
 }
 
@@ -127,12 +221,24 @@ $(".line").mousedown((e)=> {
 	});
 })
 
+let analyser;
+let tmp = 0;
+let apart;
 var render = function() {
     var dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(dataArray);
 
-    
-    console.info(dataArray);
+    let ret = [];
+	for(let i in dataArray) {
+		// if(i <= 20)continue;
+		if(dataArray[i] > 140) {
+			ret.push(i * apart);
+		}
+	}
+	if(tmp === 12)console.info(dataArray);
+	console.info(ret);
+	tmp ++;
+	if(tmp > 800)return;
 
     window.requestAnimationFrame(render);
 }
@@ -140,11 +246,11 @@ var render = function() {
 
 let audioBufferSourceNode;
 var start = function() {
-  const startL = parseInt($("#start").css("left"));
-  const endL = parseInt($("#end").css("left"));
+	const startL = parseInt($("#start").css("left"));
+	const endL = parseInt($("#end").css("left"));
 	
-  const leftLine = Math.min(startL, endL);
-  const rightLine = Math.max(startL, endL);
+	const leftLine = Math.min(startL, endL);
+	const rightLine = Math.max(startL, endL);
 
   buffer = g_buf;
   if(audioBufferSourceNode) {
@@ -153,8 +259,12 @@ var start = function() {
   const audioContext = new AudioContext({
       sampleRate: 44100,
   });
-  const analyser = audioContext.createAnalyser();
-  analyser.fftSize = 2048;
+  const l = leftLine*startL;
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize = 16384;
+  apart = 44100 / analyser.fftSize;
+  console.info(apart);
+  
   audioBufferSourceNode = audioContext.createBufferSource();
   audioBufferSourceNode.connect(analyser);
   analyser.connect(audioContext.destination);
@@ -167,6 +277,16 @@ var start = function() {
   audioBufferSourceNode.start(audioContext.currentTime, start, length);
   window.requestAnimationFrame(render);
 }
+
+
+
+
+
+
+
+
+
+
 
 $("#play").click(() => {
     start();
