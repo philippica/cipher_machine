@@ -32,6 +32,10 @@
 				height: 200px;
 				width: 1000px;
 			}
+			#frequency {
+				height: 1000px;
+				width: 16380px;
+			}
 			#selectedArea {
 				height: 100%;
 				position: absolute;
@@ -55,6 +59,8 @@
 	    </div>
     </div>
     <button id="play">▶</button>
+	<button onclick="analysis()">analysis</button>
+	<canvas id="frequency"></canvas>
     <script>
 
 
@@ -126,16 +132,6 @@ const cfft = (amplitudes) => {
 	return amplitudes;
 }
 
-
-
-
-
-
-
-
-
-
-
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var source;
 
@@ -143,6 +139,9 @@ function drawBuffer( width, height, context, buffer ) {
     var data = buffer.getChannelData( 0 );
     var step = Math.ceil( data.length / width );
     var amp = 600;
+	context.lineWidth = 0.5;
+	context.lineJoin = "round";
+    context.lineCap = "round";
     for(var i=0; i < width; i++){
         var min = 1.0;
         var max = -1.0;
@@ -153,21 +152,49 @@ function drawBuffer( width, height, context, buffer ) {
             if (datum > max)
                 max = datum;
         }
-        context.fillRect(i,(1+min)*amp-500,1,Math.max(1,(max-min)*amp));
+
+		context.beginPath();
+		context.moveTo(i+0.5, (1+min)*amp-500);
+		context.lineTo(i+0.5, Math.max(1,(max-min)*amp)+(1+min)*amp-500);
+		context.stroke();
     }
 }
+let data;
 
-const analysis = (data) => {
-	const start = 0;
-	const ret = [];
+const analysis = (sampleRate) => {
+	const startL = parseInt($("#start").css("left"));
+	const endL = parseInt($("#end").css("left"));
+	
+	const leftLine = Math.min(startL, endL);
+	const rightLine = Math.max(startL, endL);
+
+	apart = sampleRate / 16384;
+	const start = parseInt(leftLine/1000*data.length);
+	let ret = [];
 	for(let i = start; i < start+16384; i++) {
-		ret.push(data[i]);
+		ret.push(data[i]*(0.54 - (0.46 * Math.cos(2.0 * Math.PI * (i / ((16384 - 1) * 1.0))))));
 	}
 	const temp = cfft(ret);
-	for(const i in temp) {
+	ret = [];
+	var c = document.getElementById("frequency");
+	var ctx = c.getContext("2d");
+	ctx.lineWidth = 1;
+
+	
+	for(let i = 0; i < temp.length / 2; i++) {
+		ctx.beginPath();
+		ctx.moveTo(i, 1000);
 		temp[i] = temp[i].magnitude();
+
+		if(i > 100)ctx.strokeStyle = "red";
+		ctx.lineTo(i, 1000-temp[i]*5);
+		ctx.stroke();
+		if(temp[i] > 35) {
+			ret.push([(i)*apart,i,temp[i]]);
+		}
 	}
 	console.info(temp);
+	console.info(ret);
 }
 
 let g_buf;
@@ -177,7 +204,8 @@ function playSound(arraybuffer) {
         g_buf = buf;
         var canvas = document.getElementById("wave");
         drawBuffer( canvas.width, canvas.height, canvas.getContext('2d'), buf );
-		analysis(buf.getChannelData( 0 ));
+		data = buf.getChannelData( 0 )
+		analysis(buf.sampleRate);
     });
 }
 
@@ -196,6 +224,7 @@ function playFile(file) {
     freader.readAsArrayBuffer(file);
 }
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
 
 $(".line").mousedown((e)=> {
 	const left = e.clientX;
@@ -248,7 +277,7 @@ let audioBufferSourceNode;
 var start = function() {
 	const startL = parseInt($("#start").css("left"));
 	const endL = parseInt($("#end").css("left"));
-	
+
 	const leftLine = Math.min(startL, endL);
 	const rightLine = Math.max(startL, endL);
 
@@ -277,16 +306,6 @@ var start = function() {
   audioBufferSourceNode.start(audioContext.currentTime, start, length);
   window.requestAnimationFrame(render);
 }
-
-
-
-
-
-
-
-
-
-
 
 $("#play").click(() => {
     start();
