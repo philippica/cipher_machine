@@ -58,7 +58,7 @@
 			}
 
 
-			.tooltip {
+			.noteTooltip {
 				position: relative;
 				display: inline-block;
 				cursor: pointer;
@@ -73,13 +73,11 @@
 				text-align: center;
 				padding: 5px 0;
 				border-radius: 6px;
-				/* Position the tooltip text - see examples below! */
 				position: absolute;
 				z-index: 1;
 			}
 
-				/* Show the tooltip text when you mouse over the tooltip container */
-			.tooltip:hover .tooltiptext {
+			.noteTooltip:hover .tooltiptext {
 				visibility: visible;
 			}
 		</style>
@@ -87,17 +85,20 @@
 	<body>
 		
     <input id="files" type="file" id="files" name="files[]" multiple />
+	<input type="radio" name="linesType" id="singleLine" onchange="changeLineType()"checked>只显示一条竖线(用于分析频率时用)
+	<input type="radio" name="linesType" id="doubleLine" onchange="changeLineType()">显示起始和结束两条线(用于播放)
     <div style="height: 200px;">
     	<div id="waveContainer" style="position: absolute">
 	    	<canvas id="wave"></canvas>
 	    	<div id="start" class="line"></div>
-		    <div id="selectedArea"></div>
-		    <div id="end" class="line" style="left: 100%"></div>
+		    <div id="selectedArea" style="display: none;"></div>
+		    <div id="end" class="line" style="left: 100%; display: none;"></div>
 	    </div>
     </div>
     <button id="play">▶</button>
 	<button onclick="analysis()">analysis</button>
 	<div id="frequency"></div>
+	<div id="noteOutput"></div>
 
 
 
@@ -133,6 +134,16 @@ Complex.prototype.cexp = function (dst) {
 
 Complex.prototype.magnitude = function () {
     return Math.sqrt(this.re * this.re + this.im * this.im);
+}
+const changeLineType = () => {
+	const isSingleLine = $('#singleLine').get(0).checked;
+	if(isSingleLine) {
+		$("#selectedArea").css("display", "none");
+		$("#end").css("display", "none");
+	} else {
+		$("#selectedArea").css("display", "unset");
+		$("#end").css("display", "unset");
+	}
 }
 
 const Note = [
@@ -312,6 +323,7 @@ let sampleRate;
 const drawFrequency = (freq) => {
 	$("#frequency").empty();
 	let noteIndex = 0;
+	const note = [];
 	for(let i = 0; i < 2000; i++) {
 		while(1) {
 			if(Math.abs(i*apart+apart/2 - Note[noteIndex+1][1]) < Math.abs(i*apart+apart/2 - Note[noteIndex][1])) {
@@ -320,16 +332,26 @@ const drawFrequency = (freq) => {
 				break;
 			}
 		}
-		$("#frequency").append(`<div class='bar tooltip' style="height: ${freq[i]*3}px;"><span class="tooltiptext">${i*apart} ~ ${(i+1)*apart}Hz ${Note[noteIndex][0]}</span></div>`);
+		note.push(noteIndex);
+		$("#frequency").append(`<div class='bar noteTooltip' style="height: ${freq[i]*5}px;"><span class="tooltiptext">${i*apart} ~ ${(i+1)*apart}Hz ${Note[noteIndex][0]}</span></div>`);
+		freq[i] = [freq[i], noteIndex];
 	}
-
-	freq.sort((x, y) => {return - x[0] + y[0]});
-	console.info(freq);
+	freq = freq.sort((x, y) => {return - x[0] + y[0]}).slice(0, 10).sort((x, y) => {return x[1] - y[1]}).map((x)=> {return Note[x[1]][0];});
+	let output = "";
+	for(let i = 0, j = -1; i < 10; i++) {
+		if(freq[i]===freq[j])continue;
+		j = i;
+		output += freq[i] + " ";
+	}
+	$("#noteOutput").html(output);	
 }
 
 const analysis = () => {
 	const startL = parseInt($("#start").css("left"));
 	const endL = parseInt($("#end").css("left"));
+
+	$("#end").css("left", $("#start").css("left"));
+	$("#selectedArea").css("width", 0);
 	
 	const leftLine = Math.min(startL, endL);
 	const rightLine = Math.max(startL, endL);
@@ -346,7 +368,6 @@ const analysis = () => {
 
 	temp = temp.slice(0, len);
 
-	
 	for(let i = 0; i < len; i++) {
 		temp[i] = temp[i].magnitude();
 		if(temp[i][0] > 35) {
@@ -354,7 +375,6 @@ const analysis = () => {
 		}
 	}
 
-	temp.sort((x, y) => {return - x[0] + y[0]});
 	drawFrequency(temp);
 }
 
