@@ -159,23 +159,24 @@
 
 				renderControlPoint() {
 					$('.round').remove();
+					const list = this.path[this.selectedMarkIndex].substr(1).split(' ').map((x)=>parseInt(x));
+					const lastList = this.path[this.selectedMarkIndex-1].substr(1).split(' ').map((x)=>parseInt(x));
 					if(this.path[this.selectedMarkIndex][0] === 'L') {
-						const getX = (x)=> parseInt(x[0].substr(1));
-						const getY = (x)=> parseInt(x[1]);
 						const cur = this.path[this.selectedMarkIndex].split(' ');
 						const last = this.path[this.selectedMarkIndex-1].split(' ');
-						let x = (getX(cur) + (getX(last) - getX(cur))/3); 
-						let y = (getY(cur) + (getY(last) - getY(cur))/3);
+						let x = (list[0] + (lastList[lastList.length-2] - list[0])/3); 
+						let y = (list[1] + (lastList[lastList.length-1] - list[1])/3);
 						$("#stage").append(`<div class='mark round' style='left: ${x-2}px; top: ${y-2}px;'></div>`);
-						x = (getX(cur) + 2*(getX(last) - getX(cur))/3); 
-						y = (getY(cur) + 2*(getY(last) - getY(cur))/3);
+						x = (list[0] + 2*(lastList[lastList.length-2] - list[0])/3); 
+						y = (list[1] + 2*(lastList[lastList.length-1] - list[1])/3);
 						$("#stage").append(`<div class='mark round' style='left: ${x-2}px; top: ${y-2}px;'></div>`);
-						$(".mark").on("mousedown", (e)=>{this.onMarkClick(e);});
 					} else {
 						const list = this.path[this.selectedMarkIndex].substr(1).split(' ').map((x)=>parseInt(x));
 						$("#stage").append(`<div class='mark round' style='left: ${list[2]-2}px; top: ${list[3]-2}px;'></div>`);
+						$("#stage").append(`<div class='mark round' style='left: ${list[0]-2}px; top: ${list[1]-2}px;'></div>`);
 						console.info(list);
 					}
+					$(".mark").on("mousedown", (e)=>{this.onMarkClick(e);});
 				}
 					
 			}
