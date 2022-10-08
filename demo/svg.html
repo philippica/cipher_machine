@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>svg editor</title>
+		<link rel="stylesheet" href="../dist/static/bootstrap.min.css">
+		<script
+		  src="https://code.jquery.com/jquery-3.6.1.min.js"
+		  integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
+		  crossorigin="anonymous">
+		</script>
+		<style>
+			#stage-svg {
+				width: 300px;
+				height: 200px;
+				border: 1px solid;
+			}
+			.mark {
+				width: 2px;
+				height: 2px;
+				border: 1px solid;
+				position: absolute;
+				cursor: pointer;
+			}
+			#stage {
+				width: fit-content;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="stage">
+			<div id="svg-container">
+				<svg id="stage-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+			</div>
+		</div>
+    	<script>
+			class Pen {
+				constructor(stageId, svgId) {
+					stageId = stageId?stageId:"#stage";
+					svgId = svgId?svgId:"#stage-svg";
+					this.pathId = 0;
+					this.markIndex = 0;
+					this.markList = [];
+					this.path = [];
+					this.selectedMarkIndex = -1;
+					this.svg = $(svgId);
+					$(stageId).click((e) => {
+						this.onStageClick(e);
+					});
+				}
+
+				onStageClick(e) {
+					e.stopPropagation();
+					const x = e.clientX;
+					const y = e.clientY;
+					$("#stage").append(`<div class='mark' id="mark-${this.markIndex}" style='left: ${x-1.5}px; top: ${y-1.5}px;' data-index="${this.markIndex}""></div>`);
+					$(`#mark-${this.markIndex}`).click((e)=>{this.onMarkClick(e);});
+					const ele = $(`#mark-${this.markIndex}`);
+
+					this.markList.push(ele);
+					this.selectedMark(this.markIndex);
+					this.svgMoveTo(e.offsetX, e.offsetY, this.markIndex);
+					this.markIndex++;
+					this.refreshSvg();
+				}
+
+				onMarkClick(e) {
+					e.stopPropagation();
+					const index = parseInt(e.target.dataset["index"]);
+					console.info(index);
+					this.selectedMark(index);
+					e.stopPropagation();
+				}
+
+				svgMoveTo(x, y, index) {
+					console.info(x, y);
+					if(index === 0) {
+						let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+						this.svg.append(`<path id="path-${this.pathId}" d="M${x} ${y}" stroke="black" fill="transparent"/>`);
+						this.path.push(`M${x} ${y}`);
+						return;
+					}
+					const path = $(`#path-${this.pathId}`);
+					this.path.push(`L${x} ${y}`);
+					path.attr("d", this.path.join(" "));
+					console.info(path.attr("d"));
+				} 
+
+				unSelectedMark(markIndex) {
+					if(markIndex < 0)return;
+					const ele = this.markList[markIndex];
+					ele.css("border", "1px solid");
+					ele.css("color", "black");
+				}
+
+				selectedMark(markIndex) {
+					this.unSelectedMark(this.selectedMarkIndex);
+					this.selectedMarkIndex = markIndex;
+					const ele = this.markList[markIndex];
+					ele.css("border", "1.5px solid");
+					ele.css("color", "blue");
+				}
+
+				refreshSvg() {
+					$("#stage-svg").parent().html($("#stage-svg").parent().html())
+				}
+			}
+
+			const pen = new Pen();
+
+		</script>
+	</body>
+</html>
