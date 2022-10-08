@@ -11,8 +11,8 @@
 		</script>
 		<style>
 			#stage-svg {
-				width: 300px;
-				height: 200px;
+				width: 1000px;
+				height: 600px;
 				border: 1px solid;
 			}
 			.mark {
@@ -24,6 +24,13 @@
 			}
 			#stage {
 				width: fit-content;
+			}
+			.round {
+				width: 0px;
+				height: 0px;
+				border-radius: 50%;
+				background-color: red;
+				color: red;
 			}
 		</style>
 	</head>
@@ -37,25 +44,28 @@
     	<script>
 			class Pen {
 				constructor(stageId, svgId) {
-					stageId = stageId?stageId:"#stage";
+					this.stageId = stageId?stageId:"#stage";
 					svgId = svgId?svgId:"#stage-svg";
 					this.pathId = 0;
 					this.markIndex = 0;
 					this.markList = [];
 					this.path = [];
+					this.isDrag = false;
 					this.selectedMarkIndex = -1;
 					this.svg = $(svgId);
-					$(stageId).click((e) => {
+					$(this.stageId).on("mousedown", (e) => {
+						if(e.which !== 1)return;
 						this.onStageClick(e);
 					});
 				}
 
 				onStageClick(e) {
+					if(this.isDrag)return;
 					e.stopPropagation();
 					const x = e.clientX;
 					const y = e.clientY;
 					$("#stage").append(`<div class='mark' id="mark-${this.markIndex}" style='left: ${x-1.5}px; top: ${y-1.5}px;' data-index="${this.markIndex}""></div>`);
-					$(`#mark-${this.markIndex}`).click((e)=>{this.onMarkClick(e);});
+					$(`#mark-${this.markIndex}`).on("mousedown", (e)=>{this.onMarkClick(e);});
 					const ele = $(`#mark-${this.markIndex}`);
 
 					this.markList.push(ele);
@@ -68,23 +78,59 @@
 				onMarkClick(e) {
 					e.stopPropagation();
 					const index = parseInt(e.target.dataset["index"]);
-					console.info(index);
-					this.selectedMark(index);
-					e.stopPropagation();
+					if(index) this.selectedMark(index);
+					let mouseState = 0;
+					this.isDrag = true;
+					let isMoved = false;
+					const mark = $(e.target);
+					$(window).on("mouseup", (mouseEvent) => {
+						this.isDrag = false;
+						mouseState = 1;
+
+						$(window).off("mousemove");
+						$(window).off("mouseup");
+						if(isMoved===false) {
+							if(this.selectedMarkIndex !== 0) {
+								this.renderControlPoint();
+							}
+							return;
+						}
+						if(index) {
+							this.path[index] = `${this.path[index][0]}${mouseEvent.clientX+1.5} ${mouseEvent.clientY+1.5}`;
+							// this.refreshSvg();
+						} else {
+							const x1 = parseInt($($(".round")[1]).offset().left);
+							const y1 = parseInt($($(".round")[1]).offset().top);
+							const x2 = parseInt($($(".round")[0]).offset().left);
+							const y2 = parseInt($($(".round")[0]).offset().top);
+							console.info(x1, y1, x2, y2);
+							const end = this.path[this.selectedMarkIndex].substr(1).split(" ");
+							const x3 = parseInt(end[end.length-2]);
+							const y3 = parseInt(end[end.length-1]);
+							console.info(end);
+							this.path[this.selectedMarkIndex] = `C${x1} ${y1} ${x2} ${y2} ${x3} ${y3}`;
+						}
+						this.refreshSvg();
+					});
+
+					$(window).on("mousemove", (mouseEvent) => {
+						if(mouseState === 1)return;
+						isMoved = true;
+						const x = mouseEvent.clientX;
+						const y = mouseEvent.clientY;
+						mark.css("left", x);
+						mark.css("top", y);
+					});
 				}
 
 				svgMoveTo(x, y, index) {
-					console.info(x, y);
 					if(index === 0) {
 						let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 						this.svg.append(`<path id="path-${this.pathId}" d="M${x} ${y}" stroke="black" fill="transparent"/>`);
 						this.path.push(`M${x} ${y}`);
 						return;
 					}
-					const path = $(`#path-${this.pathId}`);
 					this.path.push(`L${x} ${y}`);
-					path.attr("d", this.path.join(" "));
-					console.info(path.attr("d"));
 				} 
 
 				unSelectedMark(markIndex) {
@@ -103,8 +149,35 @@
 				}
 
 				refreshSvg() {
+					const path = $(`#path-${this.pathId}`);
+					path.attr("d", this.path.join(" "));
+					if(this.selectedMarkIndex !== 0) {
+						this.renderControlPoint();
+					}
 					$("#stage-svg").parent().html($("#stage-svg").parent().html())
 				}
+
+				renderControlPoint() {
+					$('.round').remove();
+					if(this.path[this.selectedMarkIndex][0] === 'L') {
+						const getX = (x)=> parseInt(x[0].substr(1));
+						const getY = (x)=> parseInt(x[1]);
+						const cur = this.path[this.selectedMarkIndex].split(' ');
+						const last = this.path[this.selectedMarkIndex-1].split(' ');
+						let x = (getX(cur) + (getX(last) - getX(cur))/3); 
+						let y = (getY(cur) + (getY(last) - getY(cur))/3);
+						$("#stage").append(`<div class='mark round' style='left: ${x-2}px; top: ${y-2}px;'></div>`);
+						x = (getX(cur) + 2*(getX(last) - getX(cur))/3); 
+						y = (getY(cur) + 2*(getY(last) - getY(cur))/3);
+						$("#stage").append(`<div class='mark round' style='left: ${x-2}px; top: ${y-2}px;'></div>`);
+						$(".mark").on("mousedown", (e)=>{this.onMarkClick(e);});
+					} else {
+						const list = this.path[this.selectedMarkIndex].substr(1).split(' ').map((x)=>parseInt(x));
+						$("#stage").append(`<div class='mark round' style='left: ${list[2]-2}px; top: ${list[3]-2}px;'></div>`);
+						console.info(list);
+					}
+				}
+					
 			}
 
 			const pen = new Pen();
