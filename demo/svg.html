@@ -26,8 +26,8 @@
 				width: fit-content;
 			}
 			.round {
-				width: 0px;
-				height: 0px;
+				width: 1px;
+				height: 1px;
 				border-radius: 50%;
 				background-color: red;
 				color: red;
@@ -63,6 +63,7 @@
 					</div>
 				</div>
 				<button onclick="penClick()">Pen</button>
+                <button onclick="addAnimateClick()">add animation</button>
 			</div>
 			<div id="stage-selector">
 				<div id="selector">
@@ -73,7 +74,7 @@
 			</div>
 		</div>
 		<script src="./svg.js"></script>
-    	<script>
+<script>
 
 
 
@@ -154,9 +155,9 @@ class Pen {
             const offsetLeft = $(this.svg).offset().left;
             this.onStageClick({
                 clientX: event.clientX,
-                clientY: event.clientX,
+                clientY: event.clientY,
                 offsetX: event.clientX-offsetTop,
-                offsetY: event.clientX-offsetLeft
+                offsetY: event.clientY-offsetLeft
             });
         });
 
@@ -279,8 +280,8 @@ class Pen {
         }
         const list = this.path[this.selectedMarkIndex].substr(1).split(' ').map((x)=>parseInt(x));
         const lastList = this.path[this.selectedMarkIndex-1].substr(1).split(' ').map((x)=>parseInt(x));
-        const offsetTop = $(this.svg).offset().top;
-        const offsetLeft = $(this.svg).offset().left;
+        const offsetTop = $(this.svg).offset().top+2;
+        const offsetLeft = $(this.svg).offset().left+2;
         //console.info(offsetX, offsetY);
         if(this.path[this.selectedMarkIndex][0] === 'L') {
             const cur = this.path[this.selectedMarkIndex].split(' ');
@@ -382,7 +383,7 @@ const addStage = () => {
     const pen = new Pen(g_stages.stages.length);
     g_stages.stages.push ({pen});
 
-    $("#selector").append(`<div class="stage-slice selectedSlice" data-index=${g_stages.selectStage} onclick="onClickStageSlice(event)"></div>`);
+    $("#selector").append(`<div class="stage-slice selectedSlice" data-index=${g_stages.selectStage} onclick="onClickStageSlice(event)"><input value="1"></input></div>`);
 }
 
 addStage();
@@ -403,13 +404,17 @@ const onClickStageSlice = (e) => {
     $(e.target).addClass("selectedSlice");
     const index = parseInt(e.target.dataset["index"]);
     g_stages.selectStage = index;
-    if(g_stages.stages[index].path) {
+    if(g_stages.stages[index] && g_stages.stages[index].path) {
         const path = g_stages.stages[index].path;
         const pen = new Pen(index, path);
         g_stages.stages[g_stages.selectStage] = {
             pen
         }
     }
+}
+
+const addAnimateClick = () => {
+
 }
 
 
