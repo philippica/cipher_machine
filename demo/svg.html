@@ -14,6 +14,8 @@
 				width: 1000px;
 				height: 600px;
 				border: 1px solid;
+				background: -webkit-linear-gradient(top, transparent 15px, #cccccc73 0), -webkit-linear-gradient(left, transparent 15px, #cccccc73 0);
+    			background-size: 16px 16px;
 			}
 			.mark {
 				width: 2px;
@@ -73,7 +75,7 @@
 				</div>
 			</div>
 		</div>
-		<script src="./svg.js"></script>
+		
 <script>
 
 
@@ -150,17 +152,6 @@ class Pen {
 
         this.bindMarkEvent(`#mark-${this.markIndex+this.deletedCound}`);
 
-        $(`#mark-${this.markIndex+this.deletedCound}`).dblclick((event) => {
-            const offsetTop = $(this.svg).offset().top;
-            const offsetLeft = $(this.svg).offset().left;
-            this.onStageClick({
-                clientX: event.clientX,
-                clientY: event.clientY,
-                offsetX: event.clientX-offsetTop,
-                offsetY: event.clientY-offsetLeft
-            });
-        });
-
         
         const ele = $(`#mark-${this.markIndex+this.deletedCound}`);
 
@@ -221,6 +212,16 @@ class Pen {
                 lock: this.lock
             }
         );
+		$(markId).dblclick((event) => {
+            const offsetTop = $(this.svg).offset().top+2;
+            const offsetLeft = $(this.svg).offset().left+2;
+            this.onStageClick({
+                clientX: event.clientX,
+                clientY: event.clientY,
+                offsetX: event.clientX-offsetTop,
+                offsetY: event.clientY-offsetLeft
+            });
+        });
     }
 
     svgMoveTo(x, y, index) {
@@ -383,7 +384,7 @@ const addStage = () => {
     const pen = new Pen(g_stages.stages.length);
     g_stages.stages.push ({pen});
 
-    $("#selector").append(`<div class="stage-slice selectedSlice" data-index=${g_stages.selectStage} onclick="onClickStageSlice(event)"><input value="1"></input></div>`);
+    $("#selector").append(`<div class="stage-slice selectedSlice" data-index=${g_stages.selectStage} onclick="onClickStageSlice(event)"><input value="图层${g_stages.selectStage}"></input> <div><button>删除</button><button>隐藏</button></div></div>`);
 }
 
 addStage();
@@ -396,6 +397,7 @@ $(document).keydown((e)=>{
 });
 
 const onClickStageSlice = (e) => {
+	if(!e.target.dataset["index"])return;
     const path = g_stages.stages[g_stages.selectStage].pen.unfocus();
     g_stages.stages[g_stages.selectStage] = {
         path,
@@ -414,6 +416,11 @@ const onClickStageSlice = (e) => {
 }
 
 const addAnimateClick = () => {
+	const index = g_stages.selectStage;
+	const path = $(`#path-${index}`);
+	const begin = path.attr('d');
+	const end = $(`#path-0`).attr('d');
+	path.html(`<animate attributeName='d' dur='2s' values="${begin};${end};" repeatCount="indefinite"/>`);
 
 }
 
