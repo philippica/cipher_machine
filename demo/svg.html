@@ -66,6 +66,7 @@
 				</div>
 				<button onclick="penClick()">Pen</button>
                 <button onclick="addAnimateClick()">add animation</button>
+				<button onclick="exportSvg()">export</button>
 			</div>
 			<div id="stage-selector">
 				<div id="selector">
@@ -420,10 +421,30 @@ const addAnimateClick = () => {
 	const path = $(`#path-${index}`);
 	const begin = path.attr('d');
 	const end = $(`#path-0`).attr('d');
-	path.html(`<animate attributeName='d' dur='2s' values="${begin};${end};" repeatCount="indefinite"/>`);
+	path.html(`<animate id="animate" attributeName='d' dur='2s' begin="mouseover" values="${begin};${end};" repeatCount="indefinite"/>`);
 
 }
 
+const exportSvg = () => {
+	const html = $("#svg-container").html();
+	const page = window.open(``);
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(html, "image/svg+xml");
+	page.document.write(`<html><head><style>
+		    #stage-svg {
+				width: 1000px;
+				height: 600px;
+			}
+			</style></head><body>${html}</body></html>`);
+    //document.body.appendChild(doc.documentElement);
+    $(page.document).ready((e)=>{
+        const index = g_stages.selectStage;
+	    const path = $(`#path-${index}`);
+	    const begin = path.attr('d');
+	    const end = $(`#path-0`).attr('d');
+	    path.html(`<animate id="animate" attributeName='d' dur='2s' values="${begin};${end};" repeatCount="indefinite"/>`);
+    })
+}
 
 		</script>
 	</body>
