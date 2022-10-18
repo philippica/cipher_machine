@@ -1,19 +1,18 @@
 // TODO: Need to be refacted, the code here is tooooo terrible
 import { SolverParser } from './solverParser';
 export class SudokuSolver {
-  constructor(rulesList, n, m) {
-    this.n = n;
-    this.m = m;
-
+  constructor() {
     this.possibleArray = [];
     this.connectedRules = [];
     this.globalRules = [];
     this.globalFinalRules = [];
     this.weight = [];
-    this.solve(rulesList, n, m);
   }
 
-  solve(rulesList, n, m) {
+  async solve(rulesList, n, m, callback) {
+    this.n = n;
+    this.m = m;
+    this.callback = callback;
     const possibleArray = this.possibleArray;
     const connectedRules = this.connectedRules;
     const globalRules = this.globalRules;
@@ -61,7 +60,9 @@ export class SudokuSolver {
       }
     }
     this.relax();
-    this.dfs();
+    $('#sudokuAnswer').html("");
+    await this.dfs();
+    $('#sudokuAnswer').append("已找到所有解");
   };
 
 
@@ -459,7 +460,7 @@ export class SudokuSolver {
       }
       console.info(result);
       console.info(answer);
-      $('#sudokuAnswer').html(answer);
+      $('#sudokuAnswer').append(answer + "\n-----------------------\n");
   }
 
   relax() {
@@ -498,11 +499,16 @@ export class SudokuSolver {
     return smallestGridIndex;
   }
 
-  dfs() {
+  async dfs() {
     const smallestGridIndex = this.getSmallestGrid();
     if(smallestGridIndex === -1) {
       this.print();
-      return -1;
+      await this.callback();
+      if (confirm('发现了一个解，是否继续寻找下一个解?(可能耗时很久)')) {
+        return 0;
+      } else {
+        return -1;
+      }
     }
     const set = this.possibleArray[smallestGridIndex];
 
@@ -526,7 +532,7 @@ export class SudokuSolver {
         }
       }
 
-      const result = this.dfs();
+      const result = await this.dfs();
       if(result === -1) {
         return result;
       }

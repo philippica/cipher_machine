@@ -3,10 +3,20 @@ export class SolverParser {
   constructor(rulesList, n, m, globalRules, globalFinalRules) {
     this.n = n;
     this.m = m;
+    this.filledArea = [];
     this.globalRules = globalRules;
     this.globalFinalRules = globalFinalRules;
+    const lastParse = [];
     for (let i = 0; i < rulesList.length; i++) {
-      this.parseLine(rulesList[i].replace(/\s/g, ''));
+      const rule = rulesList[i].replace(/\s/g, '');
+      if(rule[0]=='没') {
+        lastParse.push(rule);
+      } else {
+        this.parseLine(rule);
+      }
+    }
+    for(const rule of lastParse) {
+      this.parseLine(rule);
     }
   }
 
@@ -23,8 +33,23 @@ export class SolverParser {
       alert(`我不认识"${lineStr}"的规则，请仔细检查`);
       return;
     }
-    if(rules.smallerThan || rules.largerThan) {
+    if(restrictAreas.restrictArea.noFill) {
+      const restrictArea = [];
+      for(let i = 0; i < this.n*this.m; i++) {
+        if(this.filledArea[i])continue;
+        restrictArea.push(i);
+      }
+      globalRules.push({
+        restrictAreas: restrictArea,
+        rules,
+      });
+    } else if(rules.smallerThan || rules.largerThan) {
       for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
+        if(lineStr[0]!=='每'){
+          for(const area of restrictAreas.restrictArea[i]) {
+            this.filledArea[area] = true;
+          }
+        }
         globalFinalRules.push({
           restrictAreas: restrictAreas.restrictArea[i],
           rules,
@@ -32,6 +57,11 @@ export class SolverParser {
       }
     } else {
       for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
+        if(lineStr[0]!=='每'){
+          for(const area of restrictAreas.restrictArea[i]) {
+            this.filledArea[area] = true;
+          }
+        }
         globalRules.push({
           restrictAreas: restrictAreas.restrictArea[i],
           rules,
@@ -200,6 +230,11 @@ export class SolverParser {
       return {
         stopPos: lineToken.stopPos + 1,
         restrictArea: [ret],
+      };
+    } else if(str[0] === "没") { //没填的格子默认是
+      return {
+        stopPos: 7,
+        restrictArea: {noFill: true},
       };
     }
   };
