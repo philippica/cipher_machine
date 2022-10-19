@@ -33,23 +33,8 @@ export class SolverParser {
       alert(`我不认识"${lineStr}"的规则，请仔细检查`);
       return;
     }
-    if(restrictAreas.restrictArea.noFill) {
-      const restrictArea = [];
-      for(let i = 0; i < this.n*this.m; i++) {
-        if(this.filledArea[i])continue;
-        restrictArea.push(i);
-      }
-      globalRules.push({
-        restrictAreas: restrictArea,
-        rules,
-      });
-    } else if(rules.smallerThan || rules.largerThan) {
+    if(rules.smallerThan || rules.largerThan) {
       for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
-        if(lineStr[0]!=='每'){
-          for(const area of restrictAreas.restrictArea[i]) {
-            this.filledArea[area] = true;
-          }
-        }
         globalFinalRules.push({
           restrictAreas: restrictAreas.restrictArea[i],
           rules,
@@ -57,11 +42,6 @@ export class SolverParser {
       }
     } else {
       for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
-        if(lineStr[0]!=='每'){
-          for(const area of restrictAreas.restrictArea[i]) {
-            this.filledArea[area] = true;
-          }
-        }
         globalRules.push({
           restrictAreas: restrictAreas.restrictArea[i],
           rules,
@@ -208,13 +188,16 @@ export class SolverParser {
       }
     } else if (str[0] === '第') {
       const lineToken = this.getNumber(str, 1);
+      this.filledArea[lineToken.value - 1] = true;
       if (lineToken) {
         if (str[lineToken.stopPos] === '行') {
           for (let col = 0; col < this.m; col++) {
+            this.filledArea[(lineToken.value - 1) * m + col] = true;
             ret.push((lineToken.value - 1) * m + col);
           }
         } else if (str[lineToken.stopPos] === '列') {
           for (let row = 0; row < this.n; row++) {
+            this.filledArea[row * this.m + (lineToken.value - 1)] = true;
             ret.push(row * this.m + (lineToken.value - 1));
           }
         } else if (str[lineToken.stopPos] === '格') {
@@ -230,11 +213,6 @@ export class SolverParser {
       return {
         stopPos: lineToken.stopPos + 1,
         restrictArea: [ret],
-      };
-    } else if(str[0] === "没") { //没填的格子默认是
-      return {
-        stopPos: 7,
-        restrictArea: {noFill: true},
       };
     }
   };
@@ -387,6 +365,19 @@ export class SolverParser {
           }
         }
         this.globalRules.push(dummyRule);
+      }
+
+      return true;
+    } else if(lineStr[0] === '没') { //没填的格子默认是"第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是0"
+      let content = lineStr.substr(9);
+      content = content.substr(0, content.length-1);
+      console.info(content);
+
+      for(let i = 0; i < this.n*this.m; i++) {
+        if(this.filledArea[i])continue;
+        const contentSubstitue = content.replace("<格子序号>", (i+1).toString())
+        console.info(contentSubstitue);
+        this.parseLine(contentSubstitue);
       }
 
       return true;
