@@ -53,10 +53,22 @@
             .selectedSlice {
                 border: 2px solid;
             }
+            #tools{
+                border: 1px solid;
+                height: 60px;
+                padding: 10px;
+            }
 		</style>
 	</head>
 	<body>
-
+        <div id="tools">
+            <span>宽度: </span>
+            <input id="stroke-width" value="1"/>
+            <span>颜色: </span>
+            <input id="stroke-color" value="black"/>
+            <span>线形: </span>
+            <input id="stroke-type" value=""/>
+        </div>
 		<div id="container" style="display: flex;">
 			<div>
 				<div id="stage">
@@ -191,9 +203,9 @@ class Pen {
                 const offsetLeft = $(this.svg).offset().left;
                 if(index !== undefined) {
                     if(this.path[index][0] === 'C') {
-                        this.path[index] = `L${event.clientX+1.5-offsetLeft} ${event.clientY+1.5-offsetLeft}`;
+                        this.path[index] = `L${event.clientX+1.5-offsetLeft} ${event.clientY+1.5-offsetTop}`;
                     } else {
-                        this.path[index] = `${this.path[index][0]}${event.clientX+1.5-offsetLeft} ${event.clientY+1.5-offsetLeft}`;
+                        this.path[index] = `${this.path[index][0]}${event.clientX+1.5-offsetLeft} ${event.clientY+1.5-offsetTop}`;
                     }
                     // this.refreshSvg();
                 } else {
@@ -227,8 +239,10 @@ class Pen {
 
     svgMoveTo(x, y, index) {
         if(index === 0) {
-            let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             $(this.svg).append(`<path id="path-${this.pathId}" d="M${x} ${y}" stroke="black" fill="transparent"/>`);
+            let path = $(`path-${this.pathId}`)
+            const strokeWidth = parseInt($("#stroke-width").val());
+            path.attr("stroke-width", strokeWidth);
             this.path.push(`M${x} ${y}`);
             return;
         }
@@ -362,6 +376,23 @@ class Draggable {
     }
 }
 
+class Animation {
+    static pathAnimate(path1Index, path2Index) {
+        let path1 = g_stages.stages[path1Index].path ? g_stages.stages[path1Index].path:g_stages.stages[path1Index].pen.unfocus();
+        let path2 = g_stages.stages[path2Index].path ? g_stages.stages[path2Index].path:g_stages.stages[path2Index].pen.unfocus();
+        if(path1.length > path2.length) {
+            let temp = path1;
+            path1 = path2;
+            path2 = temp;
+        }
+        const diff = path2.length-path1.length;
+        for(let i = path1.length; i < path2.length; i++) {
+            path1.push(path1[path1.length-1]);
+        }
+        return [path1.join(' '), path2.join(' ')];
+    }
+}
+
 
 
 const g_stages = {
@@ -385,7 +416,7 @@ const addStage = () => {
     const pen = new Pen(g_stages.stages.length);
     g_stages.stages.push ({pen});
 
-    $("#selector").append(`<div class="stage-slice selectedSlice" data-index=${g_stages.selectStage} onclick="onClickStageSlice(event)"><input value="图层${g_stages.selectStage}"></input> <div><button>删除</button><button>隐藏</button></div></div>`);
+    $("#selector").append(`<div class="stage-slice selectedSlice" data-index=${g_stages.selectStage} onclick="onClickStageSlice(event)"><input value="图层${g_stages.selectStage}"></input> <div style="width: fit-content"><button>删除</button><button>隐藏</button></div></div>`);
 }
 
 addStage();
@@ -398,13 +429,18 @@ $(document).keydown((e)=>{
 });
 
 const onClickStageSlice = (e) => {
-	if(!e.target.dataset["index"])return;
+    console.info("wtf");
+	if(!e.target.dataset["index"]) {
+        console.info(e.target);
+        return;
+    }
     const path = g_stages.stages[g_stages.selectStage].pen.unfocus();
     g_stages.stages[g_stages.selectStage] = {
         path,
     };
     $(".selectedSlice").removeClass("selectedSlice");
     $(e.target).addClass("selectedSlice");
+    console.info("hahah");
     const index = parseInt(e.target.dataset["index"]);
     g_stages.selectStage = index;
     if(g_stages.stages[index] && g_stages.stages[index].path) {
@@ -418,11 +454,13 @@ const onClickStageSlice = (e) => {
 
 const addAnimateClick = () => {
 	const index = g_stages.selectStage;
+    const paths = Animation.pathAnimate(index, 0);
 	const path = $(`#path-${index}`);
 	const begin = path.attr('d');
 	const end = $(`#path-0`).attr('d');
-	path.html(`<animate id="animate" attributeName='d' dur='2s' begin="mouseover" values="${begin};${end};" repeatCount="indefinite"/>`);
-
+    $("#stage-svg").append(`<path id="animation" fill="transparent" stroke="black"/>`);
+    $("#animation").html(`<animate id="animate" attributeName='d' dur='2s' values="${paths[0]};${paths[1]};" fill="transparent" repeatCount="indefinite"/>`);
+    $("#stage-svg").parent().html($("#stage-svg").parent().html())
 }
 
 const exportSvg = () => {
@@ -445,6 +483,14 @@ const exportSvg = () => {
 	    path.html(`<animate id="animate" attributeName='d' dur='2s' values="${begin};${end};" repeatCount="indefinite"/>`);
     })
 }
+
+$("#stroke-width").change((e) => {
+    const strokeWidth = parseInt($(e.target).val());
+    const index = g_stages.selectStage;
+	const path = $(`#path-${index}`);
+    path.attr("stroke-width", strokeWidth);
+    console.info(strokeWidth);
+})
 
 		</script>
 	</body>
