@@ -188,8 +188,8 @@ export class SolverParser {
       }
     } else if (str[0] === '第') {
       const lineToken = this.getNumber(str, 1);
-      this.filledArea[lineToken.value - 1] = true;
       if (lineToken) {
+        this.filledArea[lineToken.value - 1] = true;
         if (str[lineToken.stopPos] === '行') {
           for (let col = 0; col < this.m; col++) {
             this.filledArea[(lineToken.value - 1) * m + col] = true;
