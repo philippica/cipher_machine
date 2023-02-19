@@ -49,7 +49,7 @@ export class OneWord {
     }
 
 
-    async findByRegularExpression(str, callback) {
+    async findByRegularExpression(str, callback, filter) {
         const regularExpression = eval(`/${str}/`);
         const answer = [];
         if(!callback) {
@@ -58,7 +58,9 @@ export class OneWord {
         for(let pattern in words) {
             if(!pattern)continue;
             const len = pattern.length;
-            for(let word of words[pattern]) {
+            for(let i = 0; i < words[pattern].length; i++) {
+                const word = words[pattern][i];
+                if(this.isFilter(pattern, i, filter))continue;
                 if(regularExpression.test(word)) {
                     answer.push(word);
                     await callback(len, word);
@@ -68,7 +70,7 @@ export class OneWord {
         return answer;
     }
 
-    findByWildcard(wildcard, callback) {
+    findByWildcard(wildcard, callback, filter) {
         let regx = '';
         for(let x of wildcard) {
             if(x === '#') {
@@ -79,7 +81,19 @@ export class OneWord {
                 regx += x;
             }
         }
-        return this.findByRegularExpression(`^${regx}$`, callback);
+        return this.findByRegularExpression(`^${regx}$`, callback, filter);
+    }
+
+    isFilter(patten, index, filter) {
+        if(!window.c)return false;
+        if(!window.c[patten]) {
+            return false;
+        }
+        if((filter & 16) === 0 && (window.c[patten][index] & 16)===0)return true;
+        if((filter & window.c[patten][index]) != 0) {
+            return false;
+        }
+        return true;
     }
 
     makeLetterSet(str) {

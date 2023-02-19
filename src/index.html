@@ -244,6 +244,33 @@
 			<div id="word-container">
 				<div id="word-capsule" class="capsule" data-expend=true>puzzle 字典(正则匹配、anagram、通配符、编辑距离)</div>
 				<div id="word-main" class="content-area">
+					<fieldset>
+						<legend>选择需要筛选的类别</legend>
+						<div>
+							<input type="checkbox" id="all" name="all" checked>
+							<label for="all">全选</label>
+						</div>
+						<div>
+						  <input type="checkbox" id="noun" name="noun" checked>
+						  <label for="noun">名词</label>
+						</div>
+						<div>
+							<input type="checkbox" id="verb" name="verb" checked>
+							<label for="verb">动词</label>
+						</div>
+						<div>
+							<input type="checkbox" id="adj" name="adj" checked>
+							<label for="adj">形容词</label>
+						</div>
+						<div>
+							<input type="checkbox" id="adv" name="adv" checked>
+							<label for="adv">副词</label>
+						</div>
+						<div>
+							<input type="checkbox" id="lowfrequcy" name="lowfrequcy" checked>
+							<label for="lowfrequcy">低频词</label>
+						</div>
+					</fieldset>
 					<textarea id="one-word-content" class="form-control" placeholder="请输入要查询的单词"></textarea>
 					<div id="method-select">
 						<select onchange="changeMethod()" id="find-method">
@@ -717,6 +744,13 @@
 						await sleep(1);
 					}
 				}
+				let filter = 0;
+				if($("#noun").is(':checked')) filter |= 1;
+				if($("#verb").is(':checked')) filter |= 2;
+				if($("#adj").is(':checked')) filter |= 4;
+				if($("#adv").is(':checked')) filter |= 8;
+				if($("#lowfrequcy").is(':checked')) filter |= 16;
+
 				const solverFunc = new Solver.OneWord()[method].bind(solver);
 				if(method === "findSimilarity") {
 					const regex = $('#similarityRegex').val();
@@ -731,7 +765,7 @@
 						await findWord(wordLength, word);
 					}
 					const similarityDegree = parseInt($("#similarityDegree").val());
-					answer = await solverFunc(content, similarityDegree, findSimilarity)
+					answer = await solverFunc(content, similarityDegree, findSimilarity, filter)
 				} else if(method === 'contains') {
 					const regex = $('#similarityRegex').val();
 					let regularExpression;
@@ -744,9 +778,9 @@
 						}
 						await findWord(wordLength, word);
 					}
-					answer = await solverFunc(content, findSimilarity)
+					answer = await solverFunc(content, findSimilarity, filter)
 				} else {
-					answer = await solverFunc(content, findWord)
+					answer = await solverFunc(content, findWord, filter)
 				}
 			});
 
@@ -1587,7 +1621,7 @@ $("#play").click(() => {
 
 
 		</script>
-
+		<script src="./out.js"></script>
 		</div>
 	</body>
 </html>
