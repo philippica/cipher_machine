@@ -11,6 +11,7 @@ module.exports = {
     library: 'Solver',
     libraryTarget: 'umd',
     globalObject: 'this',
+    hashFunction: "sha256"
   },
   plugins: [
     new htmlWebpackPlugin({

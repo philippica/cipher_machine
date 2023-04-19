@@ -233,6 +233,13 @@
 			.noteTooltip:hover .tooltiptext {
 				visibility: visible;
 			}
+			.form-control {
+				font-family: monospace, monospace;
+			}
+			.plain-code-area {
+				font-size: x-large;
+				margin: 40px;
+			}
  		</style>
 		<link rel="stylesheet" href="./static/nonogram.css">
 		<link rel="stylesheet" href="./static/bootstrap.min.css">
@@ -451,16 +458,22 @@
 					<div id="cipher-tools">
 						<button id="caeser-brute-force" style="margin: 20px;">暴力凯撒</button>
 						<button id="QWE" style="margin: 20px;">QWE</button>
+						<hr/>
 						<div id="general-substitute-cipher">
 							<select onchange="changeSubstitutionMethod()" id="substitution-cipher-method">
-								<option value ="QWECipher">QWE加密</option>
-								<option value ="QWECipher">QWE解密</option>
+								<option value ="QWECipher">字母序(a = 1, b = 2)</option>
+								<option value ="QWECipher">字母序(a = 01, b = 02)</option>
+								<option value ="QWECipher">QWE</option>
 								<option value ="QWECipher">Atbash</option>
+								<option value ="QWECipher">5*5棋盘(i/j同格)</option>
+								<option value ="QWECipher">手机键盘</option>
+								<option value ="QWECipher">莫尔斯电码(morse code)</option>
 							</select>
-							<div id="substitute-table" style="display: flex;"></div>
-							<button onclick="solveGeneralSubstitution()">解码</button>
+							<textarea id="key-textarea" class="form-control" rows="4" oninput="onTypeKey()"></textarea>
+							<button onclick="encode()">编码</button>
+							<button onclick="decode()">解码</button>
 						</div>
-						<input id="autoDecode" type="checkbox" onclick="autoCheckClick()"/> 自动暴力
+						<div style="margin: 10px;">将<input id="replace1"/> 替换成 <input id="replace2"/> <button onclick="replaceStr()">替换</button></div>
 					</div>
 					<textarea id="cipher-code-textarea" class="form-control" rows="20" placeholder="请输入密文" oninput="onTypePlainCode()"></textarea>
 					<div id="plain-code-area"></div>
@@ -690,7 +703,7 @@
 			const solver = new Solver.OneWord();
 			const oneWordHelpContent = {
 				"findByWildcard": "当前是通配符模式 - 你可以使用#表示一个字母或者*表示多个字母 例如 bo##ke*r 可以匹配到bookkeeper",
-				"findByRegularExpression": "当前是正则表达式模式 - 如果你熟悉正则表达式，那它将会是一个非常强大的工具 例如^[abcd][ef].*[aeiou]$ 能够搜到第一个字母为abcd中一个，第二个字母为ef中一个，并且以元音结尾的所有单词",
+				"findByRegularExpression": "当前是正则表达式模式 - 如果你熟悉正则表达式，那它将会是一个非常强大的工具 例如^[abcd][ef].*[aeiou]$ 能够搜到第一个字母为abcd中一个，第二个字母为ef中一个，并且以元音结尾的所有单词\n\n例如寻找第一个字符和第四个字符相同第二个字符为b的长度为8的单词 ^(.)b.\\1....$ 解释：(其中\\1表示从左到右第一个括号需要和它相同 .代表任意字符 ^ $分别代表头和尾)\n\n例如寻找长度为4的第一个字符和第四个字符相同，第二个字符和第三个字符相同的单词: ^(.)(.)\\2\\1$\n\n例如寻找第一个字符是元音，且第一个字符和第三个字符相同，长度不定，第二个字符不可能是b或者c的单词 ^([aeiou])[^bc]\\1\n",
 				"contains": "当前是包含模式 - 能够搜出所有至少包含这些字母的单词，例如abbcc会找到所有至少包含一个a两个b和两个c的单词",
 				"findSimilarity": "当前是相似度模式-给出单词找到与它相想的单词，两个词相似度即编辑距离，如果能通过一次添加一个字母，替换一个字母或删除一个字母能从一个单词变成另一个单词，那它们的相似度为1",
 				"findByCode": "最灵活的找词方式，通过自己编写js代码，实现一个接受一个字符串作为参数的check函数来寻找单词\n函数同时会传入一个tool的参数，包含很多有用函数，当前包括:\n\tisWord(str: string) :bool : 判断传入字符串是否为英语单词\n\tanagram(str: string, letters: string) :bool : 判断传入字符串是否为letters参数中的字符排列组成"
@@ -962,6 +975,10 @@
 				return ans;
 			}
 
+			const removeSpace = () => {
+				$('#plain-code-area').html();
+			}
+
 			const caeserProcess = () => {
 				const cipherCode = $("#cipher-code-textarea").val();
 				$('#plain-code-area').empty();
@@ -970,13 +987,6 @@
 					$('#plain-code-area').append(`<div style="display:flex;"><div>凯撒${i}： </div><div>${pt}</div></div>`);
 				}
 			}
-
-			
-			const substitutionTable = [
-				['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l','z','x','c','v','b','n','m'],
-				['k','x','v','m','c','n','o','p','h','q','r','s','z','y','i','j','a','d','l','e','g','w','b','u','f','t'],
-				['z','y','x','w','v','u','t','s','r','q','p','o','n','m','l','k','j','i','h','g','f','e','d','c','b','a'],
-			];
 
 			const makeMap = (mapList) => {
 				const ret = {};
@@ -991,20 +1001,100 @@
 			{
 				caeserProcess();
 			});
-			
-			const useMethod = (index) => {
-				$("#substitute-table").empty();
-				for(let i = 0; i < 26; i++) {
-					const letter = String.fromCharCode(97 + i);
-					$("#substitute-table").append(`<div class="map-unit"><div>${letter}</div><input id="cipher-text" data-pt="${letter}" value="${substitutionTable[index][i]}"/></div>`);
-				}
+
+			const replaceStr = () => {
+				const cipherText = $('#cipher-code-textarea').val();
+				$('#cipher-code-textarea').val(cipherText.replaceAll($('#replace1').val(), $('#replace2').val()));
 			}
 
+			decodeProcess = (key1, key2) => {
+				key1 = key1.trim().replaceAll('  ', ' ').split(' ');
+				key2 = key2.trim().replaceAll('  ', ' ').split(' ');
+				const keyLen = key1.length;
+				const cipherText = $('#cipher-code-textarea').val();
+				let plainText = '';
+				for(let i = 0; i < cipherText.length;) { // TODO: AC automaton instead of brute force
+					let match = -1;
+					for(let j = 0; j < keyLen; j++) {
+						if(cipherText.startsWith(key1[j], i)) {
+							if(match == -1) {
+								match = j;
+								continue;
+							}
+							if(key1[match].length < key1[j].length) {
+								match = j;
+							}
+						}
+					}
+					if(match == -1) {
+						plainText += cipherText[i];
+						i++;
+					} else {
+						i += key1[match].length;
+						plainText += key2[match] + ' ';
+					}
+				}
+				console.info(plainText);
+				$('#plain-code-area').html(`<div style="display:flex;">结果: ${plainText}</div>`);
+			}
+
+			const decode = () => {
+				const key = $("#key-textarea").val().split('\n');
+				decodeProcess(key[1], key[0]);
+			}
+
+			const encode = () => {
+				const key = $("#key-textarea").val().split('\n');
+				decodeProcess(key[0], key[1]);
+			}
+
+			const substitutionTable = [
+				'q w e r t y u i o p a s d f g h j k l z x c v b n m',
+				'a b c d e f g h i j k l m n o p q r s t u v w x y z',
+				'11 12 13 14 15 21 22 23 24 24 25 31 32 33 34 35 41 42 43 44 45 51 52 53 54 55',
+				'21 22 23 31 32 33 41 42 43 51 52 53 61 62 63 71 72 73 74 81 82 83 91 92 93 94',
+				'1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26',
+				'01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26',
+				'0 1 2 3 4 5 6 7 8 9',
+				'.- -... -.-. -.. . ..-. --. .... .. .--- -.- .-.. -- -. --- .--. --.- .-. ... - ..- ...- .-- -..- -.-- --..',
+				'----- .---- ..--- ...-- ....- ..... -.... --... ---.. ----.',
+			];
+
+
+			const useMethod = (method) => {
+				let str = '';
+				switch(method) {
+				case 0:
+					str += substitutionTable[1] + '\n' + substitutionTable[4];
+					break;
+				case 1:
+					str += substitutionTable[1] + '\n' + substitutionTable[5];
+					break;
+				case 2:
+					str += substitutionTable[1] + '\n' + substitutionTable[0];
+					break;
+				case 3:
+					str += substitutionTable[1] + '\n' + substitutionTable[1].split('').reverse().join('');
+					break;
+				case 4:
+					str += substitutionTable[1] + '\n' + substitutionTable[2];
+					break;
+				case 5:
+					str += substitutionTable[1] + '\n' + substitutionTable[3];
+					break;
+				case 6:
+					str += substitutionTable[1] + ' ' + substitutionTable[6] + '\n' + substitutionTable[7] + ' ' + substitutionTable[8];
+					break;
+				}
+				$('#key-textarea').val(str);
+			}
+			
 			const changeSubstitutionMethod = () => {
 				const methodIndex = $("#substitution-cipher-method")[0].selectedIndex;
 				useMethod(methodIndex);
 
 			}
+			changeSubstitutionMethod();
 
 			const onTypePlainCode = (e) => {
 				const isAutoDecode = $('#autoDecode').get(0).checked;
