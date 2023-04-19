@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>svg editor</title>
+		<link rel="stylesheet" href="../dist/static/bootstrap.min.css">
+		<script
+		  src="https://code.jquery.com/jquery-3.6.1.min.js"
+		  integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
+		  crossorigin="anonymous">
+		</script>
+		<style>
+			#stage-svg {
+				width: 1000px;
+				height: 600px;
+				border: 1px solid;
+				background: -webkit-linear-gradient(top, transparent 15px, #cccccc73 0), -webkit-linear-gradient(left, transparent 15px, #cccccc73 0);
+    			background-size: 16px 16px;
+			}
+			.mark {
+				width: 2px;
+				height: 2px;
+				border: 1px solid;
+				position: absolute;
+				cursor: pointer;
+			}
+			#stage {
+				width: fit-content;
+			}
+			.round {
+				width: 1px;
+				height: 1px;
+				border-radius: 50%;
+				background-color: red;
+				color: red;
+			}
+			#stage-selector {
+				border-radius: 5%;
+				border: 1px solid;
+				width: 300px;
+				height: 500px;
+				margin: 20px;
+			}
+			#selector {
+				height: 90%;
+			}
+			.stage-slice{
+				width: 96%;
+				height: 120px;
+				background-color: gray;
+				margin: 5px;
+			}
+            .selectedSlice {
+                border: 2px solid;
+            }
+            #tools{
+                border: 1px solid;
+                height: 60px;
+                padding: 10px;
+            }
+		</style>
+	</head>
+	<body>
+        <div id="tools">
+            <span>宽度: </span>
+            <input id="stroke-width" value="1"/>
+            <span>颜色: </span>
+            <input id="stroke-color" value="black"/>
+            <span>线形: </span>
+            <input id="stroke-type" value=""/>
+        </div>
+		<div id="container" style="display: flex;">
+			<div>
+				<div id="stage">
+					<div id="svg-container">
+						<svg id="stage-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+					</div>
+				</div>
+				<button onclick="penClick()">Pen</button>
+                <button onclick="addAnimateClick()">add animation</button>
+				<button onclick="exportSvg()">export</button>
+			</div>
+			<div id="stage-selector">
+				<div id="selector">
+				</div>
+				<div id="buttons-area">
+					<button id="add-stage" onclick="addStage()">add</button>
+				</div>
+			</div>
+		</div>
+		
+<script>
+
+
+
+class Pen {
+    constructor(penId, path, stageId, svgId) {
+        this.stageId = stageId?stageId:"#svg-container";
+        svgId = svgId?svgId:"#stage-svg";
+        this.pathId = penId;
+        this.markIndex = 0;
+        this.markList = [];
+        this.path = [];
+        this.isDrag = false;
+        this.selectedMarkIndex = -1;
+        this.deletedCound = 0;
+        this.svg = svgId;
+        this.lock = {
+            drag: false
+        };
+        this.bindStageEvent();
+        if(path) {
+            this.parsePath(path);
+        }
+
+        g_keySubscription.push([46, this.deleteMark.bind(this)])
+    }
+
+
+    parsePath(path) {
+        this.path = path;
+        this.selectedMarkIndex = path.length-1;
+        const offsetTop = $(this.svg).offset().top;
+        const offsetLeft = $(this.svg).offset().left;
+        for(let i = 0; i < path.length; i++) {
+            const line = path[i].substr(1).split(" ").map((x)=>parseInt(x));
+            let x, y, ele;
+            switch(path[i][0]) {
+            case 'L':
+            case 'M':
+                x = line[0];
+                y = line[1];
+                break;
+            case 'C':
+                x = line[4];
+                y = line[5];
+                break;
+            default:
+                break;
+            }
+            $("#stage").append(`<div class='mark' id="mark-${this.markIndex+this.deletedCound}" style='left: ${x-1.5+offsetLeft}px; top: ${y-1.5+offsetTop}px;' data-index="${this.markIndex}""></div>`);
+
+            this.bindMarkEvent(`#mark-${this.markIndex+this.deletedCound}`);
+
+            ele = $(`#mark-${this.markIndex+this.deletedCound}`);
+            this.markList.push(ele);
+            this.markIndex++;
+        }
+    }
+
+    bindStageEvent() {
+        $(this.stageId).on("mousedown", (e) => {
+            if(e.which !== 1)return;
+            e.stopPropagation();
+            this.onStageClick(e);
+        });
+    }
+
+    onStageClick(e) {
+        if(this.isDrag)return;
+        const x = e.clientX;
+        const y = e.clientY;
+        $("#stage").append(`<div class='mark' id="mark-${this.markIndex+this.deletedCound}" style='left: ${x-1.5}px; top: ${y-1.5}px;' data-index="${this.markIndex}""></div>`);
+        //$(`#mark-${this.markIndex+this.deletedCound}`).on("mousedown", (e)=>{e.stopPropagation();this.onMarkClick(e);});
+
+        this.bindMarkEvent(`#mark-${this.markIndex+this.deletedCound}`);
+
+        
+        const ele = $(`#mark-${this.markIndex+this.deletedCound}`);
+
+        this.markList.push(ele);
+        this.selectedMark(this.markIndex);
+        this.svgMoveTo(e.offsetX, e.offsetY, this.markIndex);
+        this.markIndex++;
+        this.refreshSvg();
+    }
+
+
+    bindMarkEvent(markId) {
+        Draggable.register(markId,
+            (event, data)=>{
+                let index = $(event.target).index()-1;
+                if(index >= this.markIndex)index=undefined;
+                if(index !== undefined) {
+                    this.selectedMark(index);
+                    this.refreshSvg();
+                }
+                data.lock.drag = true;
+                data.index = index;
+            },
+            (event, data)=>{
+                data.move = true;
+            },
+
+            (event, data)=>{
+                const index = data.index;
+                data.lock.drag = false;
+                if(data.move!==true) {
+                    this.renderControlPoint();
+                    return;
+                }
+                const offsetTop = $(this.svg).offset().top;
+                const offsetLeft = $(this.svg).offset().left;
+                if(index !== undefined) {
+                    if(this.path[index][0] === 'C') {
+                        this.path[index] = `L${event.clientX+1.5-offsetLeft} ${event.clientY+1.5-offsetTop}`;
+                    } else {
+                        this.path[index] = `${this.path[index][0]}${event.clientX+1.5-offsetLeft} ${event.clientY+1.5-offsetTop}`;
+                    }
+                    // this.refreshSvg();
+                } else {
+                    const x1 = parseInt($($(".round")[1]).offset().left);
+                    const y1 = parseInt($($(".round")[1]).offset().top);
+                    const x2 = parseInt($($(".round")[0]).offset().left);
+                    const y2 = parseInt($($(".round")[0]).offset().top) ;
+                    const end = this.path[this.selectedMarkIndex].substr(1).split(" ");
+                    const x3 = parseInt(end[end.length-2]);
+                    const y3 = parseInt(end[end.length-1]);
+                    this.path[this.selectedMarkIndex] = `C${x1-offsetLeft} ${y1-offsetTop} ${x2-offsetLeft} ${y2-offsetTop} ${x3} ${y3}`;
+                }
+                this.refreshSvg();
+
+            },
+            {
+                lock: this.lock
+            }
+        );
+		$(markId).dblclick((event) => {
+            const offsetTop = $(this.svg).offset().top+2;
+            const offsetLeft = $(this.svg).offset().left+2;
+            this.onStageClick({
+                clientX: event.clientX,
+                clientY: event.clientY,
+                offsetX: event.clientX-offsetTop,
+                offsetY: event.clientY-offsetLeft
+            });
+        });
+    }
+
+    svgMoveTo(x, y, index) {
+        if(index === 0) {
+            $(this.svg).append(`<path id="path-${this.pathId}" d="M${x} ${y}" stroke="black" fill="transparent"/>`);
+            let path = $(`path-${this.pathId}`)
+            const strokeWidth = parseInt($("#stroke-width").val());
+            path.attr("stroke-width", strokeWidth);
+            this.path.push(`M${x} ${y}`);
+            return;
+        }
+        this.path.push(`L${x} ${y}`);
+    } 
+
+    unSelectedMark(markIndex) {
+        if(markIndex < 0)return;
+        const ele = this.markList[markIndex];
+        ele.css("border", "1px solid");
+        ele.css("color", "black");
+    }
+
+    selectedMark(markIndex) {
+        if(markIndex<0)return;
+        this.unSelectedMark(this.selectedMarkIndex);
+        this.selectedMarkIndex = markIndex;
+        const ele = this.markList[markIndex];
+        ele.css("border", "1.5px solid");
+        ele.css("color", "blue");
+    }
+
+    refreshSvg() {
+        this.addHelpLine();
+        const path = $(`#path-${this.pathId}`);
+        path.attr("d", this.path.join(" "));
+        this.renderControlPoint();
+        $("#stage-svg").parent().html($("#stage-svg").parent().html())
+    }
+
+    addHelpLine() {
+        if(this.path.length === 0)return;
+        $("#help-line").remove();
+        if($(".round").length === 0)return;
+        const cur = this.path[this.selectedMarkIndex];
+        if(cur[0] != "C")return;
+        const offsetTop = $(this.svg).offset().top+1;
+        const offsetLeft = $(this.svg).offset().left+1;
+        const curList = this.path[this.selectedMarkIndex].substr(1).split(' ').map((x)=>parseInt(x));
+        const lastList = this.path[this.selectedMarkIndex-1].substr(1).split(' ').map((x)=>parseInt(x));
+        const len = lastList.length;
+
+        const line = `M${curList[4]} ${curList[5]} L${curList[2]} ${curList[3]} L${curList[0]} ${curList[1]} L${lastList[len-2]} ${lastList[len-1]}`;
+        $(this.svg).append(`<path id="help-line" d="${line}" stroke="black" fill="transparent" stroke-dasharray="10 5" opacity=".3"/>`);
+    }
+
+    renderControlPoint() {
+        $('.round').remove();
+        if(this.selectedMarkIndex <= 0) {
+            return;
+        }
+        const list = this.path[this.selectedMarkIndex].substr(1).split(' ').map((x)=>parseInt(x));
+        const lastList = this.path[this.selectedMarkIndex-1].substr(1).split(' ').map((x)=>parseInt(x));
+        const offsetTop = $(this.svg).offset().top+2;
+        const offsetLeft = $(this.svg).offset().left+2;
+        //console.info(offsetX, offsetY);
+        if(this.path[this.selectedMarkIndex][0] === 'L') {
+            const cur = this.path[this.selectedMarkIndex].split(' ');
+            const last = this.path[this.selectedMarkIndex-1].split(' ');
+            let x = (list[0] + (lastList[lastList.length-2] - list[0])/3)+offsetLeft; 
+            let y = (list[1] + (lastList[lastList.length-1] - list[1])/3)+offsetTop;
+            $("#stage").append(`<div class='mark round' id="round-1" style='left: ${x-2}px; top: ${y-2}px;'></div>`);
+            x = (list[0] + 2*(lastList[lastList.length-2] - list[0])/3)+offsetLeft; 
+            y = (list[1] + 2*(lastList[lastList.length-1] - list[1])/3)+offsetTop;
+            $("#stage").append(`<div class='mark round' id="round-2" style='left: ${x-2}px; top: ${y-2}px;'></div>`);
+        } else {
+            const list = this.path[this.selectedMarkIndex].substr(1).split(' ').map((x)=>parseInt(x));
+            $("#stage").append(`<div class='mark round' id="round-1" style='left: ${list[2]-2+offsetLeft}px; top: ${list[3]-2+offsetTop}px;'></div>`);
+            $("#stage").append(`<div class='mark round' id="round-2" style='left: ${list[0]-2+offsetLeft}px; top: ${list[1]-2+offsetTop}px;'></div>`);
+            console.info(list);
+        }
+        this.bindMarkEvent("#round-1");
+        this.bindMarkEvent("#round-2");
+    }
+
+    disappearMarks() {
+        $(".mark").css("display", none);
+    }
+
+    deleteMark(e) {
+        if(this.selectedMarkIndex < 0)return;
+
+        this.markList[this.selectedMarkIndex].remove();
+        this.markList.splice(this.selectedMarkIndex, 1);
+        this.path.splice(this.selectedMarkIndex, 1);
+        this.markIndex--;
+        this.deletedCound++;
+        this.selectedMarkIndex = this.markIndex-1;
+        this.selectedMark(this.selectedMarkIndex);
+        this.refreshSvg();
+    }
+    unfocus() {
+        $(this.stageId).off("mousedown");
+        $(".mark").remove();
+        this.selectedMarkIndex = 0;
+        this.refreshSvg();
+        return this.path.slice(0);
+    }
+}
+
+class Draggable {
+    static register(elementId, onClicked, onMoving, afterDrag, data) {
+        const element = $(elementId);
+        element.off("mousedown");
+        element.on("mousedown", (event)=>{
+            event.stopPropagation();
+            onClicked(event, data);
+            Draggable.onElementClick(element, event, onMoving, afterDrag, data);
+        });
+    }
+
+    static onElementClick(element, event, onMoving, afterDrag, data) {
+        let mouseState = 0;
+        let isMoved = false;
+        $(window).off("mouseup");
+        $(window).off("mousemove");
+        $(window).on("mouseup", (mouseEvent) => {
+            mouseState = 1;
+            $(window).off("mousemove");
+            $(window).off("mouseup");
+            afterDrag(mouseEvent, data);
+        });
+        $(window).on("mousemove", (mouseEvent) => {
+            if(mouseState === 1)return;
+            onMoving(mouseEvent, data);
+            const x = mouseEvent.clientX;
+            const y = mouseEvent.clientY;
+            element.css("left", x);
+            element.css("top", y);
+        });
+    }
+}
+
+class Animation {
+    static pathAnimate(path1Index, path2Index) {
+        let path1 = g_stages.stages[path1Index].path ? g_stages.stages[path1Index].path:g_stages.stages[path1Index].pen.unfocus();
+        let path2 = g_stages.stages[path2Index].path ? g_stages.stages[path2Index].path:g_stages.stages[path2Index].pen.unfocus();
+        if(path1.length > path2.length) {
+            let temp = path1;
+            path1 = path2;
+            path2 = temp;
+        }
+        const diff = path2.length-path1.length;
+        for(let i = path1.length; i < path2.length; i++) {
+            path1.push(path1[path1.length-1]);
+        }
+        for(let i = 0; i < path2.length; i++) {
+            console.info(path1[i]);
+            if(path1[i][0] == path2[i][0]) {
+                continue;
+            }
+            if(path1[i][0] == 'C') {
+                const coordinate = path2[i].slice(1);
+                path2[i] = `C${coordinate} ${coordinate} ${coordinate}`;
+            }
+        }
+        return [path1.join(' '), path2.join(' ')];
+    }
+}
+
+
+
+const g_stages = {
+    selectStage: 0,
+    stages: []
+};
+
+const g_keySubscription = [
+];
+
+const addStage = () => {
+    if(g_stages.stages.length !== 0) {
+        const path = g_stages.stages[g_stages.selectStage].pen.unfocus();
+        g_stages.stages[g_stages.selectStage] = {
+            path,
+        };
+    }
+    $(".selectedSlice").removeClass("selectedSlice");
+    g_stages.selectStage = g_stages.stages.length;
+
+    const pen = new Pen(g_stages.stages.length);
+    g_stages.stages.push ({pen});
+
+    $("#selector").append(`<div class="stage-slice selectedSlice" data-index=${g_stages.selectStage} onclick="onClickStageSlice(event)"><input value="图层${g_stages.selectStage}"></input> <div style="width: fit-content"><button>删除</button><button>隐藏</button></div></div>`);
+}
+
+addStage();
+
+
+
+$(document).keydown((e)=>{
+    console.info(e.keyCode);
+    g_keySubscription.forEach((subscription)=>{if(e.keyCode===subscription[0])subscription[1](e)});
+});
+
+const onClickStageSlice = (e) => {
+    console.info("wtf");
+	if(!e.target.dataset["index"]) {
+        console.info(e.target);
+        return;
+    }
+    const path = g_stages.stages[g_stages.selectStage].pen.unfocus();
+    g_stages.stages[g_stages.selectStage] = {
+        path,
+    };
+    $(".selectedSlice").removeClass("selectedSlice");
+    $(e.target).addClass("selectedSlice");
+    console.info("hahah");
+    const index = parseInt(e.target.dataset["index"]);
+    g_stages.selectStage = index;
+    if(g_stages.stages[index] && g_stages.stages[index].path) {
+        const path = g_stages.stages[index].path;
+        const pen = new Pen(index, path);
+        g_stages.stages[g_stages.selectStage] = {
+            pen
+        }
+    }
+}
+
+const addAnimateClick = () => {
+	const index = g_stages.selectStage;
+    const paths = Animation.pathAnimate(index, 0);
+	const path = $(`#path-${index}`);
+	const begin = path.attr('d');
+	const end = $(`#path-0`).attr('d');
+    $("#stage-svg").append(`<path id="animation" fill="transparent" stroke="black"/>`);
+    $("#animation").html(`<animate id="animate" attributeName='d' dur='2s' values="${paths[0]};${paths[1]};" fill="transparent" repeatCount="indefinite"/>`);
+    $("#stage-svg").parent().html($("#stage-svg").parent().html())
+}
+
+const exportSvg = () => {
+	const html = $("#svg-container").html();
+	const page = window.open(``);
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(html, "image/svg+xml");
+    page.location.href = `svg.html`;
+    page.name = html;
+}
+
+$("#stroke-width").change((e) => {
+    const strokeWidth = parseInt($(e.target).val());
+    const index = g_stages.selectStage;
+	const path = $(`#path-${index}`);
+    path.attr("stroke-width", strokeWidth);
+    console.info(strokeWidth);
+});
+
+$( document ).ready(function() {
+    if(window.name != '') {
+        let svg = window.name;
+        console.info(svg);
+        $("body").html(svg);
+        $("#stage-svg").css("background", 'transparent')
+    }
+});
+
+		</script>
+	</body>
+</html>
