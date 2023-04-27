@@ -3,7 +3,8 @@
         <title>puzzle hunt常见表</title>
         <style>
             .title {
-                margin: 3px;
+                margin-top: 20px;
+                font-weight: bold;
             }
             .content {
                 font-size: 15px;
@@ -50,6 +51,21 @@
             }
             .nato {
                 font-size: medium;
+            }
+            .circle {
+              background: #456BD9;
+              border: 0.1875em solid #0F1C3F;
+              border-radius: 50%;
+              box-shadow: 0.375em 0.375em 0 0 rgba(15, 28, 63, 0.125);
+              height: 5em;
+              width: 5em;
+              text-align: center;
+              display: flex;
+              flex-direction: column;
+              flex-wrap: nowrap;
+              align-content: stretch;
+              justify-content: space-evenly;
+              margin-right: 10px;
             }
         </style>
     </head>
@@ -1017,6 +1033,24 @@
                         </tr>
                       </table>
                 </div>
+                <div class="title">
+                  常见颜色
+                </div>
+              <div class="content">
+                  <b>电阻色:</b>
+                  <div style="display:flex">
+                      <div class="circle" style="background-color:#000000;color: white;">黑(0)</div>
+                      <div class="circle" style="background-color:#996633;">棕(1)</div>
+                      <div class="circle" style="background-color:#FF0000;">红(2)</div>
+                      <div class="circle" style="background-color:#FF9900;">橙(3)</div>
+                      <div class="circle" style="background-color:#FFFF00;">黄(4)</div>
+                      <div class="circle" style="background-color:#00FF00;">绿(5)</div>
+                      <div class="circle" style="background-color:#4f4fff;">蓝(6)</div>
+                      <div class="circle" style="background-color:#FF00FF;">紫(7)</div>
+                      <div class="circle" style="background-color:#CCCCCC;">灰(8)</div>
+                      <div class="circle" style="background-color:#FFFFFF;">白(9)</div>
+                  </div>
+              </div>
             </div>
         </div>
     </body>
