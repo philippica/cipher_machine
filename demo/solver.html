@@ -64,380 +64,405 @@
 
 class SolverParser {
 
-  constructor(rulesList, n, m, globalRules, globalFinalRules) {
-    this.n = n;
-    this.m = m;
-    this.globalRules = globalRules;
-    this.globalFinalRules = globalFinalRules;
-    for (let i = 0; i < rulesList.length; i++) {
-      this.parseLine(rulesList[i].replace(/\s/g, ''));
-    }
-  }
-
-  parseLine(lineStr, _globalFinalRules, _globalRules) {
-    const globalFinalRules = _globalFinalRules ? _globalFinalRules:this.globalFinalRules;
-    const globalRules = _globalRules ? _globalRules:this.globalRules;
-    if(lineStr === "")return;
-    if(this.specialRule(lineStr)) {
-      return;
-    }
-    const restrictAreas = this.getRestrictAreas(lineStr, 0);
-    const rules = this.getRules(lineStr, restrictAreas.stopPos);
-    if(rules === undefined) {
-      alert(`我不认识"${lineStr}"的规则，请仔细检查`);
-      return;
-    }
-    if(rules.smallerThan || rules.largerThan) {
-      for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
-        globalFinalRules.push({
-          restrictAreas: restrictAreas.restrictArea[i],
-          rules,
-        });
-      }
+constructor(rulesList, n, m, globalRules, globalFinalRules) {
+  this.n = n;
+  this.m = m;
+  this.filledArea = [];
+  this.globalRules = globalRules;
+  this.globalFinalRules = globalFinalRules;
+  const lastParse = [];
+  for (let i = 0; i < rulesList.length; i++) {
+    const rule = rulesList[i].replace(/\s/g, '');
+    if(rule[0]=='没') {
+      lastParse.push(rule);
     } else {
-      for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
-        globalRules.push({
-          restrictAreas: restrictAreas.restrictArea[i],
-          rules,
-        });
-      }
-    }
-  };
-
-  parseRelativeSign(str, start) {
-    if (str[start] === '是') {
-      return {
-        set: this.getSet(str, start + 1),
-      };
-    } else if (str[start] === '大') {
-      return {
-        largerThan: this.getNumber(str, start + 2).value,
-      };
-    } else if (str[start] === '大' && str[start+2] === '等') {
-      return {
-        largerThan: this.getNumber(str, start + 4).value-1,
-      };
-    } else if (str[start] === '小') {
-      return {
-        smallerThan: this.getNumber(str, start + 2).value,
-      };
-    } else if (str[start] === '小' && str[start+2] === '等') {
-      return {
-        smallerThan: this.getNumber(str, start + 4).value+1,
-      };
+      this.parseLine(rule);
     }
   }
-
-  getRules(str, start) {
-    let temp;
-    if (str[start] === '互') {
-      return {
-        isDifferent: true,
-      };
-    } else if (temp = this.parseRelativeSign(str, start)) {
-      return temp
-    } else if(str[start] === '的' && str[start+1] === '和') {
-      return {
-        sum: this.getNumber(str, start + 3).value,
-      };
-    } else if(str[start] === '的' && str[start+1] === '系') {
-      const coefficient = this.getNumberList(str, start+4);
-      const number = this.getNumber(str, coefficient.stopPos+6);
-      return {
-        linear: {
-          coefficient: coefficient.set.map(x => x+1),
-          result: number.value
-        }
-      };
-    } else if(str[start] === '的') { // 的（黑格/1/2/3）的数量(是)
-      const lineToken = this.getNumber(str, start+1);
-      let currentPos;
-      let item;
-      if(lineToken) {
-        currentPos = lineToken.stopPos+3;
-        item = lineToken.value;
-      } else if(str[start+1] === '黑') {
-        currentPos = start+6;
-        item = "black";
-      } else if(str[start+1] === '白') {
-        currentPos = start+6;
-        item = "white";
-      } else if(str[start+1] === '红') {
-        currentPos = start+6;
-        item = "red";
-      } else if(str[start+1] === '蓝') {
-        currentPos = start+6;
-        item = "blue";
-      }
-      const result = this.parseRelativeSign(str, currentPos);
-      const ret = {
-          count: result
-      }
-      ret.count.item = item;
-
-      return ret;
-    }
-  };
-
-  getNumber(str, start) {
-    const number = str.substr(start).match(/^\-*\d+/);
-    if (!number) return null;
-    return {
-      value: parseInt(number[0]),
-      stopPos: start + number[0].length,
-    };
-  };
-
-  getNumberList(str, start) {
-    let index = start + 1;
-    const ret = [];
-    while (1) {
-      const numberToken = this.getNumber(str, index);
-      index = numberToken.stopPos + 1;
-      ret.push(numberToken.value - 1);
-      if (str[numberToken.stopPos] === ']') {
-        return {
-          stopPos: numberToken.stopPos + 1,
-          set: ret,
-        };
-      }
-    }
-  };
-
-  getOriginAreas(str, start) {
-    const ret = [];
-    if (str[0] === '每') {
-      if (str.substr(1, 2) === '一行') {
-        for (let row = 0; row < this.n; row++) {
-          ret.push([]);
-          for (let col = 0; col < this.m; col++) {
-            ret[row].push(row * this.m + col);
-          }
-        }
-        return {
-          stopPos: 3,
-          restrictArea: ret,
-        };
-      } else if (str.substr(1, 2) === '一列') {
-        for (let col = 0; col < this.n; col++) {
-          ret.push([]);
-          for (let row = 0; row < this.m; row++) {
-            ret[col].push(row * this.m + col);
-          }
-        }
-        return {
-          stopPos: 3,
-          restrictArea: ret,
-        };
-      } else if (str.substr(1, 2) === '一格') {
-        for (let row = 0; row < this.n; row++) {
-          for (let col = 0; col < this.m; col++) {
-            ret.push(row * this.m + col);
-          }
-        }
-        return {
-          stopPos: 3,
-          restrictArea: [ret],
-        };
-      }
-    } else if (str[0] === '第') {
-      const lineToken = this.getNumber(str, 1);
-      if (lineToken) {
-        if (str[lineToken.stopPos] === '行') {
-          for (let col = 0; col < this.m; col++) {
-            ret.push((lineToken.value - 1) * m + col);
-          }
-        } else if (str[lineToken.stopPos] === '列') {
-          for (let row = 0; row < this.n; row++) {
-            ret.push(row * this.m + (lineToken.value - 1));
-          }
-        } else if (str[lineToken.stopPos] === '格') {
-          ret.push(lineToken.value - 1);
-        }
-      } else if (str[start + 1] === '[') {
-        const list = this.getNumberList(str, start + 1);
-        return {
-          stopPos: list.stopPos + 1,
-          restrictArea: [list.set],
-        };
-      }
-      return {
-        stopPos: lineToken.stopPos + 1,
-        restrictArea: [ret],
-      };
-    }
-  };
-
-  getDir(str, start) {
-    if(str[start] === '本') { // 本格
-      return {
-        stopPos: start+2,
-        diff: {
-          dr: 0,
-          dc: 0
-        }
-      }
-    }
-    let currentPos = start;
-    let dr = 0;
-    let dc = 0;
-    while(1) {
-      let flag = 0;
-      switch(str[currentPos]) {
-      case '上':
-        dr--;
-        break;
-      case '下':
-        dr++;
-        break;
-      case '左':
-        dc--;
-        break;
-      case '右':
-        dc++;
-        break;
-      default:
-        flag = 1;
-      }
-      if(flag === 1)break;
-      currentPos++;
-    }
-    return {
-      stopPos: currentPos,
-      diff: {
-        dr,
-        dc
-      }
-    }
+  for(const rule of lastParse) {
+    this.parseLine(rule);
   }
+}
 
-  modifyArea(str, start, origin) {
-    if(str[start] === '[') {
-      let currentPos = start + 1;
-      const diffs = [];
-      while(1) {
-        const result = this.getDir(str, currentPos);
-        diffs.push(result.diff);
-        currentPos = result.stopPos + 1;
-        if(str[result.stopPos] === ']')break;
-      }
-      return {diffs, stopPos: currentPos};
-    }
+parseLine(lineStr, _globalFinalRules, _globalRules) {
+  const globalFinalRules = _globalFinalRules ? _globalFinalRules:this.globalFinalRules;
+  const globalRules = _globalRules ? _globalRules:this.globalRules;
+  if(lineStr === "")return;
+  if(this.specialRule(lineStr)) {
+    return;
   }
-
-
-  getRestrictAreas(str, start) {
-    const ret = this.getOriginAreas(str, start);
-    console.info(str[ret.stopPos]);
-    if(str[ret.stopPos] === "的" && str[ret.stopPos+1] !== "和" && str[ret.stopPos + 1] !== "系") {
-      let result = this.modifyArea(str, ret.stopPos +1, ret);
-      const modifiedArea = ret.restrictArea[0].map((x) => {
-        let c = x % this.m;
-        let r = parseInt(x / this.m);
-        const temp = [];
-        for(const d of result.diffs) {
-          const nc = c+d.dc;
-          const nr = r+d.dr;
-          if(nc < 0 || nc >= this.m || nr < 0 || nr >= this.n)continue;
-          temp.push(nr*this.m+nc);
-        }
-        return temp;
+  const restrictAreas = this.getRestrictAreas(lineStr, 0);
+  const rules = this.getRules(lineStr, restrictAreas.stopPos);
+  if(rules === undefined) {
+    alert(`我不认识"${lineStr}"的规则，请仔细检查`);
+    return;
+  }
+  if(rules.smallerThan || rules.largerThan) {
+    for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
+      globalFinalRules.push({
+        restrictAreas: restrictAreas.restrictArea[i],
+        rules,
       });
-      ret.restrictArea = modifiedArea;
-      ret.stopPos = result.stopPos;
-      console.info(modifiedArea);
     }
-    return ret;
-  }
-
-
-  getSet(str, start) {
-    const ret = [];
-    let currentPos = start;
-    while(1) {
-      const numberToken = this.getNumber(str, currentPos);
-
-      if (numberToken) {
-        ret.push(numberToken.value);
-        currentPos = numberToken.stopPos;
-      } else if (str[currentPos] === '从') {
-        const firstToken = this.getNumber(str, currentPos + 1);
-        let secondToken;
-        if (str[firstToken.stopPos] === '到') {
-          secondToken = this.getNumber(str, firstToken.stopPos + 1);
-        }
-        for (let i = firstToken.value; i <= secondToken.value; i++) {
-          ret.push(i);
-        }
-        currentPos = secondToken.stopPos+3;
-      } else if (str[currentPos] === '或') {
-        currentPos++;
-      } else if(str[currentPos] === '黑') {
-        ret.push('black');
-        currentPos += 2;
-      } else if(str[currentPos] === '白') {
-        ret.push('white');
-        currentPos += 2;
-      } else if(str[currentPos] === '红') {
-        ret.push('red');
-        currentPos += 2;
-      } else if(str[currentPos] === '蓝') {
-        ret.push('blue');
-        currentPos += 2;
-      } else {
-        break;
-      }
+  } else {
+    for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
+      globalRules.push({
+        restrictAreas: restrictAreas.restrictArea[i],
+        rules,
+      });
     }
-    return ret;
-  };
-
-  specialRule(lineStr) {
-    if(lineStr[0] === '我') {
-      return true;
-    } else if (lineStr[0] === '如') {
-      const regexResult = lineStr.match(/^如果(?<ifCondition>(?<![,，]).*),那么(?<statement>.*)/).groups;
-      const condition = regexResult.ifCondition;
-      const statement = regexResult.statement;
-      if(condition === undefined || statement === undefined) {
-        alert(lineStr + "不符合如果这条规则的规范");
-      }
-      const conditionResult = [];
-      this.parseLine(condition, conditionResult, conditionResult);
-      const statementResult = [];
-      this.parseLine(statement, statementResult, statementResult);
-      for(const rule of conditionResult) {
-        const dummyRule = {
-          restrictAreas: rule.restrictAreas,
-          rules: {
-            ifCondition: {
-              condition: rule.rules,
-              statement: statementResult
-            }
-          }
-        }
-        this.globalRules.push(dummyRule);
-      }
-
-      return true;
-    }
-    return false;
   }
 };
 
-class SudokuSolver {
-  constructor(rulesList, n, m) {
-    this.n = n;
-    this.m = m;
+parseRelativeSign(str, start) {
+  if (str[start] === '是') {
+    return {
+      set: this.getSet(str, start + 1),
+    };
+  } else if (str[start] === '大') {
+    return {
+      largerThan: this.getNumber(str, start + 2).value,
+    };
+  } else if (str[start] === '大' && str[start+2] === '等') {
+    return {
+      largerThan: this.getNumber(str, start + 4).value-1,
+    };
+  } else if (str[start] === '小') {
+    return {
+      smallerThan: this.getNumber(str, start + 2).value,
+    };
+  } else if (str[start] === '小' && str[start+2] === '等') {
+    return {
+      smallerThan: this.getNumber(str, start + 4).value+1,
+    };
+  }
+}
 
+getRules(str, start) {
+  let temp;
+  if (str[start] === '互') {
+    return {
+      isDifferent: true,
+    };
+  } else if (temp = this.parseRelativeSign(str, start)) {
+    return temp
+  } else if(str[start] === '的' && str[start+1] === '和') {
+    return {
+      sum: this.getNumber(str, start + 3).value,
+    };
+  } else if(str[start] === '的' && str[start+1] === '系') {
+    const coefficient = this.getNumberList(str, start+4);
+    const number = this.getNumber(str, coefficient.stopPos+6);
+    return {
+      linear: {
+        coefficient: coefficient.set.map(x => x+1),
+        result: number.value
+      }
+    };
+  } else if(str[start] === '的') { // 的（黑格/1/2/3）的数量(是)
+    const lineToken = this.getNumber(str, start+1);
+    let currentPos;
+    let item;
+    if(lineToken) {
+      currentPos = lineToken.stopPos+3;
+      item = lineToken.value;
+    } else if(str[start+1] === '黑') {
+      currentPos = start+6;
+      item = "black";
+    } else if(str[start+1] === '白') {
+      currentPos = start+6;
+      item = "white";
+    } else if(str[start+1] === '红') {
+      currentPos = start+6;
+      item = "red";
+    } else if(str[start+1] === '蓝') {
+      currentPos = start+6;
+      item = "blue";
+    }
+    const result = this.parseRelativeSign(str, currentPos);
+    const ret = {
+        count: result
+    }
+    ret.count.item = item;
+
+    return ret;
+  }
+};
+
+getNumber(str, start) {
+  const number = str.substr(start).match(/^\-*\d+/);
+  if (!number) return null;
+  return {
+    value: parseInt(number[0]),
+    stopPos: start + number[0].length,
+  };
+};
+
+getNumberList(str, start) {
+  let index = start + 1;
+  const ret = [];
+  while (1) {
+    const numberToken = this.getNumber(str, index);
+    index = numberToken.stopPos + 1;
+    ret.push(numberToken.value - 1);
+    if (str[numberToken.stopPos] === ']') {
+      return {
+        stopPos: numberToken.stopPos + 1,
+        set: ret,
+      };
+    }
+  }
+};
+
+getOriginAreas(str, start) {
+  const ret = [];
+  if (str[0] === '每') {
+    if (str.substr(1, 2) === '一行') {
+      for (let row = 0; row < this.n; row++) {
+        ret.push([]);
+        for (let col = 0; col < this.m; col++) {
+          ret[row].push(row * this.m + col);
+        }
+      }
+      return {
+        stopPos: 3,
+        restrictArea: ret,
+      };
+    } else if (str.substr(1, 2) === '一列') {
+      for (let col = 0; col < this.n; col++) {
+        ret.push([]);
+        for (let row = 0; row < this.m; row++) {
+          ret[col].push(row * this.m + col);
+        }
+      }
+      return {
+        stopPos: 3,
+        restrictArea: ret,
+      };
+    } else if (str.substr(1, 2) === '一格') {
+      for (let row = 0; row < this.n; row++) {
+        for (let col = 0; col < this.m; col++) {
+          ret.push(row * this.m + col);
+        }
+      }
+      return {
+        stopPos: 3,
+        restrictArea: [ret],
+      };
+    }
+  } else if (str[0] === '第') {
+    const lineToken = this.getNumber(str, 1);
+    if (lineToken) {
+      this.filledArea[lineToken.value - 1] = true;
+      if (str[lineToken.stopPos] === '行') {
+        for (let col = 0; col < this.m; col++) {
+          this.filledArea[(lineToken.value - 1) * m + col] = true;
+          ret.push((lineToken.value - 1) * m + col);
+        }
+      } else if (str[lineToken.stopPos] === '列') {
+        for (let row = 0; row < this.n; row++) {
+          this.filledArea[row * this.m + (lineToken.value - 1)] = true;
+          ret.push(row * this.m + (lineToken.value - 1));
+        }
+      } else if (str[lineToken.stopPos] === '格') {
+        ret.push(lineToken.value - 1);
+      }
+    } else if (str[start + 1] === '[') {
+      const list = this.getNumberList(str, start + 1);
+      return {
+        stopPos: list.stopPos + 1,
+        restrictArea: [list.set],
+      };
+    }
+    return {
+      stopPos: lineToken.stopPos + 1,
+      restrictArea: [ret],
+    };
+  }
+};
+
+getDir(str, start) {
+  if(str[start] === '本') { // 本格
+    return {
+      stopPos: start+2,
+      diff: {
+        dr: 0,
+        dc: 0
+      }
+    }
+  }
+  let currentPos = start;
+  let dr = 0;
+  let dc = 0;
+  while(1) {
+    let flag = 0;
+    switch(str[currentPos]) {
+    case '上':
+      dr--;
+      break;
+    case '下':
+      dr++;
+      break;
+    case '左':
+      dc--;
+      break;
+    case '右':
+      dc++;
+      break;
+    default:
+      flag = 1;
+    }
+    if(flag === 1)break;
+    currentPos++;
+  }
+  return {
+    stopPos: currentPos,
+    diff: {
+      dr,
+      dc
+    }
+  }
+}
+
+modifyArea(str, start, origin) {
+  if(str[start] === '[') {
+    let currentPos = start + 1;
+    const diffs = [];
+    while(1) {
+      const result = this.getDir(str, currentPos);
+      diffs.push(result.diff);
+      currentPos = result.stopPos + 1;
+      if(str[result.stopPos] === ']')break;
+    }
+    return {diffs, stopPos: currentPos};
+  }
+}
+
+
+getRestrictAreas(str, start) {
+  const ret = this.getOriginAreas(str, start);
+  console.info(str[ret.stopPos]);
+  if(str[ret.stopPos] === "的" && str[ret.stopPos+1] !== "和" && str[ret.stopPos + 1] !== "系") {
+    let result = this.modifyArea(str, ret.stopPos +1, ret);
+    const modifiedArea = ret.restrictArea[0].map((x) => {
+      let c = x % this.m;
+      let r = parseInt(x / this.m);
+      const temp = [];
+      for(const d of result.diffs) {
+        const nc = c+d.dc;
+        const nr = r+d.dr;
+        if(nc < 0 || nc >= this.m || nr < 0 || nr >= this.n)continue;
+        temp.push(nr*this.m+nc);
+      }
+      return temp;
+    });
+    ret.restrictArea = modifiedArea;
+    ret.stopPos = result.stopPos;
+    console.info(modifiedArea);
+  }
+  return ret;
+}
+
+
+getSet(str, start) {
+  const ret = [];
+  let currentPos = start;
+  while(1) {
+    const numberToken = this.getNumber(str, currentPos);
+
+    if (numberToken) {
+      ret.push(numberToken.value);
+      currentPos = numberToken.stopPos;
+    } else if (str[currentPos] === '从') {
+      const firstToken = this.getNumber(str, currentPos + 1);
+      let secondToken;
+      if (str[firstToken.stopPos] === '到') {
+        secondToken = this.getNumber(str, firstToken.stopPos + 1);
+      }
+      for (let i = firstToken.value; i <= secondToken.value; i++) {
+        ret.push(i);
+      }
+      currentPos = secondToken.stopPos+3;
+    } else if (str[currentPos] === '或') {
+      currentPos++;
+    } else if(str[currentPos] === '黑') {
+      ret.push('black');
+      currentPos += 2;
+    } else if(str[currentPos] === '白') {
+      ret.push('white');
+      currentPos += 2;
+    } else if(str[currentPos] === '红') {
+      ret.push('red');
+      currentPos += 2;
+    } else if(str[currentPos] === '蓝') {
+      ret.push('blue');
+      currentPos += 2;
+    } else {
+      break;
+    }
+  }
+  return ret;
+};
+
+specialRule(lineStr) {
+  if(lineStr[0] === '我') {
+    return true;
+  } else if (lineStr[0] === '如') {
+    const regexResult = lineStr.match(/^如果(?<ifCondition>(?<![,，]).*),那么(?<statement>.*)/).groups;
+    const condition = regexResult.ifCondition;
+    const statement = regexResult.statement;
+    if(condition === undefined || statement === undefined) {
+      alert(lineStr + "不符合如果这条规则的规范");
+    }
+    const conditionResult = [];
+    this.parseLine(condition, conditionResult, conditionResult);
+    const statementResult = [];
+    this.parseLine(statement, statementResult, statementResult);
+    for(const rule of conditionResult) {
+      const dummyRule = {
+        restrictAreas: rule.restrictAreas,
+        rules: {
+          ifCondition: {
+            condition: rule.rules,
+            statement: statementResult
+          }
+        }
+      }
+      this.globalRules.push(dummyRule);
+    }
+
+    return true;
+  } else if(lineStr[0] === '没') { //没填的格子默认是"第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是0"
+    let content = lineStr.substr(9);
+    content = content.substr(0, content.length-1);
+    console.info(content);
+
+    for(let i = 0; i < this.n*this.m; i++) {
+      if(this.filledArea[i])continue;
+      const contentSubstitue = content.replace("<格子序号>", (i+1).toString())
+      console.info(contentSubstitue);
+      this.parseLine(contentSubstitue);
+    }
+
+    return true;
+  }
+  return false;
+}
+};
+
+class SudokuSolver {
+  constructor() {
     this.possibleArray = [];
     this.connectedRules = [];
     this.globalRules = [];
     this.globalFinalRules = [];
     this.weight = [];
-    this.solve(rulesList, n, m);
   }
 
-  solve(rulesList, n, m) {
+  async solve(rulesList, n, m, callback) {
+    this.n = n;
+    this.m = m;
+    this.callback = callback;
     const possibleArray = this.possibleArray;
     const connectedRules = this.connectedRules;
     const globalRules = this.globalRules;
@@ -480,12 +505,14 @@ class SudokuSolver {
         }
       } else if(rule.rules && rule.rules.smallerThan) {
         for (let j = 0; j < restrictAreas.length; j++) {
-          possibleArray[restrictAreas[j]] = this.smallSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
+          possibleArray[restrictAreas[j]] = this.smallSet(possibleArray[restrictAreas[j]], rule.rules.smallerThan);
         }
       }
     }
     this.relax();
-    this.dfs();
+    $('#sudokuAnswer').html("");
+    await this.dfs();
+    $('#sudokuAnswer').append("已找到所有解");
   };
 
 
@@ -825,7 +852,7 @@ class SudokuSolver {
             } else if(statement.rules.largerThan) {
               this.possibleArray[area] = this.largerSet(this.possibleArray[area], statement.rules.largerThan);
             } else if(statement.rules.smallerThan) {
-              this.possibleArray[area] = this.smallSet(this.possibleArray[area], statement.rules.largerThan);
+              this.possibleArray[area] = this.smallSet(this.possibleArray[area], statement.rules.smallerThan);
             }
           }
         }
@@ -865,7 +892,8 @@ class SudokuSolver {
       let answer = "";
       let temp = [];
       for(let i = 0; i < this.possibleArray.length; i++) {
-        const number = this.possibleArray[i].values().next().value;
+        const possibleArray = this.possibleArray[i];
+        const number = possibleArray ? possibleArray.values().next().value : ' ';
         if(number === 'black') {
           $(`.sudoku-grid #grid-${i}`).css("background-color", number);
           $(`.sudoku-grid #grid-${i}`).css("color", "white");
@@ -883,7 +911,7 @@ class SudokuSolver {
       }
       console.info(result);
       console.info(answer);
-      $('#sudokuAnswer').html(answer);
+      $('#sudokuAnswer').append(answer + "\n-----------------------\n");
   }
 
   relax() {
@@ -907,7 +935,7 @@ class SudokuSolver {
     let smallestGridSize = 1024;
     let largestW = 0;
     for(let i = 0; i < this.possibleArray.length; i++) {
-      const currentSetSize = this.possibleArray[i].size;
+      const currentSetSize = this.possibleArray[i] ? this.possibleArray[i].size : 1;
       const w = this.weight[i];
       if(currentSetSize === 1)continue;
       if(currentSetSize < smallestGridSize || (currentSetSize == smallestGridSize && w > largestW)) {
@@ -922,11 +950,16 @@ class SudokuSolver {
     return smallestGridIndex;
   }
 
-  dfs() {
+  async dfs() {
     const smallestGridIndex = this.getSmallestGrid();
     if(smallestGridIndex === -1) {
       this.print();
-      return -1;
+      await this.callback();
+      if (confirm('发现了一个解，是否继续寻找下一个解?(可能耗时很久)')) {
+        return 0;
+      } else {
+        return -1;
+      }
     }
     const set = this.possibleArray[smallestGridIndex];
 
@@ -950,7 +983,7 @@ class SudokuSolver {
         }
       }
 
-      const result = this.dfs();
+      const result = await this.dfs();
       if(result === -1) {
         return result;
       }
@@ -996,93 +1029,100 @@ class SudokuSolver {
 
 
 
-let n = parseInt($("#sudoku-row").html());
-let m = parseInt($("#sudoku-col").html());
-const generate = (n, m) => {
-  $('#sudokuContainer').html("");
-  $('#sudokuContainer').width(m*30 + m);
-  $('#sudokuContainer').height(n*30 + n);
-  for(let i = 0; i < n*m; i++) {
-    $('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="grid-${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
-  }
-  $('.sudoku-grid-content,#sudoku-row,#sudoku-col').on('focus', function() {
-    before = $(this).html();
-  }).on('blur keyup paste', function() { 
-    if (before != $(this).html()) { before = $(this).html(); $(this).trigger('change'); }
-  });
 
-  $('#sudoku-col,#sudoku-row').on('change', (e) =>{
-    n = parseInt($("#sudoku-row").html());
-    m = parseInt($("#sudoku-col").html());
-    generate(n,m);
-  });
+    let n = parseInt($("#sudoku-row").html());
+		let m = parseInt($("#sudoku-col").html());
+		const generate = (n, m) => {
+			$('#sudokuContainer').html("");
+			$('#sudokuContainer').width(m*30 + m);
+			$('#sudokuContainer').height(n*30 + n);
+			for(let i = 0; i < n*m; i++) {
+				$('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="grid-${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
+			}
+			$('.sudoku-grid-content,#sudoku-row,#sudoku-col').on('focus', function() {
+				before = $(this).html();
+			}).on('blur keyup paste', function() { 
+				if (before != $(this).html()) { before = $(this).html(); $(this).trigger('change'); }
+			});
 
-  $('.sudoku-grid-content').on('change', (e) =>{
-    console.info(e.target.innerText);
-    const text = e.target.innerText;
-    const number = parseInt(e.currentTarget.id.substr(5)) + 1;
-    console.info(number);
-    const replaceStr = $("#replaceStr").val().replace("<格子序号>", number.toString());
-    const findStr = "^" + replaceStr.replace("<格子内容>", ".*") + "$";
-    const rulesStr = $('#rules').val().split('\n');
-    let content = "";
-    for(let i = 0; i < rulesStr.length; i++) {
-      rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
-      if(new RegExp(findStr).test(rulesWithoutSpace)) {
-        continue;
-      }
-      content += `${rulesWithoutSpace}\n`;
-    }
-    if(text != '') {
-      content += replaceStr.replace("<格子内容>", text) + `\n`;
-    }
-    $('#rules').val(content);
-  });
+			$('#sudoku-col,#sudoku-row').on('change', (e) =>{
+				n = parseInt($("#sudoku-row").html());
+				m = parseInt($("#sudoku-col").html());
+				generate(n,m);
+			});
 
-}
+			$('.sudoku-grid-content').on('change', (e) =>{
+				console.info(e.target.innerText);
+				const text = e.target.innerText;
+				const number = parseInt(e.currentTarget.id.substr(5)) + 1;
+				console.info(number);
+				const replaceStr = $("#replaceStr").val().replace("<格子序号>", number.toString());
+				const findStr = "^" + replaceStr.replace("<格子内容>", ".*") + "$";
+				const rulesStr = $('#rules').val().split('\n');
+				let content = "";
+				for(let i = 0; i < rulesStr.length; i++) {
+					rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
+					if(rulesWithoutSpace === "")continue;
+					if(new RegExp(findStr.replace("[", "\\[").replace(']', "\\]")).test(rulesWithoutSpace)) {
+						continue;
+					}
+					content += `${rulesWithoutSpace}\n`;
+				}
+				if(text != '') {
+					content += replaceStr.replace("<格子内容>", text) + `\n`;
+				}
+				$('#rules').val(content);
+			});
 
-const initSudoku = () => {
-  let initStr = '每一格是从1到9的数字\n每一行互不相同\n每一列互不相同\n第[1,2,3,10,11,12,19,20,21]格互不相同\n第[4,5,6,13,14,15,22,23,24]格互不相同\n第[7,8,9,16,17,18,25,26,27]格互不相同\n';
-  initStr += '第[28,29,30,37,38,39,46,47,48]格互不相同\n第[31,32,33,40,41,42,49,50,51]格互不相同\n第[34,35,36,43,44,45,52,53,54]格互不相同\n';
-  initStr += '第[55,56,57,64,65,66,73,74,75]格互不相同\n第[58,59,60,67,68,69,76,77,78]格互不相同\n第[61,62,63,70,71,72,79,80,81]格互不相同\n第1格大于5\n';
-  $('#replaceStr').val("第<格子序号>格是<格子内容>");
-  n = 9;
-  m = 9;
-  $("#rules").val(initStr);
-  $("#sudoku-row").html(n);
-  $("#sudoku-col").html(m);
-  generate(n, m);
-}
+		}
 
-const changeSolverMode = () => {
-  const modeStr = $("#solverMode").val();
-  if(modeStr === "sudoku") {
-    initSudoku();
-  } else if (modeStr === "mine") {
-    $('#replaceStr').val("第<格子序号>格的[上,下,左,右,左上,右上,左下,右下]的黑格的数量是<格子内容>");
-    $("#rules").val('每一格是白格或黑格');
-    generate(n, m);
-  } else if (modeStr === "magicSquare") {
-    let initStr = '每一格是从1到16的数字\n每一格互不相同\n每一列的和是34\n每一行的和是34\n';
-    $("#rules").val(initStr);
+		const initSudoku = () => {
+			let initStr = '第1格是5';
+			$('#replaceStr').val("第<格子序号>格是<格子内容>");
+			n = 9;
+			m = 9;
+			$("#rules").val(initStr);
+			$("#sudoku-row").html(n);
+			$("#sudoku-col").html(m);
+			generate(n, m);
+		}
 
-    n = 4;
-    m = 4;
-    $("#sudoku-row").html(n);
-    $("#sudoku-col").html(m);
-    $('#replaceStr').val("第<格子序号>格是<格子内容>");
-    generate(n, m);
-    
-  }
-}
+		const changeSolverMode = () => {
+			const modeStr = $("#solverMode").val();
+			if(modeStr === "sudoku") {
+				initSudoku();
+			} else if (modeStr === "mine") {
+				$('#replaceStr').val("第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是<格子内容>");
+				$("#rules").val('每一格是白格或黑格\n没填的格子默认是"第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是0"\n');
+				generate(n, m);
+			} else if (modeStr === "magicSquare") {
+				let initStr = '每一格是从1到16的数字\n每一格互不相同\n每一列的和是34\n每一行的和是34\n';
+				$("#rules").val(initStr);
 
-$('#solveSudoku').click(() => {
-  n = parseInt($("#sudoku-row").html());
-  m = parseInt($("#sudoku-col").html());
-  new SudokuSolver(($('#rules').val().split('\n')), n, m);
-});
+				n = 4;
+				m = 4;
+				$("#sudoku-row").html(n);
+				$("#sudoku-col").html(m);
+				$('#replaceStr').val("第<格子序号>格是<格子内容>");
+				generate(n, m);
+				
+			}
+		}
 
-initSudoku();
+		$('#solveSudoku').click(async () => {
+			function sleep(ms) {
+				return new Promise(resolve => setTimeout(resolve, ms));
+			}
+			n = parseInt($("#sudoku-row").html());
+			m = parseInt($("#sudoku-col").html());
+			const solver = new SudokuSolver();
+			await solver.solve(($('#rules').val().split('\n')), n, m, async ()=>{
+				console.info("wtf");
+				await sleep(2);
+			});
+		});
+
+		initSudoku();
 
 
 

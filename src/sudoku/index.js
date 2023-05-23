@@ -1,6 +1,7 @@
 // TODO: Need to be refacted, the code here is tooooo terrible
 import { SolverParser } from './solverParser';
-export class SudokuSolver {
+export 
+class SudokuSolver {
   constructor() {
     this.possibleArray = [];
     this.connectedRules = [];
@@ -55,7 +56,7 @@ export class SudokuSolver {
         }
       } else if(rule.rules && rule.rules.smallerThan) {
         for (let j = 0; j < restrictAreas.length; j++) {
-          possibleArray[restrictAreas[j]] = this.smallSet(possibleArray[restrictAreas[j]], rule.rules.largerThan);
+          possibleArray[restrictAreas[j]] = this.smallSet(possibleArray[restrictAreas[j]], rule.rules.smallerThan);
         }
       }
     }
@@ -402,7 +403,7 @@ export class SudokuSolver {
             } else if(statement.rules.largerThan) {
               this.possibleArray[area] = this.largerSet(this.possibleArray[area], statement.rules.largerThan);
             } else if(statement.rules.smallerThan) {
-              this.possibleArray[area] = this.smallSet(this.possibleArray[area], statement.rules.largerThan);
+              this.possibleArray[area] = this.smallSet(this.possibleArray[area], statement.rules.smallerThan);
             }
           }
         }
@@ -442,7 +443,8 @@ export class SudokuSolver {
       let answer = "";
       let temp = [];
       for(let i = 0; i < this.possibleArray.length; i++) {
-        const number = this.possibleArray[i].values().next().value;
+        const possibleArray = this.possibleArray[i];
+        const number = possibleArray ? possibleArray.values().next().value : ' ';
         if(number === 'black') {
           $(`.sudoku-grid #grid-${i}`).css("background-color", number);
           $(`.sudoku-grid #grid-${i}`).css("color", "white");
@@ -484,7 +486,7 @@ export class SudokuSolver {
     let smallestGridSize = 1024;
     let largestW = 0;
     for(let i = 0; i < this.possibleArray.length; i++) {
-      const currentSetSize = this.possibleArray[i].size;
+      const currentSetSize = this.possibleArray[i] ? this.possibleArray[i].size : 1;
       const w = this.weight[i];
       if(currentSetSize === 1)continue;
       if(currentSetSize < smallestGridSize || (currentSetSize == smallestGridSize && w > largestW)) {

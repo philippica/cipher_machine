@@ -19,7 +19,7 @@ export class SolverParser {
       this.parseLine(rule);
     }
   }
-
+  
   parseLine(lineStr, _globalFinalRules, _globalRules) {
     const globalFinalRules = _globalFinalRules ? _globalFinalRules:this.globalFinalRules;
     const globalRules = _globalRules ? _globalRules:this.globalRules;
@@ -49,7 +49,7 @@ export class SolverParser {
       }
     }
   };
-
+  
   parseRelativeSign(str, start) {
     if (str[start] === '是') {
       return {
@@ -73,7 +73,7 @@ export class SolverParser {
       };
     }
   }
-
+  
   getRules(str, start) {
     let temp;
     if (str[start] === '互') {
@@ -120,11 +120,11 @@ export class SolverParser {
           count: result
       }
       ret.count.item = item;
-
+  
       return ret;
     }
   };
-
+  
   getNumber(str, start) {
     const number = str.substr(start).match(/^\-*\d+/);
     if (!number) return null;
@@ -133,7 +133,7 @@ export class SolverParser {
       stopPos: start + number[0].length,
     };
   };
-
+  
   getNumberList(str, start) {
     let index = start + 1;
     const ret = [];
@@ -149,7 +149,7 @@ export class SolverParser {
       }
     }
   };
-
+  
   getOriginAreas(str, start) {
     const ret = [];
     if (str[0] === '每') {
@@ -216,7 +216,7 @@ export class SolverParser {
       };
     }
   };
-
+  
   getDir(str, start) {
     if(str[start] === '本') { // 本格
       return {
@@ -259,7 +259,7 @@ export class SolverParser {
       }
     }
   }
-
+  
   modifyArea(str, start, origin) {
     if(str[start] === '[') {
       let currentPos = start + 1;
@@ -273,8 +273,8 @@ export class SolverParser {
       return {diffs, stopPos: currentPos};
     }
   }
-
-
+  
+  
   getRestrictAreas(str, start) {
     const ret = this.getOriginAreas(str, start);
     console.info(str[ret.stopPos]);
@@ -298,8 +298,8 @@ export class SolverParser {
     }
     return ret;
   }
-
-
+  
+  
   getSet(str, start) {
     const ret = [];
     let currentPos = start;
@@ -339,7 +339,7 @@ export class SolverParser {
     }
     return ret;
   };
-
+  
   specialRule(lineStr) {
     if(lineStr[0] === '我') {
       return true;
@@ -366,22 +366,23 @@ export class SolverParser {
         }
         this.globalRules.push(dummyRule);
       }
-
+  
       return true;
     } else if(lineStr[0] === '没') { //没填的格子默认是"第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是0"
       let content = lineStr.substr(9);
       content = content.substr(0, content.length-1);
       console.info(content);
-
+  
       for(let i = 0; i < this.n*this.m; i++) {
         if(this.filledArea[i])continue;
         const contentSubstitue = content.replace("<格子序号>", (i+1).toString())
         console.info(contentSubstitue);
         this.parseLine(contentSubstitue);
       }
-
+  
       return true;
     }
     return false;
   }
 };
+  
