@@ -16,7 +16,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack && cp ./dist/index-*.js ./dist/index.js",
-    "push-ghpages": "git subtree push --prefix=dist origin gh-pages"
+    "push-ghpages": "git subtree push --prefix=dist origin gh-pages",
+    "split-substree": "git subtree split --rejoin --prefix=dist HEAD"
   },
   "author": "Yuanjie Pu",
   "license": "BSD-2-Clause",
