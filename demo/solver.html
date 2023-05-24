@@ -144,6 +144,10 @@ getRules(str, start) {
     return {
       isDifferent: true,
     };
+  } else if(str[start] === '按' && str[start+1] === '顺') { // 按顺序组成字母
+    return {
+      isWord: true,
+    };
   } else if (temp = this.parseRelativeSign(str, start)) {
     return temp
   } else if(str[start] === '的' && str[start+1] === '和') {
@@ -368,21 +372,34 @@ getSet(str, start) {
   const ret = [];
   let currentPos = start;
   while(1) {
+    if(!str[currentPos])break;
     const numberToken = this.getNumber(str, currentPos);
 
     if (numberToken) {
       ret.push(numberToken.value);
       currentPos = numberToken.stopPos;
     } else if (str[currentPos] === '从') {
-      const firstToken = this.getNumber(str, currentPos + 1);
+      let firstToken = this.getNumber(str, currentPos + 1);
       let secondToken;
-      if (str[firstToken.stopPos] === '到') {
-        secondToken = this.getNumber(str, firstToken.stopPos + 1);
+      if(firstToken === null) {
+        firstToken = str[currentPos + 1];
+        if (str[currentPos+2] === '到') {
+          secondToken = str[currentPos + 3];
+        }
+        for(let i = firstToken.charCodeAt(0); i <= secondToken.charCodeAt(0); i++) {
+          ret.push(String.fromCharCode(i).toLowerCase());
+        }
+        currentPos += 4;
+      } else {
+        if (str[firstToken.stopPos] === '到') {
+          secondToken = this.getNumber(str, firstToken.stopPos + 1);
+        }
+        for (let i = firstToken.value; i <= secondToken.value; i++) {
+          ret.push(i);
+        }
+        currentPos = secondToken.stopPos+3;
       }
-      for (let i = firstToken.value; i <= secondToken.value; i++) {
-        ret.push(i);
-      }
-      currentPos = secondToken.stopPos+3;
+
     } else if (str[currentPos] === '或') {
       currentPos++;
     } else if(str[currentPos] === '黑') {
@@ -397,6 +414,9 @@ getSet(str, start) {
     } else if(str[currentPos] === '蓝') {
       ret.push('blue');
       currentPos += 2;
+    } else if(str[currentPos].match(/[a-z]/i)) {
+      ret.push(str[currentPos]);
+      currentPos += 1;
     } else {
       break;
     }
@@ -860,6 +880,10 @@ class SudokuSolver {
     }
   }
 
+  relaxWord(areas, origin, ruleSet) {
+    consoleo.info();
+  }
+
   relaxRule(rule, origin, index, newRule) {
     const ruleSet = new Set([]);
     const areas = rule.restrictAreas;
@@ -877,6 +901,9 @@ class SudokuSolver {
       if(ret === -1)return -1;
     } else if(rule.rules.ifCondition) {
       const ret = this.relaxIfCondition(rule.rules.ifCondition, areas, origin, ruleSet, newRule);
+      if(ret === -1)return -1;
+    } else if(rule.rules.isWord) {
+      const ret = this.relaxWord(areas, origin, ruleSet);
       if(ret === -1)return -1;
     }
 
@@ -1077,7 +1104,7 @@ class SudokuSolver {
 		}
 
 		const initSudoku = () => {
-			let initStr = '第1格是5';
+			let initStr = '每一格是从a到z的字母';
 			$('#replaceStr').val("第<格子序号>格是<格子内容>");
 			n = 9;
 			m = 9;
@@ -1105,7 +1132,6 @@ class SudokuSolver {
 				$("#sudoku-col").html(m);
 				$('#replaceStr').val("第<格子序号>格是<格子内容>");
 				generate(n, m);
-				
 			}
 		}
 

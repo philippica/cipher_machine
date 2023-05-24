@@ -1,7 +1,6 @@
 // TODO: Need to be refacted, the code here is tooooo terrible
 import { SolverParser } from './solverParser';
-export 
-class SudokuSolver {
+export class SudokuSolver {
   constructor() {
     this.possibleArray = [];
     this.connectedRules = [];
@@ -411,6 +410,10 @@ class SudokuSolver {
     }
   }
 
+  relaxWord(areas, origin, ruleSet) {
+    consoleo.info();
+  }
+
   relaxRule(rule, origin, index, newRule) {
     const ruleSet = new Set([]);
     const areas = rule.restrictAreas;
@@ -428,6 +431,9 @@ class SudokuSolver {
       if(ret === -1)return -1;
     } else if(rule.rules.ifCondition) {
       const ret = this.relaxIfCondition(rule.rules.ifCondition, areas, origin, ruleSet, newRule);
+      if(ret === -1)return -1;
+    } else if(rule.rules.isWord) {
+      const ret = this.relaxWord(areas, origin, ruleSet);
       if(ret === -1)return -1;
     }
 
