@@ -51,4 +51,32 @@ export class Trie {
         return answer;
     }
 
+    dfs(possibleSets, index, currentNode, str, answer) {
+        if(index === possibleSets.length) {
+            if(currentNode.isWord) {
+                answer.push(str);
+            }
+            return;
+        }
+        const currentSet = possibleSets[index];
+        for(let i = 0; i < currentSet.length; i++) {
+            const currentLetter = currentSet[i];
+            const nextLetter = currentNode[currentLetter];
+            if(!nextLetter) {
+                continue;
+            }
+            this.dfs(possibleSets, index + 1, nextLetter, str + currentLetter, answer);
+        }
+    }
+
+    findAllByPossibleSets(possibleSets) {
+        const _possibleSets = [];
+        for(let i = 0; i < possibleSets.length; i++) {
+            const currentSet = possibleSets[i];
+            _possibleSets.push([...new Set(currentSet)]);
+        }
+        const answer = [];
+        this.dfs(_possibleSets, 0, this.root, "", answer);
+        return answer;
+    }
 }
