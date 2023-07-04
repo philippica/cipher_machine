@@ -240,6 +240,21 @@
 				font-size: x-large;
 				margin: 40px;
 			}
+			#sudoku-upper .col-input {
+				width: 30px;
+			}
+			#sudoku-upper {
+				margin-bottom: 10px;
+				margin-right: 0px !important;
+			}
+			#sudoku-left .row-input {
+				height: 30px;
+				margin-left: -1px !important;
+
+			}
+			#sudoku-left {
+				margin-right: 10px !important;
+			}
  		</style>
 		<link rel="stylesheet" href="./static/nonogram.css">
 		<link rel="stylesheet" href="./static/bootstrap.min.css">
@@ -517,19 +532,36 @@
 							<option value ="sudoku">经典数独模式</option>
 							<option value ="mine">经典扫雷</option>
 							<option value = "magicSquare">经典幻方</option>
+							<option value = "nonogram">经典nonogram</option>
 						</select>
 					</div>
 					<span>行: </span> <span id="sudoku-row" style="border: 1px solid;" contenteditable="true">9</span>
 					<span>列: </span> <span id="sudoku-col" style="border: 1px solid;" contenteditable="true">9</span>
 					<a href="https://github.com/philippica/cipher_machine/wiki/%E7%84%96%E8%82%89%E9%9D%A2%E8%84%9A%E6%9C%AC%E6%96%87%E6%A1%A3">脚本规则说明</a>
+					<div><span>显示上排</span><input type="checkbox" id="show-upper" /></div>
+					<div><span>显示左排</span><input type="checkbox" id="show-left" /></div>
 					<div style="display:flex;">
 						<textarea id="rules" cols="50" rows="30"></textarea>
 						<div style="margin:20px;">
+							<div style="display: none;" id="upperRules">
+								<div style="font-size: 13px;">上排区域中的内容将被替换为规则:</div>
+								<textarea id="upReplaceStr" cols="50"></textarea>
+							</div>
+							<div style="display: none;" id="leftRules">
+								<div style="font-size: 13px;">左排区域中的内容将被替换为规则:</div>
+								<textarea id="leftReplaceStr" cols="50"></textarea>
+							</div>
 							<div>
 								<div style="font-size: 13px;">下面格子中的内容将被替换为规则:</div>
 								<textarea id="replaceStr" cols="50"></textarea>
 							</div>
-							<div id="sudokuContainer"></div>
+							<div style="width: fit-content;">
+								<div id="sudoku-upper"></div>
+								<div style="display: flex;">
+									<div id="sudoku-left"></div>
+									<div id="sudokuContainer"></div>
+								</div>
+							</div>
 							<pre id="sudokuAnswer"></pre>
 						</div>
 					</div>
@@ -1252,9 +1284,27 @@
 		// sudoku
 		let n = parseInt($("#sudoku-row").html());
 		let m = parseInt($("#sudoku-col").html());
+
+		const updateRule = (replaceStr, text, replacedContent) => {
+			const findStr = "^" + replaceStr.replace(replacedContent, ".*") + "$";
+			const rulesStr = $('#rules').val().split('\n');
+			let content = "";
+			for(let i = 0; i < rulesStr.length; i++) {
+				rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
+				if(rulesWithoutSpace === "")continue;
+				if(new RegExp(findStr.replace("[", "\\[").replace(']', "\\]")).test(rulesWithoutSpace)) {
+					continue;
+				}
+				content += `${rulesWithoutSpace}\n`;
+			}
+			if(text != '') {
+				content += replaceStr.replace(replacedContent, text) + `\n`;
+			}
+			$('#rules').val(content);
+		}
 		const generate = (n, m) => {
 			$('#sudokuContainer').html("");
-			$('#sudokuContainer').width(m*30 + m);
+			$('#sudokuContainer').width(m*30 - m);
 			$('#sudokuContainer').height(n*30 + n);
 			for(let i = 0; i < n*m; i++) {
 				$('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="grid-${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
@@ -1277,21 +1327,7 @@
 				const number = parseInt(e.currentTarget.id.substr(5)) + 1;
 				console.info(number);
 				const replaceStr = $("#replaceStr").val().replace("<格子序号>", number.toString());
-				const findStr = "^" + replaceStr.replace("<格子内容>", ".*") + "$";
-				const rulesStr = $('#rules').val().split('\n');
-				let content = "";
-				for(let i = 0; i < rulesStr.length; i++) {
-					rulesWithoutSpace = rulesStr[i].replace(/\s/g, '');
-					if(rulesWithoutSpace === "")continue;
-					if(new RegExp(findStr.replace("[", "\\[").replace(']', "\\]")).test(rulesWithoutSpace)) {
-						continue;
-					}
-					content += `${rulesWithoutSpace}\n`;
-				}
-				if(text != '') {
-					content += replaceStr.replace("<格子内容>", text) + `\n`;
-				}
-				$('#rules').val(content);
+				updateRule(replaceStr, text, "<格子内容>");
 			});
 
 		}
@@ -1311,6 +1347,12 @@
 
 		const changeSolverMode = () => {
 			const modeStr = $("#solverMode").val();
+			if($('#show-upper').get(0).checked) {
+				$('#show-upper').click();
+			}
+			if($('#show-left').get(0).checked) {
+				$('#show-left').click();
+			}
 			if(modeStr === "sudoku") {
 				initSudoku();
 			} else if (modeStr === "mine") {
@@ -1320,14 +1362,22 @@
 			} else if (modeStr === "magicSquare") {
 				let initStr = '每一格是从1到16的数字\n每一格互不相同\n每一列的和是34\n每一行的和是34\n';
 				$("#rules").val(initStr);
-
 				n = 4;
 				m = 4;
 				$("#sudoku-row").html(n);
 				$("#sudoku-col").html(m);
 				$('#replaceStr').val("第<格子序号>格是<格子内容>");
 				generate(n, m);
-				
+			} else if (modeStr === "nonogram") {
+				if(!$('#show-upper').get(0).checked) {
+					$('#show-upper').click();
+				}
+				if(!$('#show-left').get(0).checked) {
+					$('#show-left').click();
+				}
+				$('#upReplaceStr').val("第<列号>列从上到下连续的黑格长度是[<列序列内容>]");
+				$('#leftReplaceStr').val("第<行号>行从左到右连续的黑格长度是[<行序列内容>]");
+				$("#rules").val('每一格是白格或黑格\n');
 			}
 		}
 
@@ -1342,6 +1392,110 @@
 				console.info("wtf");
 				await sleep(2);
 			});
+		});
+
+		let sudokuColumnArea = [];
+		let sudokuRowArea = [];
+
+		const sudokuChangeInput = (e) => {
+			const value = parseInt(e.target.innerText);
+			const data = e.target.dataset;
+			const index = parseInt(data.idx);
+			const column = parseInt(data.col);
+			const row = parseInt(data.row);
+			const line = data.type === "row" ? $("#sudoku-left #row-"+row).children() : $("#sudoku-upper #col-"+column).children();
+			if(data && value !== "") {
+				if(data.type === "col" && (index+1 === line.length)) {
+					$(`#sudoku-upper #col-${data.col}`).prepend(`<div id="col-cell-${data.col}-${index+1}" data-type="col" data-col=${data.col} data-idx=${index+1} contenteditable="true" oninput="sudokuChangeInput(event)" class="col-input">0</div>`);
+				}
+				else if(data.type === "row" && (index+1 === line.length)) {
+					$(`#sudoku-left #row-${data.row}`).prepend(`<div id="row-cell-${data.row}-${index+1}" data-type="row" data-row=${data.row} data-idx=${index+1} contenteditable="true" oninput="sudokuChangeInput(event)" class="row-input">0</div>`);
+				}
+
+			} else {
+				if(data.type === "row") {
+					while(sudokuRowArea[row].length > index) {
+						$(`#sudoku-upper #row-${data.row}`).children().eq(0).remove();
+					}
+				} else {
+					while(sudokuColumnArea[column].length > index) {
+						$(`#sudoku-upper #col-${data.col}`).children().eq(0).remove();
+					}
+				}
+			}
+			var rule;
+			if(data.type === "row") {
+				let values = "";
+				for(var i = 0; i < line.length; i++) {
+					const cell = line[i];
+					const cellData = cell.dataset;
+					const cellValue = cell.innerText;
+					if(cellValue === "0")continue;
+					if(values === "") {
+						values = cellValue;
+					} else {
+						values += "," + cellValue;
+					}
+				}
+				rule = $("#leftReplaceStr").val().replace("<行号>", row+1);
+				updateRule(rule, values, "<行序列内容>");
+			} else {
+				let values = "";
+				for(var i = 0; i < line.length; i++) {
+					const cell = line[i];
+					const cellData = cell.dataset;
+					const cellValue = cell.innerText;
+					if(cellValue === "0")continue;
+					if(values === "") {
+						values = cellValue;
+					} else {
+						values += "," + cellValue;
+					}
+				}
+				rule = $("#upReplaceStr").val().replace("<列号>", column+1);
+				updateRule(rule, values, "<列序列内容>");
+			}
+		}
+
+		$('#show-upper').change(async () => {
+			const checked = $('#show-upper').get(0).checked;
+			if(checked) {
+				sudokuColumnArea = [];
+				for(let i = 0; i < m; i++) {
+					sudokuColumnArea.push([]);
+				}
+
+				$("#sudoku-upper").html('')
+				for(var i = 0; i < m; i++) {
+					$("#sudoku-upper").append(`<div id="col-${i}" class="col-container"></div>`);
+					$(`#sudoku-upper #col-${i}`).append(`<div id="col-cell-${i}-0" data-type="col" data-col=${i} data-idx=0 contenteditable="true" oninput="sudokuChangeInput(event)" class="col-input">0</div>`);
+				}
+
+				$('#upperRules').css("display", "unset");
+			} else {
+				$("#sudoku-upper").html('');
+				$('#upperRules').css("display", "none");
+			}
+		});
+
+		$('#show-left').change(async () => {
+			const checked = $('#show-left').get(0).checked;
+			if(checked) {
+				sudokuRowArea = [];
+				for(let i = 0; i < m; i++) {
+					sudokuRowArea.push([]);
+				}
+
+				$("#sudoku-left").html('')
+				for(var i = 0; i < n; i++) {
+					$("#sudoku-left").append(`<div id="row-${i}" class="row-container"></div>`);
+					$(`#sudoku-left #row-${i}`).append(`<div id="row-cell-${i}-0" data-type="row" data-row=${i} data-idx=0 contenteditable="true" oninput="sudokuChangeInput(event)" class="row-input">0</div>`);
+				}
+				$('#leftRules').css("display", "unset");
+			} else {
+				$("#sudoku-left").html('');
+				$('#leftRules').css("display", "none");
+			}
 		});
 
 		initSudoku();
