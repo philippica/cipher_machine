@@ -414,6 +414,45 @@ export class SudokuSolver {
     consoleo.info();
   }
 
+  relaxBars(areas, origin, ruleSet, rule) {
+    console.info(areas, origin, ruleSet, rule);
+    // dp1[i][j]: i's grid j's number, last grid is black
+    // dp2[i][j]: i's grid j's number, last grid is white
+    // dp1[i][j] = dp2[i-number[j]][j-1] & all j to i is black
+    // dp2[i][j] = dp2[i-1][j] | dp1[i-1][j]
+    const sum = [0];
+    let last = 0;
+    for(const area of areas) {
+      console.info(this.possibleArray[area]);
+      if(this.possibleArray[area].has(rule.item)) {
+        last++;
+      }
+      sum.push(last);
+    }
+    const n = areas.length;
+    const m = rule.list.length;
+    const dp1 = [[]];
+    const dp2 = [[]];
+    for(let i = 0; i <= m; i++) {
+      dp1[0].push(false);
+      dp2[0].push(true);
+    }
+    for(let i = 1; i <= n; i++) {
+      dp1.push([false]);
+      dp2.push([true]);
+      for(let j = 1; j <= m; j++) {
+        let canBeFill = false;
+        if(i - rule.list[j-1] >= 0 && sum[i] - sum[i - rule.list[j-1]] === rule.list[j-1]) {
+          canBeFill = true;
+        }
+        if(canBeFill)dp1[i].push((dp2[i-rule.list[j-1]][j-1]));else dp1[i].push(false);
+        dp2[i].push(dp2[i-1][j] || dp1[i-1][j]);
+      }
+    }
+    console.info(dp1, dp2);
+
+  }
+
   relaxRule(rule, origin, index, newRule) {
     const ruleSet = new Set([]);
     const areas = rule.restrictAreas;
@@ -435,6 +474,8 @@ export class SudokuSolver {
     } else if(rule.rules.isWord) {
       const ret = this.relaxWord(areas, origin, ruleSet);
       if(ret === -1)return -1;
+    } else if(rule.rules.bars)  {
+      const ret = this.relaxBars(areas, origin, ruleSet, rule.rules.bars);
     }
 
     for(const rules of ruleSet) {
