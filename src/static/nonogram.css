@@ -43,7 +43,7 @@
 	flex-direction: column;
 	justify-content: flex-end;
 }
-#drop-quotes-upper-bar, #upper-bar {
+#drop-quotes-upper-bar, #upper-bar, #sudoku-upper {
 	display: flex;
 	justify-content: flex-end;
 	margin-right: -1px;

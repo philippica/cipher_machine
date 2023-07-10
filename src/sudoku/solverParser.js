@@ -1,3 +1,11 @@
+const colorMap = {
+  '黑': 'black',
+  '白': 'white',
+  '红': 'red',
+  '蓝': 'blue',
+  '黄': 'yellow',
+}
+
 export class SolverParser {
 
   constructor(rulesList, n, m, globalRules, globalFinalRules) {
@@ -106,19 +114,10 @@ export class SolverParser {
       if(lineToken) {
         currentPos = lineToken.stopPos+3;
         item = lineToken.value;
-      } else if(str[start+1] === '黑') {
+      } else {
         currentPos = start+6;
-        item = "black";
-      } else if(str[start+1] === '白') {
-        currentPos = start+6;
-        item = "white";
-      } else if(str[start+1] === '红') {
-        currentPos = start+6;
-        item = "red";
-      } else if(str[start+1] === '蓝') {
-        currentPos = start+6;
-        item = "blue";
-      }
+        item = colorMap[str[start+1]];
+      };
       const result = this.parseRelativeSign(str, currentPos);
       const ret = {
           count: result
@@ -126,6 +125,16 @@ export class SolverParser {
       ret.count.item = item;
 
       return ret;
+    } else if(str[start] === '从') {//从上到下连续的黑格长度是
+      const list = this.getNumberList(str, start + 12).set.map((x)=>x+1);
+      const type = str[start+1] === '上' ? 'col' : 'row';
+      return {
+        bars: {
+          list,
+          type,
+          item: colorMap[str[start+7]]
+        }
+      }
     }
   };
 
