@@ -334,27 +334,6 @@
 					<div id="substitution-answer"></div>
 				</div>
 			</div>
-			<div id="nonogram-container">
-				<div id="nonogram-capsule" class="capsule" data-expend=true>nonogram</div>
-				<div id="nonogram-main" class="content-area" style="display: none;">
-					<form role="form">
-						<div class="form-group">
-							<label for="name">行</label>
-							<input id="row" value="5" onchange="ModifiedCb()"/>
-							<label for="name">列</label>
-							<input id="column" value="5" onchange="ModifiedCb()"/>
-						</div>
-					</form>
-					<div id="playground">
-						<div id="upper-bar"></div>
-						<div id="bottom">
-							<div id="left-bar"></div>
-							<div id="board"></div>
-						</div>
-					</div>
-					<button onclick="solve()">solve</button>
-				</div>
-			</div>
 			<div id="word-search-container">
 				<div id="word-search-capsule" class="capsule" data-expend=true>Word Search</div>
 				<div id="word-search-main" class="content-area" style="display: none;">
@@ -525,7 +504,7 @@
 				</div>
 			</div>
 			<div id="sudoku-container">
-				<div id="sudoku-capsule" class="capsule" data-expend=true>数独、幻方、扫雷黑科技</div>
+				<div id="sudoku-capsule" class="capsule" data-expend=true>数独、幻方、扫雷、nonogram黑科技</div>
 				<div id="sudoku-main" class="content-area" style="display: none;">
 					<div>
 						<select id ="solverMode" onchange="changeSolverMode()">
@@ -630,114 +609,6 @@
 					$("#substitution-answer").append(`<div><b>${plaintext[i]}</b></div>`);
 				}
 			});
-
-			// nono
-			let columnArea = [];
-			let rowArea = [];
-
-			const setTile = (x, y, color) => {
-				console.info(x, y, color);
-				if(color === 2) {
-					$(`#cell-${x}-${y}`).css("background-color", "white")
-				}
-				if(color === 1) {
-					$(`#cell-${x}-${y}`).css("background-color", "black")
-				}
-			}
-
-			const solve = () => {
-				let columnSum = 0;
-				for(let line of columnArea) {
-					for(let number of line) {
-						columnSum += number;
-					}
-				}
-
-				let rowSum = 0;
-				for(let line of rowArea) {
-					for(let number of line) {
-						rowSum += number;
-					}
-				}
-
-				if(rowSum != columnSum) {
-					alert(`左半部分的和为${rowSum}, 右半部分的和为${columnSum}， 两者不相等，检查一下`);
-					return;
-				}
-				plaintext = new Solver.Nonogram().nonogramSolver(columnArea, rowArea, setTile)
-			}
-
-			const changeInput = (e) => {
-				const value = parseInt(e.target.innerText);
-				if(e.data && value > 0) {
-					const data = e.target.dataset;
-					console.info(data);
-					const index = parseInt(data.idx);
-					const column = parseInt(data.col);
-					const row = parseInt(data.row);
-					if(data.type === "col" && (index === columnArea[column].length)) {
-						columnArea[column].push(value);
-						console.info(columnArea);
-						$(`#col-${data.col}`).prepend(`<div id="col-cell-${data.col}-${index+1}" data-type="col" data-col=${data.col} data-idx=${index+1} contenteditable="true" oninput="changeInput(event)" class="col-input">0</div>`);
-					}
-					else if(data.type === "row" && (index === rowArea[row].length)) {
-						rowArea[row].push(value);
-						$(`#row-${data.row}`).prepend(`<div id="row-cell-${data.row}-${index+1}" data-type="row" data-row=${data.row} data-idx=${index+1} contenteditable="true" oninput="changeInput(event)" class="row-input">0</div>`);
-						console.info(rowArea);
-					} else if(data.type === "row") {
-						rowArea[row][index] = value;
-					} else {
-						columnArea[column][index] = value;
-					}
-				} else {
-					const data = e.target.dataset;
-					const index = parseInt(data.idx);
-					const column = parseInt(data.col);
-					const row = parseInt(data.row);
-					if(data.type === "row") {
-						while(rowArea[row].length > index) {
-							rowArea[row].pop();
-							$(`#row-${data.row}`).children().eq(0).remove();
-						}
-					} else {
-						while(columnArea[column].length > index) {
-							columnArea[column].pop();
-							$(`#col-${data.col}`).children().eq(0).remove();
-						}
-					}
-				}
-			}
-
-			const ModifiedCb = () => {
-				let col = parseInt($("#column").val());
-				let row = parseInt($("#row").val());
-				columnArea = [];
-				rowArea = [];
-				for(let i = 0; i < col; i++) {
-					columnArea.push([]);
-				}
-				for(let i = 0; i < row; i++) {
-					rowArea.push([]);
-				}
-				$("#upper-bar").empty();
-				$("#left-bar").empty();
-				$("#board").empty();
-
-				for(let i = 0; i < col; i++) {
-					$("#upper-bar").append(`<div id="col-${i}" class="col-container"></div>`);
-					$(`#col-${i}`).append(`<div id="col-cell-${i}-0" data-type="col" data-col=${i} data-idx=0 contenteditable="true" oninput="changeInput(event)" class="col-input">0</div>`);
-				}
-				for(let i = 0; i < row; i++) {
-					$("#left-bar").append(`<div id="row-${i}" class="row-container"></div>`);
-					$(`#row-${i}`).append(`<div id="row-cell-${i}-0" contenteditable="true" data-type="row" data-row=${i} data-idx=0 oninput="changeInput(event)" class="row-input">0</div>`);
-					$("#board").append(`<div id="row-${i}" class="row-board"></div>`);
-					// $(`#board #row-${i}`).append(`<div contenteditable="true" class="row-input"></div>`);
-					for(let j = 0; j < col; j++) {
-						$(`#board #row-${i}`).append(`<div id="cell-${i}-${j}" class="cell"></div>`);
-					}
-				}
-			}
-			ModifiedCb();
 
 			// one word
 			const solver = new Solver.OneWord();
@@ -1315,12 +1186,6 @@
 				if (before != $(this).html()) { before = $(this).html(); $(this).trigger('change'); }
 			});
 
-			$('#sudoku-col,#sudoku-row').on('change', (e) =>{
-				n = parseInt($("#sudoku-row").html());
-				m = parseInt($("#sudoku-col").html());
-				generate(n,m);
-			});
-
 			$('.sudoku-grid-content').on('change', (e) =>{
 				console.info(e.target.innerText);
 				const text = e.target.innerText;
@@ -1377,7 +1242,14 @@
 				}
 				$('#upReplaceStr').val("第<列号>列从上到下连续的黑格长度是[<列序列内容>]");
 				$('#leftReplaceStr').val("第<行号>行从左到右连续的黑格长度是[<行序列内容>]");
-				$("#rules").val('每一格是白格或黑格\n');
+				let content = "每一格是黑格或白格\n";
+				for(let i = 1; i <= n; i++) {
+					content += `第${i}行从左到右连续的黑格长度是[0]\n`;
+				}
+				for(let i = 1; i <= m; i++) {
+					content += `第${i}列从上到下连续的黑格长度是[0]\n`;
+				}
+				$("#rules").val(content);
 			}
 		}
 
@@ -1457,41 +1329,46 @@
 			}
 		}
 
+		const showUpper = () => {
+			sudokuColumnArea = [];
+			for(let i = 0; i < m; i++) {
+				sudokuColumnArea.push([]);
+			}
+			$("#sudoku-upper").html('')
+			for(var i = 0; i < m; i++) {
+				$("#sudoku-upper").append(`<div id="col-${i}" class="col-container"></div>`);
+				$(`#sudoku-upper #col-${i}`).append(`<div id="col-cell-${i}-0" data-type="col" data-col=${i} data-idx=0 contenteditable="true" oninput="sudokuChangeInput(event)" class="col-input">0</div>`);
+			}
+			$('#upperRules').css("display", "unset");
+		}
 		$('#show-upper').change(async () => {
 			const checked = $('#show-upper').get(0).checked;
 			if(checked) {
-				sudokuColumnArea = [];
-				for(let i = 0; i < m; i++) {
-					sudokuColumnArea.push([]);
-				}
-
-				$("#sudoku-upper").html('')
-				for(var i = 0; i < m; i++) {
-					$("#sudoku-upper").append(`<div id="col-${i}" class="col-container"></div>`);
-					$(`#sudoku-upper #col-${i}`).append(`<div id="col-cell-${i}-0" data-type="col" data-col=${i} data-idx=0 contenteditable="true" oninput="sudokuChangeInput(event)" class="col-input">0</div>`);
-				}
-
-				$('#upperRules').css("display", "unset");
+				showUpper();
 			} else {
 				$("#sudoku-upper").html('');
 				$('#upperRules').css("display", "none");
 			}
 		});
 
+		const showLeft = () => {
+			sudokuRowArea = [];
+			for(let i = 0; i < m; i++) {
+				sudokuRowArea.push([]);
+			}
+
+			$("#sudoku-left").html('')
+			for(var i = 0; i < n; i++) {
+				$("#sudoku-left").append(`<div id="row-${i}" class="row-container"></div>`);
+				$(`#sudoku-left #row-${i}`).append(`<div id="row-cell-${i}-0" data-type="row" data-row=${i} data-idx=0 contenteditable="true" oninput="sudokuChangeInput(event)" class="row-input">0</div>`);
+			}
+			$('#leftRules').css("display", "unset");
+		}
+
 		$('#show-left').change(async () => {
 			const checked = $('#show-left').get(0).checked;
 			if(checked) {
-				sudokuRowArea = [];
-				for(let i = 0; i < m; i++) {
-					sudokuRowArea.push([]);
-				}
-
-				$("#sudoku-left").html('')
-				for(var i = 0; i < n; i++) {
-					$("#sudoku-left").append(`<div id="row-${i}" class="row-container"></div>`);
-					$(`#sudoku-left #row-${i}`).append(`<div id="row-cell-${i}-0" data-type="row" data-row=${i} data-idx=0 contenteditable="true" oninput="sudokuChangeInput(event)" class="row-input">0</div>`);
-				}
-				$('#leftRules').css("display", "unset");
+				showLeft();
 			} else {
 				$("#sudoku-left").html('');
 				$('#leftRules').css("display", "none");
@@ -1499,6 +1376,18 @@
 		});
 
 		initSudoku();
+
+		$('#sudoku-col,#sudoku-row').on('change', (e) =>{
+			n = parseInt($("#sudoku-row").html());
+			m = parseInt($("#sudoku-col").html());
+			if($('#show-left').get(0).checked) {
+				showLeft();
+			}
+			if($('#show-upper').get(0).checked) {
+				showUpper();
+			}
+			generate(n,m);
+		});
 
 // audio
 

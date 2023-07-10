@@ -595,6 +595,8 @@ export class SudokuSolver {
         } else if(number === 'white') {
           $(`.sudoku-grid #grid-${i}`).css("background-color", number);
           $(`.sudoku-grid #grid-${i}`).css("color", "black");
+        } else if(number === 'red') {
+          $(`.sudoku-grid #grid-${i}`).css("background-color", number);
         }
         temp.push(number);
         answer += number + ' ';
