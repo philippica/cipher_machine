@@ -79,6 +79,11 @@ export class SolverParser {
       return {
         smallerThan: this.getNumber(str, start + 4).value+1,
       };
+    } else if(str[start] === '强') { // 强制是xx
+      return {
+        set: this.getSet(str, start + 3),
+        force: true
+      };
     }
   }
 
@@ -135,6 +140,13 @@ export class SolverParser {
           item: colorMap[str[start+7]]
         }
       }
+    } else if (str[start] === '除') {//除了黑格外的格子是
+      const list = this.getNumberList(str, start + 9).set;
+      return {
+        permutation: {
+          list
+        }
+      }
     }
   };
 
@@ -151,9 +163,19 @@ export class SolverParser {
     let index = start + 1;
     const ret = [];
     while (1) {
-      const numberToken = this.getNumber(str, index);
-      index = numberToken.stopPos + 1;
-      ret.push(numberToken.value - 1);
+      let numberToken = this.getNumber(str, index);
+      if(numberToken) {
+        index = numberToken.stopPos + 1;
+        ret.push(numberToken.value - 1);
+      } else {
+        const start = index;
+        while(str[index] != ']' && str[index] != ',') {
+          index++;
+        }
+        ret.push(str.slice(start, index));
+        numberToken = {stopPos: index}
+        index++;
+      }
       if (str[numberToken.stopPos] === ']') {
         return {
           stopPos: numberToken.stopPos + 1,

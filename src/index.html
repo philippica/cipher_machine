@@ -512,6 +512,7 @@
 							<option value ="mine">经典扫雷</option>
 							<option value = "magicSquare">经典幻方</option>
 							<option value = "nonogram">经典nonogram</option>
+							<option value = "drop">经典drop</option>
 						</select>
 					</div>
 					<span>行: </span> <span id="sudoku-row" style="border: 1px solid;" contenteditable="true">9</span>
@@ -1249,6 +1250,13 @@
 				for(let i = 1; i <= m; i++) {
 					content += `第${i}列从上到下连续的黑格长度是[0]\n`;
 				}
+				$("#rules").val(content);
+			} else if (modeStr === "drop") {
+				if(!$('#show-upper').get(0).checked) {
+					$('#show-upper').click();
+				}
+				$('#upReplaceStr').val("第<列号>列除了黑格外的格子是[<列序列内容>]的一个排列");
+				let content = "每一格是从a到z的字母\n";
 				$("#rules").val(content);
 			}
 		}

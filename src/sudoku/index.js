@@ -28,12 +28,17 @@ export class SudokuSolver {
 
     globalRules.descriptionRules = [];
     globalRules.groupRules = [];
+    const forceRule = [];
     for (let i = 0; i < globalRules.length; i++) {
       const rule = globalRules[i];
       const { restrictAreas } = rule;
       const letterSet = rule.rules ? rule.rules.set : undefined;
       if (letterSet) {
         globalRules.descriptionRules.push(i);
+        if(rule.rules.force) {
+          forceRule.push(i);
+          continue;
+        }
         for (let j = 0; j < restrictAreas.length; j++) {
           this.mergeSet(restrictAreas[j], letterSet);
         }
@@ -57,6 +62,14 @@ export class SudokuSolver {
         for (let j = 0; j < restrictAreas.length; j++) {
           possibleArray[restrictAreas[j]] = this.smallSet(possibleArray[restrictAreas[j]], rule.rules.smallerThan);
         }
+      }
+    }
+
+    for(const index of forceRule) {
+      const rule = globalRules[index];
+      const { restrictAreas } = rule;
+      for (let j = 0; j < restrictAreas.length; j++) {
+        this.possibleArray[restrictAreas[j]] = new Set(rule.rules.set);
       }
     }
     this.relax();
