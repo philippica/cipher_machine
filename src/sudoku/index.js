@@ -554,11 +554,58 @@ export class SudokuSolver {
         this.possibleArray[areas[i-1]].delete(rule.item);
       }
     }
-  
+  }
 
-    console.info(dp1, dp2);
-    console.info(black, white);
+  relaxPermutation(areas, origin, ruleSet, rule) {
+    console.info(areas, origin, ruleSet, rule);
+    const list = Array.from(rule.list);
+    const n = areas.length;
+    const realAreas = [];
+    const alreadyHave = [];
 
+    for(const area of areas) {
+      if(this.possibleArray[area].size === 1) {
+        alreadyHave.push(this.possibleArray[area].values().next().value);
+      } else {
+        realAreas.push(area);
+      }
+    }
+    for(const item of alreadyHave) {
+      let flag = false;
+      for(let i = 0; i < list.length; i++) {
+        if(item === list[i]) {
+          list.splice(i, 1);
+          flag = true;
+          break;
+        }
+      }
+      if(!flag)return -1;
+    }
+
+    const impossible = [];
+    for(const item of alreadyHave) {
+      let flag = false;
+      for(let i = 0; i < list.length; i++) {
+        if(item === list[i]) {
+          flag = true;
+          break;
+        }
+      }
+      if(!flag)impossible.push(item);
+    }
+    for(const area of realAreas) {
+      for(const item of impossible) {
+        if(!this.possibleArray[area].has(item)) continue;
+
+        if(!origin[area]) {
+          origin[area] = new Set(this.possibleArray[area]);
+        }
+        for(const connectedRule of this.connectedRules[area]) {
+          ruleSet.add(connectedRule);
+        }
+        this.possibleArray[area];
+      }
+    }
   }
 
   relaxRule(rule, origin, index, newRule) {
@@ -584,6 +631,9 @@ export class SudokuSolver {
       if(ret === -1)return -1;
     } else if(rule.rules.bars)  {
       const ret = this.relaxBars(areas, origin, ruleSet, rule.rules.bars);
+      if(ret === -1)return -1;
+    } else if(rule.rules.permutation) {
+      const ret = this.relaxPermutation(areas, origin, ruleSet, rule.rules.permutation);
       if(ret === -1)return -1;
     }
 
