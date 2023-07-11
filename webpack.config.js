@@ -3,7 +3,7 @@ const htmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
-  //mode: 'development',
+  // mode: 'development',
   entry: path.resolve(__dirname, './src/index'),
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -20,7 +20,7 @@ module.exports = {
       scriptLoading: 'blocking',
       minify: {
         minifyCSS: true,
-        minifyJS: true,
+        minifyJS: module.exports.mode == 'development' ? false : true,
         minify: true
       }
     }),
