@@ -437,6 +437,17 @@ export class SudokuSolver {
       for(const word of words) {
         letters.add(word[i]);
       }
+      const s = new Set([...letters].filter(item => possibleList[i].has(item)));
+      if(s.size === this.possibleArray[areas[i]].size) {
+        continue;
+      }
+      if(!origin[areas[i]]) {
+        origin[areas[i]] = new Set(this.possibleArray[areas[i]]);
+      }
+      for(const connectedRule of this.connectedRules[areas[i]]) {
+        ruleSet.add(connectedRule);
+      }
+
       this.possibleArray[areas[i]] = new Set([...letters].filter(item => possibleList[i].has(item)));
     }
   }
