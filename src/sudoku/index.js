@@ -42,12 +42,12 @@ export class SudokuSolver {
         for (let j = 0; j < restrictAreas.length; j++) {
           this.mergeSet(restrictAreas[j], letterSet);
         }
-      } else {
-        globalRules.groupRules.push(i);
-        for (let j = 0; j < restrictAreas.length; j++) {
-          connectedRules[restrictAreas[j]].push(i);
-          this.weight[restrictAreas[j]]++;
-        }
+        if(!rule.rules.permutation)continue;
+      }
+      globalRules.groupRules.push(i);
+      for (let j = 0; j < restrictAreas.length; j++) {
+        connectedRules[restrictAreas[j]].push(i);
+        this.weight[restrictAreas[j]]++;
       }
     }
 

@@ -145,7 +145,8 @@ export class SolverParser {
       return {
         permutation: {
           list
-        }
+        },
+        set: list
       }
     }
   };
