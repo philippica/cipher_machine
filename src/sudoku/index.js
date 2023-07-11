@@ -1,5 +1,6 @@
 // TODO: Need to be refacted, the code here is tooooo terrible
 import { SolverParser } from './solverParser';
+import { Trie } from '../common/Trie';
 export class SudokuSolver {
   constructor() {
     this.possibleArray = [];
@@ -424,7 +425,20 @@ export class SudokuSolver {
   }
 
   relaxWord(areas, origin, ruleSet) {
-    consoleo.info();
+    const possibleList = [];
+    for(const area of areas) {
+      possibleList.push(this.possibleArray[area]);
+    }
+    const words = window.Trie.findAllByPossibleSets(possibleList);
+    console.info(words);
+    if(words.length >= 1000)return;
+    for(let i = 0; i < areas.length; i++) {
+      const letters = new Set();
+      for(const word of words) {
+        letters.add(word[i]);
+      }
+      this.possibleArray[areas[i]] = new Set([...letters].filter(item => possibleList[i].has(item)));
+    }
   }
 
   relaxBars(areas, origin, ruleSet, rule) {
@@ -565,7 +579,11 @@ export class SudokuSolver {
 
     for(const area of areas) {
       if(this.possibleArray[area].size === 1) {
-        alreadyHave.push(this.possibleArray[area].values().next().value);
+        const value = this.possibleArray[area].values().next().value;
+        if(value === 'black') {
+          continue;
+        }
+        alreadyHave.push(value);
       } else {
         realAreas.push(area);
       }
