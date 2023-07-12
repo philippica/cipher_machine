@@ -314,7 +314,7 @@ export class SolverParser {
   getRestrictAreas(str, start) {
     const ret = this.getOriginAreas(str, start);
     console.info(str[ret.stopPos]);
-    if(str[ret.stopPos] === "的" && str[ret.stopPos+1] !== "和" && str[ret.stopPos + 1] !== "系") {
+    if(str[ret.stopPos] === "的" && str[ret.stopPos+1] === "[") {
       let result = this.modifyArea(str, ret.stopPos +1, ret);
       const modifiedArea = ret.restrictArea[0].map((x) => {
         let c = x % this.m;

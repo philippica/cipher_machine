@@ -1,4 +1,3 @@
-import { words } from "../common/dict";
 import { Trie } from "../common/Trie";
 
 export class OneWord {
@@ -7,7 +6,8 @@ export class OneWord {
     }
 
     initTrie() {
-        if(!window.Trie) {
+        const words = window.words;
+        if(!window.Trie && words) {
             window.Trie = new Trie();
             for(let patten in words) {
                 if(!patten)continue;
@@ -50,6 +50,7 @@ export class OneWord {
 
 
     async findByRegularExpression(str, callback, filter) {
+        const words = window.words;
         const regularExpression = eval(`/${str}/`);
         const answer = [];
         if(!callback) {
@@ -108,6 +109,7 @@ export class OneWord {
     }
 
     async onlyContains(letters, callback) {
+        const words = window.words;
         const answer = [];
         const letterSet = this.makeLetterSet(letters);
         const containsHelp = (letterSet, str) => {
@@ -137,6 +139,7 @@ export class OneWord {
     }
 
     permutation(letters) {
+        const words = window.words;
         const answer = [];
         const letterSet = this.makeLetterSet(letters);
         const containsHelp = (letterSet, str) => {
@@ -187,6 +190,7 @@ export class OneWord {
     }
 
     async contains(letters, callback) {
+        const words = window.words;
         const answers = [];
         if(!callback) {
             callback = ()=>{};
@@ -208,6 +212,7 @@ export class OneWord {
 
 
     async findSimilarity(str, similarityDegree, callback) {
+        const words = window.words;
         const answer = [];
         if(!similarityDegree) {
             similarityDegree = 1;
@@ -231,6 +236,7 @@ export class OneWord {
     }
 
     async findByCode(code, callback) {
+        const words = window.words;
         const answer = [];
         if(!callback) {
             callback = ()=>{};

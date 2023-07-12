@@ -482,7 +482,7 @@
 				</div>
 			</div>
 			<div id="sudoku-container">
-				<div id="sudoku-capsule" class="capsule" data-expend=true>数独、幻方、扫雷、nonogram黑科技</div>
+				<div id="sudoku-capsule" class="capsule" data-expend=true>数独、幻方、扫雷、nonogram、Drop Quote黑科技</div>
 				<div id="sudoku-main" class="content-area" style="display: none;">
 					<div>
 						<select id ="solverMode" onchange="changeSolverMode()">
@@ -552,7 +552,7 @@
 
 		<script src="./static/jquery.min.js"></script>
 		<script>
-			$('h3').remove();
+			$('h3').text("字典尚在加载,部分利用到字典的功能暂不可用,请稍等片刻，如果实在太慢，可下载本页面到电脑本地使用");
 			// substitution
 			$(".capsule").click((e) => {
 				const target = e.target;
@@ -591,7 +591,7 @@
 			});
 
 			// one word
-			const solver = new Solver.OneWord();
+			let solver = new Solver.OneWord();
 			const oneWordHelpContent = {
 				"findByWildcard": "当前是通配符模式 - 你可以使用#表示一个字母或者*表示多个字母 例如 bo##ke*r 可以匹配到bookkeeper",
 				"findByRegularExpression": "当前是正则表达式模式 - 如果你熟悉正则表达式，那它将会是一个非常强大的工具 例如^[abcd][ef].*[aeiou]$ 能够搜到第一个字母为abcd中一个，第二个字母为ef中一个，并且以元音结尾的所有单词\n\n例如寻找第一个字符和第四个字符相同第二个字符为b的长度为8的单词 ^(.)b.\\1....$ 解释：(其中\\1表示从左到右第一个括号需要和它相同 .代表任意字符 ^ $分别代表头和尾)\n\n例如寻找长度为4的第一个字符和第四个字符相同，第二个字符和第三个字符相同的单词: ^(.)(.)\\2\\1$\n\n例如寻找第一个字符是元音，且第一个字符和第三个字符相同，长度不定，第二个字符不可能是b或者c的单词 ^([aeiou])[^bc]\\1\n",
@@ -1696,9 +1696,11 @@ $("#play").click(() => {
     start();
 });
 
-
-
-
+		</script>
+		<script src="./static/dict.v1.0.min.js"></script>
+		<script>
+			solver = new Solver.OneWord();
+			$('h3').remove();
 		</script>
 		<script src="./out.js"></script>
 		</div>
