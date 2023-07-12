@@ -1,5 +1,4 @@
 import { Token } from './Token';
-import { words } from '../common/dict.js';
 
 export class TokenList {
     constructor() {
@@ -47,6 +46,7 @@ export class TokenList {
 
 
     build(rawTokens, knownWordsList, mappingTable, weight) {
+		const words = window.words;
 		const countOfTokens = rawTokens.length;
 		for(let i = 0; i < countOfTokens; i++) {
 			if(rawTokens[i] == "") {

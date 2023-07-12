@@ -1,25 +1,10 @@
 import { Trie } from "../common/Trie";
-import { words } from '../common/dict.js';
 
 //import { words } from "../common/dict";
 export class WordSearch {
     constructor() {
-        this.initTrie();
     }
     
-    initTrie() {
-        if(!window.Trie) {
-            window.Trie = new Trie();
-            for(let patten in words) {
-                if(!patten)continue;
-                for(let word of words[patten]) {
-                    window.Trie.insert(word);
-                }
-            }
-        }
-        this.Trie = window.Trie;
-        this.customTrie = new Trie();
-    }
     customWordList(wordList) {
         this.customTrie = new Trie();
         for(let word of wordList) {
@@ -47,7 +32,7 @@ export class WordSearch {
             currentX += dx;
             currentY += dy;
         }
-        const answers = this.Trie.findAll(str).filter((word)=>word.length>=2).map((word)=> {
+        const answers = window.Trie.findAll(str).filter((word)=>word.length>=2).map((word)=> {
             return {word, x, y, dx, dy};
         });
         return answers;

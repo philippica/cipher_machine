@@ -38578,6 +38578,4 @@ words["abcddecfdg"]=["wrigglings"]
 words["abccbdebdf"]=["yiddishism"]
 words["abbcbdefeg"]=["zoogonidia"]
 words["abbcdbebfc"]=["zoosporous"]
-export {
-    words
-}
+windows.words = words
