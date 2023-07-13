@@ -255,6 +255,17 @@
 			#sudoku-left {
 				margin-right: 10px !important;
 			}
+			#smart-analysis-ansers {
+				min-height: 100px;
+				border: 1px solid;
+			}
+			.analysis-hint {
+				color: grey;
+    			font-size: smaller;
+			}
+			.analysis-bar {
+				margin-left: 30px;
+			}
  		</style>
 		<link rel="stylesheet" href="./static/nonogram.css">
 		<link rel="stylesheet" href="./static/bootstrap.min.css">
@@ -349,6 +360,19 @@
 					<div id="word-search-ansers" style="display: flex">
 						<div id="word-search-ansers-list"></div>
 						<div id="word-search-ansers-position" style="margin-left: 40px"></div>
+					</div>
+				</div>
+			</div>
+			<div id="smart-analysis-container">
+				<div id="smart-analysis-capsule" class="capsule" data-expend="true">密文智能分析</div>
+				<div id="rubik-cube-main" class="content-area" style="display:none">
+					<div class="help-content">请在下面文本框内输入要分析的文本, 逗号或者空格可以作为分隔符</div>
+					<div>
+						<textarea id="smart-analysis-content" class="form-control" rows="1" placeholder="请输出要分析的文本"></textarea>
+					</div>
+					<div id="smart-analysis-ansers" style="display:flex">
+						<div id="smart-analysis-ansers-list"></div>
+						<div id="smart-analysis-ansers-position" style="margin-left:40px"></div>
 					</div>
 				</div>
 			</div>
@@ -549,10 +573,18 @@
 			</div>
 		</div>
 		<div id="footer"> power by -- philippica (Contact me: philippicapyj@gmail.com)</div>
-
+		<script src="<%= htmlWebpackPlugin.files.js[0] %>"></script>
 		<script src="./static/jquery.min.js"></script>
 		<script>
-			$('h3').text("字典尚在加载,部分利用到字典的功能暂不可用,请稍等片刻，如果实在太慢，可下载本页面到电脑本地使用");
+			$('h3').text("字典尚在加载,部分利用到字典的功能暂不可用,请稍等片刻,如果实在太慢,可下载本页面到电脑本地使用");
+			if(localStorage.abc) {
+				window.words = {};
+				for (let i = 0, len = localStorage.length; i < len; i++) {
+					const key = localStorage.key(i);
+					words[key] = localStorage.getItem(key).split(",");
+				}
+				$('h3').remove();
+			}
 			// substitution
 			$(".capsule").click((e) => {
 				const target = e.target;
@@ -898,11 +930,11 @@
 				$('#cipher-code-textarea').val(cipherText.replaceAll($('#replace1').val(), $('#replace2').val()));
 			}
 
-			decodeProcess = (key1, key2) => {
+			decodeProcess = (key1, key2, ct) => {
 				key1 = key1.trim().replaceAll('  ', ' ').split(' ');
 				key2 = key2.trim().replaceAll('  ', ' ').split(' ');
 				const keyLen = key1.length;
-				const cipherText = $('#cipher-code-textarea').val();
+				const cipherText = ct || $('#cipher-code-textarea').val();
 				let plainText = '';
 				for(let i = 0; i < cipherText.length;) { // TODO: AC automaton instead of brute force
 					let match = -1;
@@ -925,18 +957,18 @@
 						plainText += key2[match] + ' ';
 					}
 				}
-				console.info(plainText);
+				return plainText;
 				$('#plain-code-area').html(`<div style="display:flex;">结果: ${plainText}</div>`);
 			}
 
 			const decode = () => {
 				const key = $("#key-textarea").val().split('\n');
-				decodeProcess(key[1], key[0]);
+				$('#plain-code-area').html(`<div style="display:flex;">结果: ${decodeProcess(key[1], key[0])}</div>`);
 			}
 
 			const encode = () => {
 				const key = $("#key-textarea").val().split('\n');
-				decodeProcess(key[0], key[1]);
+				$('#plain-code-area').html(`<div style="display:flex;">结果: ${decodeProcess(key[0], key[1])}</div>`);
 			}
 
 			const substitutionTable = [
@@ -977,12 +1009,12 @@
 					str += substitutionTable[1] + ' ' + substitutionTable[6] + '\n' + substitutionTable[7] + ' ' + substitutionTable[8];
 					break;
 				}
-				$('#key-textarea').val(str);
+				return str;
 			}
 			
 			const changeSubstitutionMethod = () => {
 				const methodIndex = $("#substitution-cipher-method")[0].selectedIndex;
-				useMethod(methodIndex);
+				$('#key-textarea').val(useMethod(methodIndex));
 
 			}
 			changeSubstitutionMethod();
@@ -1002,7 +1034,7 @@
 			}
 
 			$('#substitution-cipher-method').ready(() => {
-				useMethod(0);
+				$('#key-textarea').val(useMethod(0));
 			});
 
 			const substituteCipher = (str, mapT) => {
@@ -1024,8 +1056,8 @@
 				for(let ch of str) {
 					if(mappingTable[ch]) {
 						ans += mappingTable[ch];
-					} else if(mappingTable[toLowerCase(ch)]) {
-						ans += mappingTable[toLowerCase(ch)];
+					} else if(mappingTable[ch.toLowerCase()]) {
+						ans += mappingTable[ch.toLowerCase()];
 					} else {
 						ans += ch;
 					}
@@ -1696,11 +1728,154 @@ $("#play").click(() => {
     start();
 });
 
+// smart analysis
+let analysisIndex = 0;
+const morseAnalysis = (result, words, chars) => {
+	result.append(`<h4 class="analysis-hint">尝试莫斯</h4>`);
+	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+	let pt = "";
+	const morse = useMethod(6).split('\n');
+	for(const word of words) {
+		const c = decodeProcess(morse[1], morse[0], word.replaceAll(chars[0], '.').replaceAll(chars[1], '-')).trim();
+		if(c.length > 1) {
+			pt += '*';
+			continue;
+		}
+		pt += c;
+	}
+	$(`#analysis-bar-${analysisIndex-1}`).append(`<div><b>${chars[0]}为点, ${chars[1]}为长:</b> ${pt}</div>`);
+
+	pt = "";
+	for(const word of words) {
+		const c = decodeProcess(morse[1], morse[0], word.replaceAll(chars[1], '.').replaceAll(chars[0], '-')).trim();
+		if(c.length > 1) {
+			pt += '*';
+			continue;
+		}
+		pt += c;
+	}
+	$(`#analysis-bar-${analysisIndex-1}`).append(`<div><b>${chars[1]}为点, ${chars[0]}为长:</b> ${pt}</div>`);
+}
+
+const numbersAnalysis = (result, nums) => {
+	result.append(`<h4 class="analysis-hint">尝试数字</h4>`);
+	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+	const numResult = $(`#analysis-bar-${analysisIndex-1}`);
+	if(nums.filter((x)=>
+		x <=0 || x > 26
+	).length === 0) {
+		numResult.append(`<h4 class="analysis-hint">发现所有数字都在1-26之间</h4>`);
+		const answer = nums.map((x)=>String.fromCharCode(x+96)).join("");
+		numResult.append(`<div><b>A=1..Z=26:</b> ${answer}</div>`);
+	}
+	if(nums.filter((x)=>
+		x <0 || x >= 26
+	).length === 0) {
+		numResult.append(`<h4 class="analysis-hint">发现所有数字都在0-25之间</h4>`);
+		const answer = nums.map((x)=>String.fromCharCode(x+97)).join("");
+		numResult.append(`<div><b>A=0..Z=25:</b> ${answer}</div>`);
+	}
+	numResult.append(`<h4 class="analysis-hint">发现所有数字都在1-255之间,尝试ASCII码</h4>`);
+	if(nums.filter((x)=>
+		x <=0 || x >= 255
+	).length === 0) {
+		const answer = nums.map((x)=>String.fromCharCode(x)).join("");
+		numResult.append(`<div><b>ASCII:</b> ${answer}</div>`);
+	}
+}
+
+const summaryAnalysis = (result, str) => {
+	result.append(`<h4 class="analysis-hint">综合分析</h4>`);
+	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+	const summaryResult = $(`#analysis-bar-${analysisIndex-1}`);
+	summaryResult.append(`<div>共${str.length}个字符</div>`);
+}
+
+const binaryAnalysis = (result, words, chars) => {
+	let pt = "";
+	result.append(`<h4 class="analysis-hint">尝试二进制</h4>`);
+	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+	const binaryResult = $(`#analysis-bar-${analysisIndex-1}`);
+	let numbers = [];
+	for(const word of words) {
+		const number = parseInt(word.replaceAll(chars[0], '1').replaceAll(chars[1], '0'), 2);
+		numbers.push(number);
+		pt += number.toString() + " ";
+	}
+
+	binaryResult.append(`<div><b>若${chars[0]}为1, ${chars[1]}为0:</b> ${pt}</div>`);
+
+	binaryResult.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+
+	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers);
+
+	pt = "";
+	numbers = [];
+	for(const word of words) {
+		const number = parseInt(word.replaceAll(chars[1], '1').replaceAll(chars[0], '0'), 2);
+		numbers.push(number);
+		pt += number.toString() + " ";
+	}
+
+
+	binaryResult.append(`<div><b>若${chars[1]}为1, ${chars[0]}为0:</b> ${pt}</div>`);
+	binaryResult.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers);
+}
+
+
+$("#smart-analysis-content").on("change keyup paste", () => {
+	analysisIndex = 0;
+	const result = $("#smart-analysis-ansers-list");
+	result.html("");
+	const content = $("#smart-analysis-content").val();
+	const words = content.split(/[\s,]+/);
+	const count = {};
+	const chars = [];
+	let index = 0;
+	let countOfChar = 0;
+	let isAllnumber = true;
+	for(const word of words) {
+		for(let i = 0; i < word.length; i++) {
+			if(count[word[i]] === undefined) {
+				count[word[i]] = 1;
+				chars.push(word[i]);
+				countOfChar++;
+			} else {
+				count[word[i]]++;
+			}
+		}
+		if(!/^-?\d+$/.test(word)) {
+			isAllnumber = false;
+		}
+	}
+	if(countOfChar == 2) {
+		result.append(`<div class="analysis-hint">只有两个字符, 开始二值分析</div><div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div`);
+		
+
+		morseAnalysis($(`#analysis-bar-${analysisIndex-1}`), words, chars);
+		binaryAnalysis($(`#analysis-bar-${analysisIndex-1}`), words, chars);
+
+	} else if(countOfChar == 3) {
+		result.append('<div class="analysis-hint">只有三个字符, 开始三值分析</div>');
+	}
+
+	if(isAllnumber) {
+		numbersAnalysis(result, words.map((x) => parseInt(x)));
+	}
+
+	summaryAnalysis(result, content);
+
+});
+
 		</script>
 		<script src="./static/dict.v1.0.min.js"></script>
 		<script>
-			solver = new Solver.OneWord();
-			$('h3').remove();
+			if(!localStorage.abc) {
+				for(const obj in words) {localStorage.setItem(obj, words[obj]);}
+				solver = new Solver.OneWord();
+				$('h3').remove();
+			}
 		</script>
 		<script src="./out.js"></script>
 		</div>
