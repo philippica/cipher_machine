@@ -1851,10 +1851,9 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 	}
 	if(countOfChar == 2) {
 		result.append(`<div class="analysis-hint">只有两个字符, 开始二值分析</div><div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div`);
-		
-
-		morseAnalysis($(`#analysis-bar-${analysisIndex-1}`), words, chars);
-		binaryAnalysis($(`#analysis-bar-${analysisIndex-1}`), words, chars);
+		const index = analysisIndex-1;
+		morseAnalysis($(`#analysis-bar-${index}`), words, chars);
+		binaryAnalysis($(`#analysis-bar-${index}`), words, chars);
 
 	} else if(countOfChar == 3) {
 		result.append('<div class="analysis-hint">只有三个字符, 开始三值分析</div>');
