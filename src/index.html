@@ -1829,7 +1829,7 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 	const result = $("#smart-analysis-ansers-list");
 	result.html("");
 	const content = $("#smart-analysis-content").val();
-	const words = content.split(/[\s,]+/);
+	const words = content.trim().split(/[\s,]+/);
 	const count = {};
 	const chars = [];
 	let index = 0;
