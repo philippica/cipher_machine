@@ -16,7 +16,7 @@ module.exports = {
   plugins: [
     new htmlWebpackPlugin({
       template: './src/index.html',
-      inject: 'head',
+      inject: false,
       scriptLoading: 'blocking',
       minify: {
         minifyCSS: true,

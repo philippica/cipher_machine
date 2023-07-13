@@ -549,10 +549,18 @@
 			</div>
 		</div>
 		<div id="footer"> power by -- philippica (Contact me: philippicapyj@gmail.com)</div>
-
+		<script src="<%= htmlWebpackPlugin.files.js[0] %>"></script>
 		<script src="./static/jquery.min.js"></script>
 		<script>
-			$('h3').text("字典尚在加载,部分利用到字典的功能暂不可用,请稍等片刻，如果实在太慢，可下载本页面到电脑本地使用");
+			$('h3').text("字典尚在加载,部分利用到字典的功能暂不可用,请稍等片刻,如果实在太慢,可下载本页面到电脑本地使用");
+			if(localStorage.abc) {
+				window.words = {};
+				for (let i = 0, len = localStorage.length; i < len; i++) {
+					const key = localStorage.key(i);
+					words[key] = localStorage.getItem(key).split(",");
+				}
+				$('h3').remove();
+			}
 			// substitution
 			$(".capsule").click((e) => {
 				const target = e.target;
@@ -1699,8 +1707,11 @@ $("#play").click(() => {
 		</script>
 		<script src="./static/dict.v1.0.min.js"></script>
 		<script>
-			solver = new Solver.OneWord();
-			$('h3').remove();
+			if(!localStorage.abc) {
+				for(const obj in words) {localStorage.setItem(obj, words[obj]);}
+				solver = new Solver.OneWord();
+				$('h3').remove();
+			}
 		</script>
 		<script src="./out.js"></script>
 		</div>
