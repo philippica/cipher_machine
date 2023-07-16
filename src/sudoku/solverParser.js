@@ -17,7 +17,7 @@ export class SolverParser {
     const lastParse = [];
     for (let i = 0; i < rulesList.length; i++) {
       const rule = rulesList[i].replace(/\s/g, '');
-      if(rule[0]=='没') {
+      if(rule[0]=='没' || rule.includes("空白的格子")) {
         lastParse.push(rule);
       } else {
         this.parseLine(rule);
@@ -147,6 +147,14 @@ export class SolverParser {
           list
         },
         set: list
+      }
+    } else if (str[start] === '可' && str[start + 2] === '形') { // 可以形成1条回路
+      const number = this.getNumber(str, start + 4).value;
+      return {
+        loop: {
+          number
+        },
+        set: ['UR', 'UB', 'UL', 'RB', 'RL', 'BL']
       }
     }
   };
@@ -331,7 +339,19 @@ export class SolverParser {
       ret.restrictArea = modifiedArea;
       ret.stopPos = result.stopPos;
       console.info(modifiedArea);
-    }
+    } else if(str[ret.stopPos] == '空') { // 空白的格子
+      const areas = [];
+      for(const area of ret.restrictArea) {
+        const temp = [];
+        for(const item of area) {
+          if(this.filledArea[item])continue;
+          temp.push(item);
+        }
+        areas.push(temp);
+      }
+      ret.restrictArea = areas;
+      ret.stopPos += 5;
+    }; 
     return ret;
   }
 

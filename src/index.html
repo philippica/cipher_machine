@@ -266,6 +266,63 @@
 			.analysis-bar {
 				margin-left: 30px;
 			}
+			.sudoku-grid-content {
+			position: relative;
+			}
+
+			.sudoku-grid-content:before, .sudoku-grid-content:after {
+			content: "";
+			position: absolute;
+			z-index: 10;
+			background: black;
+			}
+
+			.UL:before, .UR:before{
+			left: 50%;
+			width: 10%;
+			margin-left: -5%;
+			height: 55%;
+			}
+
+			.UL:after, .BL:after {
+			top: 50%;
+			left: 0%;
+			height: 10%;
+			margin-top: -5%;
+			width: 55%;
+			}
+
+			.RL:after {
+				top: 50%;
+				left: 0%;
+				height: 10%;
+				margin-top: -5%;
+				width: 100%;
+			}
+
+			.UB:before {
+				left: 50%;
+				width: 10%;
+				margin-left: -5%;
+				top: 0%;
+				height: 100%;
+			}
+
+			.RB:before, .BL:before {
+			left: 50%;
+			width: 10%;
+			margin-left: -5%;
+			top: 50%;
+			height: 55%;
+			}
+
+			.RB:after, .UR:after {
+			top: 50%;
+			left: 45%;
+			height: 10%;
+			margin-top: -5%;
+			width: 55%;
+			}
  		</style>
 		<link rel="stylesheet" href="./static/nonogram.css">
 		<link rel="stylesheet" href="./static/bootstrap.min.css">
@@ -515,6 +572,7 @@
 							<option value = "magicSquare">经典幻方</option>
 							<option value = "nonogram">经典nonogram</option>
 							<option value = "drop">经典drop</option>
+							<option value = "simpLoop">经典simple loop</option>
 						</select>
 					</div>
 					<span>行: </span> <span id="sudoku-row" style="border: 1px solid;" contenteditable="true">9</span>
@@ -1155,7 +1213,6 @@
 			} else if (modeStr === "mine") {
 				$('#replaceStr').val("第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是<格子内容>");
 				$("#rules").val('每一格是白格或黑格\n没填的格子默认是"第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是0"\n');
-				generate(n, m);
 			} else if (modeStr === "magicSquare") {
 				let initStr = '每一格是从1到16的数字\n每一格互不相同\n每一列的和是34\n每一行的和是34\n';
 				$("#rules").val(initStr);
@@ -1196,6 +1253,8 @@
 				if(!$('#show-upper').get(0).checked) {
 					$('#show-upper').click();
 				}
+			} else if (modeStr === 'simpLoop') {
+				$("#rules").val('第3格是黑格\n每一格空白的格子可以形成1条回路\n');
 			}
 		}
 
