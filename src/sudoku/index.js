@@ -52,6 +52,36 @@ export class SudokuSolver {
     _rule.rules.loop.areasSet = new Set(areasSet);
   }
 
+  async tryProcess() {
+    const n = this.n;
+    const m = this.m;
+    for(let idx = 0; idx < n * m; idx++) {
+      const temp = this.possibleArray[idx];
+      if(temp.size <= 1)continue;
+      const items = [];
+      for(const item of temp) {
+        this.possibleArray[idx] = new Set([item]);
+        const origin = [];
+        const newRule = [];
+
+        let flag = false;
+        for(let i = 0; i < this.connectedRules[idx].length; i++) {
+          const result = this.relaxRule(this.globalRules[this.connectedRules[idx][i]], origin, this.connectedRules[idx][i], newRule);
+          this.resumePossible(origin, newRule);
+          if(result === -1) {
+            flag = true;
+            break;
+          }
+        }
+        if(flag === false) {
+          items.push(item);
+        }
+      }
+      this.possibleArray[idx] = new Set(items);
+    }
+    return this.relax();
+  }
+
   async solve(rulesList, n, m, callback) {
     this.n = n;
     this.m = m;
@@ -119,9 +149,13 @@ export class SudokuSolver {
         this.possibleArray[restrictAreas[j]] = new Set(rule.rules.set);
       }
     }
-    const ret = this.relax();
+    this.hasLoop = false;
+    let ret = this.relax();
+    if(ret != -1 && this.hasLoop) {
+      ret = await this.tryProcess();
+    }
     $('#sudokuAnswer').html("");
-    // if(ret != -1)await this.dfs();
+    if(ret != -1)await this.dfs();
     this.print();
     $('#sudokuAnswer').append("已找到所有解");
   };
@@ -701,14 +735,16 @@ export class SudokuSolver {
       let count = 0;
       while(1) {
         if(cur == end)return count+1;
-        if(cur && this.possibleArray[cur].size != 1)return;
+        if(!cur || this.possibleArray[cur].size != 1)return;
         const d = this.possibleArray[cur].values().next().value.replace(lastDir, '');
         cur = cur + dirsOps[dirIdx[d]];
         lastDir = opp[d];
+        count++;
       }
     }
 
     let dummyCurPossibles = [];
+    let dummyCurPossibles2 = [];
 
     for(let i = 0; i < 4; i++) {
       const dir = dirs[i];
@@ -752,11 +788,17 @@ export class SudokuSolver {
         if(neighbour.filter(x=>x.includes(oppDir)).length <= 0) {
           dummyCurPossibles.push(dir);
         }
+        if(neighbour.filter(x=>!x.includes(oppDir)).length == 0) {
+          dummyCurPossibles2.push(dir);
+        }
       }
     }
 
     for(const dir of dummyCurPossibles) {
       curPossibles = curPossibles.filter(x=>!x.includes(dir));
+    }
+    for(const dir of dummyCurPossibles2) {
+      curPossibles = curPossibles.filter(x=>x.includes(dir));
     }
 
 
@@ -824,6 +866,7 @@ export class SudokuSolver {
     } else if(rule.rules.loop) {
       const ret = this.relaxLoop(areas, origin, rule.rules.loop, ruleSet);
       if(ret === -1)return -1;
+      this.hasLoop = true;
     }
 
     for(const rules of ruleSet) {
