@@ -1254,7 +1254,18 @@
 					$('#show-upper').click();
 				}
 			} else if (modeStr === 'simpLoop') {
-				$("#rules").val('第3格是黑格\n每一格空白的格子可以形成1条回路\n');
+				let rule = "";
+				const black = [1,18,86,154,155,222,38,123,125,91,159,260,8,59,144,195,61,112,146,197,231,282,199,63,46,32,51,68,136,286,237,220,133,99,167];
+				for(const grid of black) {
+					rule += `第${grid}格是黑格\n`;
+				}
+				rule += '每一格空白的格子可以形成1条回路\n';
+				$("#rules").val(rule);
+				n = 17;
+				m = 17;
+				$("#sudoku-row").html(n);
+				$("#sudoku-col").html(m);
+				generate(n, m);
 			}
 		}
 

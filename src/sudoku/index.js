@@ -156,7 +156,7 @@ export class SudokuSolver {
     }
     $('#sudokuAnswer').html("");
     if(ret != -1)await this.dfs();
-    this.print();
+
     $('#sudokuAnswer').append("已找到所有解");
   };
 
