@@ -121,7 +121,8 @@ export class SudokuSolver {
     }
     const ret = this.relax();
     $('#sudokuAnswer').html("");
-    if(ret != -1)await this.dfs();
+    // if(ret != -1)await this.dfs();
+    this.print();
     $('#sudokuAnswer').append("已找到所有解");
   };
 
@@ -340,7 +341,6 @@ export class SudokuSolver {
   }
 
   relaxLinear(rule, areas, origin, ruleSet) {
-    console.info(rule);
     let currentResult = 0;
     let upperBound = 0;
     let lowerBound = 0;
@@ -402,7 +402,6 @@ export class SudokuSolver {
       if(this.possibleArray[area].size !== 1)return -1;
       numbers.push(this.possibleArray[area].values().next().value);
     }
-    console.info(rule);
     if(rule.set) {
       for(const number of numbers) {
         if(!rule.set.includes(number)) {
@@ -520,7 +519,6 @@ export class SudokuSolver {
 
     for(let i = 0; i < areas.length; i++) {
       const area = areas[i];
-      console.info(this.possibleArray[area]);
       if(this.possibleArray[area].has(rule.item)) {
         last++;
         if(this.possibleArray[area].size === 1) {
@@ -628,7 +626,6 @@ export class SudokuSolver {
   }
 
   relaxPermutation(areas, origin, ruleSet, rule) {
-    console.info(areas, origin, ruleSet, rule);
     const list = Array.from(rule.list);
     const n = areas.length;
     const realAreas = [];
@@ -684,18 +681,35 @@ export class SudokuSolver {
   }
 
   relaxLoop(areas, origin, rule, ruleSet) {
-    console.info(areas, origin, rule);
     const opp = {'U': 'B', 'L': 'R', 'R': 'L','B': 'U'};
+    const dirIdx = {'U': 0, 'B': 1, 'L': 2,'R': 3};
     const dirs = ['U', 'B', 'L', 'R'];
     const dirsOps = [-this.m, this.m, -1, 1];
     const cur = areas[0];
-    const curPossibles = [...this.possibleArray[cur]];
+    let curPossibles = [...this.possibleArray[cur]];
     const count = {};
     for(const item of curPossibles) {
       if(item.length != 2)continue;
       count[item[0]] = (count[item[0]] || 0) + 1;
       count[item[1]] = (count[item[1]] || 0) + 1;
     }
+    const lastLen = curPossibles.length;
+
+    const isLoop = (start, end, dir) => {
+      let cur = start;
+      let lastDir = dir;
+      let count = 0;
+      while(1) {
+        if(cur == end)return count+1;
+        if(cur && this.possibleArray[cur].size != 1)return;
+        const d = this.possibleArray[cur].values().next().value.replace(lastDir, '');
+        cur = cur + dirsOps[dirIdx[d]];
+        lastDir = opp[d];
+      }
+    }
+
+    let dummyCurPossibles = [];
+
     for(let i = 0; i < 4; i++) {
       const dir = dirs[i];
       const dirOp = dirsOps[i];
@@ -734,8 +748,49 @@ export class SudokuSolver {
           }
           this.possibleArray[area] = new Set(neighbour);
         }
+      } else {
+        if(neighbour.filter(x=>x.includes(oppDir)).length <= 0) {
+          dummyCurPossibles.push(dir);
+        }
       }
     }
+
+    for(const dir of dummyCurPossibles) {
+      curPossibles = curPossibles.filter(x=>!x.includes(dir));
+    }
+
+
+    
+    if(rule.number == 1)for(let i = 0; i < curPossibles.length; i++) {
+      const possible = curPossibles[i];
+      if(possible == 'UR' || possible == 'UL') {
+        continue;
+      }
+      const diri = cur + dirsOps[dirIdx[possible[0]]], dirj = cur + dirsOps[dirIdx[possible[1]]];
+      const x = [...this.possibleArray[diri]].filter(x=>x.includes(opp[possible[0]]));
+      const y = [...this.possibleArray[dirj]].filter(x=>x.includes(opp[possible[1]]));
+      if(x.length != 1 || y.length != 1)continue;
+      const originx = this.possibleArray[diri];
+      this.possibleArray[diri] = new Set(x);
+      const loopLen = isLoop(diri, dirj, opp[possible[0]]);
+      if(loopLen && loopLen + 1 != rule.areasSet.size) {
+        curPossibles[i] = '';
+      }
+      this.possibleArray[diri] = originx;
+    }
+    curPossibles = curPossibles.filter(x=>x!='');
+    
+
+    if(lastLen > curPossibles.length) {
+      if(!origin[cur]) {
+        origin[cur] = new Set(this.possibleArray[cur]);
+      }
+      for(const connectedRule of this.connectedRules[cur]) {
+        ruleSet.add(connectedRule);
+      }
+      this.possibleArray[cur] = new Set(curPossibles);
+    }
+
 
   }
 
@@ -785,6 +840,7 @@ export class SudokuSolver {
       let temp = [];
       for(let i = 0; i < this.possibleArray.length; i++) {
         const possibleArray = this.possibleArray[i];
+        if(possibleArray.size != 1)continue;
         const number = possibleArray ? possibleArray.values().next().value : ' ';
         if(number === 'black') {
           $(`.sudoku-grid #grid-${i}`).css("background-color", number);
@@ -806,8 +862,6 @@ export class SudokuSolver {
           temp = [];
         }
       }
-      console.info(result);
-      console.info(answer);
       $('#sudokuAnswer').append(answer + "\n-----------------------\n");
   }
 
