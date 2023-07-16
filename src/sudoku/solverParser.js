@@ -17,7 +17,7 @@ export class SolverParser {
     const lastParse = [];
     for (let i = 0; i < rulesList.length; i++) {
       const rule = rulesList[i].replace(/\s/g, '');
-      if(rule[0]=='没') {
+      if(rule[0]=='没' || rule.includes("空白的格子")) {
         lastParse.push(rule);
       } else {
         this.parseLine(rule);
@@ -147,6 +147,14 @@ export class SolverParser {
           list
         },
         set: list
+      }
+    } else if (str[start] === '可' && str[start + 2] === '形') { // 可以形成1条回路
+      const number = this.getNumber(str, start + 4).value;
+      return {
+        loop: {
+          number
+        },
+        set: ['UR', 'UB', 'UL', 'RB', 'RL', 'BL']
       }
     }
   };
@@ -313,7 +321,6 @@ export class SolverParser {
 
   getRestrictAreas(str, start) {
     const ret = this.getOriginAreas(str, start);
-    console.info(str[ret.stopPos]);
     if(str[ret.stopPos] === "的" && str[ret.stopPos+1] === "[") {
       let result = this.modifyArea(str, ret.stopPos +1, ret);
       const modifiedArea = ret.restrictArea[0].map((x) => {
@@ -330,8 +337,19 @@ export class SolverParser {
       });
       ret.restrictArea = modifiedArea;
       ret.stopPos = result.stopPos;
-      console.info(modifiedArea);
-    }
+    } else if(str[ret.stopPos] == '空') { // 空白的格子
+      const areas = [];
+      for(const area of ret.restrictArea) {
+        const temp = [];
+        for(const item of area) {
+          if(this.filledArea[item])continue;
+          temp.push(item);
+        }
+        areas.push(temp);
+      }
+      ret.restrictArea = areas;
+      ret.stopPos += 5;
+    }; 
     return ret;
   }
 
@@ -423,12 +441,10 @@ export class SolverParser {
     } else if(lineStr[0] === '没') { //没填的格子默认是"第<格子序号>格的[本格,上,下,左,右,左上,右上,左下,右下]的黑格的数量是0"
       let content = lineStr.substr(9);
       content = content.substr(0, content.length-1);
-      console.info(content);
 
       for(let i = 0; i < this.n*this.m; i++) {
         if(this.filledArea[i])continue;
         const contentSubstitue = content.replace("<格子序号>", (i+1).toString())
-        console.info(contentSubstitue);
         this.parseLine(contentSubstitue);
       }
 
