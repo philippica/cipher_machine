@@ -1887,7 +1887,16 @@ const summaryAnalysis = (result, str) => {
 	result.append(`<h4 class="analysis-hint">综合分析</h4>`);
 	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
 	const summaryResult = $(`#analysis-bar-${analysisIndex-1}`);
-	summaryResult.append(`<div>共${str.length}个字符</div>`);
+	summaryResult.append(`<div>共${str.length}个字符, 详细统计</div>`);
+	const chars = {};
+	for(let i = 0; i < str.length; i++) {
+		chars[str[i]] = (chars[str[i]] || 0) + 1;
+	}
+	const res = Object.entries(chars);
+	let s = "";
+	for(const entry of res) {
+		summaryResult.append(`<div>${entry[0]}: ${entry[1]}</div>`);
+	}
 }
 
 const binaryAnalysis = (result, words, chars) => {
@@ -1948,7 +1957,7 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 			isAllnumber = false;
 		}
 	}
-	if(countOfChar == 2) {
+	if(countOfChar <= 2) {
 		result.append(`<div class="analysis-hint">只有两个字符, 开始二值分析</div><div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div`);
 		const index = analysisIndex-1;
 		morseAnalysis($(`#analysis-bar-${index}`), words, chars);
