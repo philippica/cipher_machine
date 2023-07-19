@@ -77,13 +77,13 @@ export class SolverParser {
             for(let d = 0; d <= rule[1]; d++) {
               if(u+d > num)break;
               if(!D && d > 0)break;
-              for(let l = 0; l < rule[2]; l++) {
+              for(let l = 0; l <= rule[2]; l++) {
                 if(!L && l > 0)break;
                 const r = num - u - d - l;
                 if(r < 0)break;
                 if(!R && r > 0)continue;
                 if(r > rule[3])continue;
-                set.push({hashi:{u, d, l, r}});
+                set.push({hashi:{u, d, l, r}, to});
               }
             }
           }

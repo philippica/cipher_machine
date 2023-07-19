@@ -932,9 +932,37 @@ export class SudokuSolver {
       let temp = [];
       for(let i = 0; i < this.possibleArray.length; i++) {
         const possibleArray = this.possibleArray[i];
-        if(possibleArray.size != 1)continue;
+        if(!possibleArray || possibleArray.size != 1)continue;
         const number = possibleArray ? possibleArray.values().next().value : ' ';
-        if(number === 'black') {
+        if(number.hashi) {
+          const r = number.to['r'];
+          const rnum = number.hashi['r'];
+          const d = number.to['d'];
+          const dnum = number.hashi['d'];
+          if(r) {
+            let cur = i+1;
+            $(`.sudoku-grid #grid-${cur}`).html("");
+            const interval = 100 / (rnum+1);
+            while(cur != r) {
+              for(let i = 0; i < rnum; i++) {
+                $(`.sudoku-grid #grid-${cur}`).append(`<div class="horizon-" style="top:${interval*(i+1)}%"></div>`);
+              }
+              cur++;
+            }
+          }
+          if(d) {
+            let cur = i+this.m;
+            $(`.sudoku-grid #grid-${cur}`).html("");
+            const interval = 100 / (dnum+1);
+            while(cur != d) {
+              for(let i = 0; i < dnum; i++) {
+                $(`.sudoku-grid #grid-${cur}`).append(`<div class="vertical-" style="left:${interval*(i+1)}%"></div>`);
+              }
+              cur+=this.m;
+            }
+          }
+
+        } else if(number === 'black') {
           $(`.sudoku-grid #grid-${i}`).css("background-color", number);
           $(`.sudoku-grid #grid-${i}`).css("color", "white");
         } else if(number === 'white') {
