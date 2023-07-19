@@ -30,17 +30,16 @@ export class SolverParser {
     }
     for(const hashiRule of this.hashiRules) {
       for (let i = 0; i < hashiRule.restrictAreas.length; i++) {
-          const neighbour = [area];
           const area = hashiRule.restrictAreas[i];
+          const neighbour = [area];
           const row = area / m;
           const col = area % m;
           let L = false, R = false, U = false, D = false;
-          const to = {u:null, d: null, l:null, r:null}};
+          const to = {u:null, d: null, l:null, r:null};
           for(let cur = area - m; cur >= 0; cur -= m) { // up
             if(this.hashi.has(cur)) {
               U = true;
               neighbour.push(cur);
-              end.push();
               to.u = cur;
               break;
             }
@@ -84,11 +83,12 @@ export class SolverParser {
                 if(r < 0)break;
                 if(!R && r > 0)continue;
                 if(r > rule[3])continue;
-                set.push({hashi:{u, d, l, r}, to});
+                set.push({hashi:{u, d, l, r}});
               }
             }
           }
           hashiRule.rules.set = set;
+          hashiRule.rules.hashi.to = to;
           globalRules.push({
             restrictAreas: neighbour,
             rules: hashiRule.rules,

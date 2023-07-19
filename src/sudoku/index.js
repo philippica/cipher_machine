@@ -112,6 +112,9 @@ export class SudokuSolver {
           forceRule.push(i);
           continue;
         }
+        if(rule.rules.hashi) {
+          this.mergeSet(restrictAreas[0], letterSet);
+        } else
         for (let j = 0; j < restrictAreas.length; j++) {
           this.mergeSet(restrictAreas[j], letterSet);
         }
@@ -834,8 +837,49 @@ export class SudokuSolver {
     }
   }
 
-  relaxHashi(areas, origin, index, newRule) {
-    console.info(areas, origin, index, newRule);
+  relaxHashi(areas, origin, rule, ruleSet) {
+    const dirs = ['u', 'd', 'l', 'r'];
+    const oppDir = {'u': 'd', 'd': 'u', 'l': 'r', 'r': 'l'};
+    const to = rule.to;
+    const possibles = this.possibleArray[areas[0]];
+    const getIntersection = (setA, setB) => new Set(setB.filter(element => setA.includes(element)));
+    const getSet = (set, dir) => {
+      const ret = [];
+      for(const item of set) {
+        ret.push(item.hashi[dir]);
+      }
+      return ret;
+    };
+    for(const dir of dirs) {
+      const neighbour = to[dir];
+      if(!neighbour)continue;
+      const neighbourPossible = [...this.possibleArray[neighbour]];
+      const opp = oppDir[dir];
+      const inter = getIntersection(getSet(possibles, dir), getSet(neighbourPossible, opp));
+      for(const item of possibles) {
+        if(!inter.has(item.hashi[dir])) {
+          if(!origin[areas[0]]) {
+            origin[areas[0]] = new Set(this.possibleArray[areas[0]]);
+          }
+          for(const connectedRule of this.connectedRules[areas[0]]) {
+            ruleSet.add(connectedRule);
+          }
+          this.possibleArray[areas[0]].delete(item);
+        }
+      }
+      for(const item of neighbourPossible) {
+        if(!inter.has(item.hashi[opp])) {
+          if(!origin[neighbour]) {
+            origin[neighbour] = new Set(this.possibleArray[neighbour]);
+          }
+          for(const connectedRule of this.connectedRules[neighbour]) {
+            ruleSet.add(connectedRule);
+          }
+          this.possibleArray[neighbour].delete(item);
+        }
+      }
+
+    }
   }
 
   relaxRule(rule, origin, index, newRule) {
@@ -870,7 +914,7 @@ export class SudokuSolver {
       if(ret === -1)return -1;
       this.hasLoop = true;
     } else if(rule.rules.hashi) {
-      const ret = this.relaxHashi(areas, origin, rule.rules.loop, ruleSet);
+      const ret = this.relaxHashi(areas, origin, rule.rules.hashi, ruleSet);
       if(ret === -1)return -1;
     }
 
