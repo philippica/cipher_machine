@@ -576,6 +576,7 @@
 							<option value = "nonogram">经典nonogram</option>
 							<option value = "drop">经典drop</option>
 							<option value = "simpLoop">经典simple loop</option>
+							<option value = "hashi">经典hashi</option>
 						</select>
 					</div>
 					<span>行: </span> <span id="sudoku-row" style="border: 1px solid;" contenteditable="true">9</span>
@@ -1295,6 +1296,8 @@
 				$("#sudoku-row").html(n);
 				$("#sudoku-col").html(m);
 				generate(n, m);
+			} else if (modeStr === 'hashi') {
+				$("#rules").val("第10格连出的线段总数为3,上下左右线段数量不超过[2,2,2,2]\n第11格连出的线段总数为3,上下左右线段数量不超过[2,2,2,2]\n第19格连出的线段总数为3,上下左右线段数量不超过[2,2,2,2]");
 			}
 		}
 

@@ -832,8 +832,10 @@ export class SudokuSolver {
       }
       this.possibleArray[cur] = new Set(curPossibles);
     }
+  }
 
-
+  relaxHashi(areas, origin, index, newRule) {
+    console.info(areas, origin, index, newRule);
   }
 
   relaxRule(rule, origin, index, newRule) {
@@ -867,6 +869,9 @@ export class SudokuSolver {
       const ret = this.relaxLoop(areas, origin, rule.rules.loop, ruleSet);
       if(ret === -1)return -1;
       this.hasLoop = true;
+    } else if(rule.rules.hashi) {
+      const ret = this.relaxHashi(areas, origin, rule.rules.loop, ruleSet);
+      if(ret === -1)return -1;
     }
 
     for(const rules of ruleSet) {

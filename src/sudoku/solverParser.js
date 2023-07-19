@@ -12,6 +12,8 @@ export class SolverParser {
     this.n = n;
     this.m = m;
     this.filledArea = [];
+    this.hashi = new Set();
+    this.hashiRules = [];
     this.globalRules = globalRules;
     this.globalFinalRules = globalFinalRules;
     const lastParse = [];
@@ -25,6 +27,74 @@ export class SolverParser {
     }
     for(const rule of lastParse) {
       this.parseLine(rule);
+    }
+    for(const hashiRule of this.hashiRules) {
+      for (let i = 0; i < hashiRule.restrictAreas.length; i++) {
+          const neighbour = [area];
+          const area = hashiRule.restrictAreas[i];
+          const row = area / m;
+          const col = area % m;
+          let L = false, R = false, U = false, D = false;
+          const to = {u:null, d: null, l:null, r:null}};
+          for(let cur = area - m; cur >= 0; cur -= m) { // up
+            if(this.hashi.has(cur)) {
+              U = true;
+              neighbour.push(cur);
+              end.push();
+              to.u = cur;
+              break;
+            }
+          }
+          for(let cur = area + m; cur < n*m; cur += m) { // down
+            if(this.hashi.has(cur)) {
+              D = true;
+              neighbour.push(cur);
+              to.d = cur;
+              break;
+            }
+          }
+          for(let i = col-1, cur = area-1; i >= 0; i--, cur--) {
+            if(this.hashi.has(cur)) {
+              L = true;
+              neighbour.push(cur);
+              to.l = cur;
+              break;
+            }
+          }
+          for(let i = col+1, cur = area+1; i < m; i++, cur++) {
+            if(this.hashi.has(cur)) {
+              R = true;
+              neighbour.push(cur);
+              to.r = cur;
+              break;
+            }
+          }
+          const rule = hashiRule.rules.hashi.limit;
+          const num = hashiRule.rules.hashi.number;
+          const set = [];
+          for(let u = 0; u <= rule[0]; u++) {
+            if(u > num)break;
+            if(!U && u > 0)break;
+            for(let d = 0; d <= rule[1]; d++) {
+              if(u+d > num)break;
+              if(!D && d > 0)break;
+              for(let l = 0; l < rule[2]; l++) {
+                if(!L && l > 0)break;
+                const r = num - u - d - l;
+                if(r < 0)break;
+                if(!R && r > 0)continue;
+                if(r > rule[3])continue;
+                set.push({hashi:{u, d, l, r}, to});
+              }
+            }
+          }
+          hashiRule.rules.set = set;
+          globalRules.push({
+            restrictAreas: neighbour,
+            rules: hashiRule.rules,
+          });
+
+      }
     }
   }
 
@@ -41,7 +111,17 @@ export class SolverParser {
       alert(`我不认识"${lineStr}"的规则，请仔细检查`);
       return;
     }
-    if(rules.smallerThan || rules.largerThan) {
+    if(rules.hashi) {
+      for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
+        for(const area of restrictAreas.restrictArea[i]) {
+          this.hashi.add(area);
+        }
+        this.hashiRules.push({
+          restrictAreas: restrictAreas.restrictArea[i],
+          rules,
+        });
+      }
+    } else if(rules.smallerThan || rules.largerThan) {
       for (let i = 0; i < restrictAreas.restrictArea.length; i++) {
         globalFinalRules.push({
           restrictAreas: restrictAreas.restrictArea[i],
@@ -155,6 +235,15 @@ export class SolverParser {
           number
         },
         set: ['UR', 'UB', 'UL', 'RB', 'RL', 'BL']
+      }
+    } else if(str[start] === '连') { //连出的线段总数为3且上下左右线段数量不超过[2,2,2,2]
+      const number = this.getNumber(str, start + 8);
+      const list = this.getNumberList(str, number.stopPos+12).set;
+      return {
+        hashi: {
+          number: number.value,
+          limit: list.map((x)=>x+1)
+        }
       }
     }
   };
