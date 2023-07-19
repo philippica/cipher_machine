@@ -323,6 +323,22 @@
 			margin-top: -5%;
 			width: 55%;
 			}
+			.horizon- {
+				width: 100%;
+				height: 1px;
+				background-color: black;
+				position: absolute;
+				z-index: 10;
+				border: 1px solid;
+			}
+			.vertical- {
+				width: 1px;
+				height: 100%;
+				background-color: black;
+				position: absolute;
+				z-index: 10;
+				border: 1px solid;
+			}
  		</style>
 		<link rel="stylesheet" href="./static/nonogram.css">
 		<link rel="stylesheet" href="./static/bootstrap.min.css">
@@ -576,6 +592,7 @@
 							<option value = "nonogram">经典nonogram</option>
 							<option value = "drop">经典drop</option>
 							<option value = "simpLoop">经典simple loop</option>
+							<option value = "hashi">经典hashi</option>
 						</select>
 					</div>
 					<span>行: </span> <span id="sudoku-row" style="border: 1px solid;" contenteditable="true">9</span>
@@ -1295,6 +1312,9 @@
 				$("#sudoku-row").html(n);
 				$("#sudoku-col").html(m);
 				generate(n, m);
+			} else if (modeStr === 'hashi') {
+				$("#rules").val("第1格连出的线段总数为3,上下左右线段数量不超过[2,2,2,2]\n第3格连出的线段总数为3,上下左右线段数量不超过[2,2,2,2]\n第73格连出的线段总数为4,上下左右线段数量不超过[2,2,2,2]\n第30格连出的线段总数为4,上下左右线段数量不超过[2,2,2,2]\n第57格连出的线段总数为1,上下左右线段数量不超过[2,2,2,2]\n第49格连出的线段总数为4,上下左右线段数量不超过[2,2,2,2]\n第51格连出的线段总数为2,上下左右线段数量不超过[2,2,2,2]\n第81格连出的线段总数为4,上下左右线段数量不超过[2,2,2,2]\n第36格连出的线段总数为4,上下左右线段数量不超过[2,2,2,2]\n第6格连出的线段总数为1,上下左右线段数量不超过[2,2,2,2]\n第76格连出的线段总数为6,上下左右线段数量不超过[2,2,2,2]\n");
+				$('#replaceStr').val("第<格子序号>格连出的线段总数为<格子内容>,上下左右线段数量不超过[2,2,2,2]");
 			}
 		}
 
