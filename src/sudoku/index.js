@@ -878,7 +878,28 @@ export class SudokuSolver {
           this.possibleArray[neighbour].delete(item);
         }
       }
-
+    }
+    if(rule.conflict) {
+      if(rule.conflict.d){
+        const d = rule.conflict.d.rules;
+        let flag = false;
+        if(d)for(const cflct of d) {
+          const area = [...this.possibleArray[cflct.to.self]].filter(x=>!x.r);
+          if(area.length > 0) {
+            flag = true;
+            break;
+          }
+        }
+        if(flag) {
+          const newPossible = [...this.possibleArray[areas[0]]].filter(x=>!x.d);
+          if(newPossible.length < this.possibleArray[areas[0]].size){
+            if(!origin[areas[0]]) {
+              origin[areas[0]] = new Set(this.possibleArray[areas[0]]);
+            }
+            this.possibleArray[areas[0]] = new Set(newPossible);
+          }
+        }
+      }
     }
   }
 

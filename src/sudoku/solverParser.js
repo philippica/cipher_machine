@@ -28,73 +28,118 @@ export class SolverParser {
     for(const rule of lastParse) {
       this.parseLine(rule);
     }
+    if(this.hashiRules.length > 0) {
+      this.handleHashi(globalRules);
+    }
+  }
+
+  handleHashi(globalRules) {
+    const down = [];
+    const right = [];
+    const rightEnd = [];
+    const downEnd = [];
     for(const hashiRule of this.hashiRules) {
       for (let i = 0; i < hashiRule.restrictAreas.length; i++) {
-          const area = hashiRule.restrictAreas[i];
-          const neighbour = [area];
-          const row = area / m;
-          const col = area % m;
-          let L = false, R = false, U = false, D = false;
-          const to = {u:null, d: null, l:null, r:null};
-          for(let cur = area - m; cur >= 0; cur -= m) { // up
-            if(this.hashi.has(cur)) {
-              U = true;
-              neighbour.push(cur);
-              to.u = cur;
-              break;
+        const area = hashiRule.restrictAreas[i];
+        const neighbour = [area];
+        const row = area / m;
+        const col = area % m;
+        let L = false, R = false, U = false, D = false;
+        const to = {u:null, d: null, l:null, r:null, self: area};
+        for(let cur = area - m; cur >= 0; cur -= m) { // up
+          if(this.hashi.has(cur)) {
+            U = true;
+            neighbour.push(cur);
+            to.u = cur;
+            break;
+          }
+        }
+        for(let cur = area + m; cur < n*m; cur += m) { // down
+          if(this.hashi.has(cur)) {
+            D = true;
+            neighbour.push(cur);
+            to.d = cur;
+            break;
+          }
+        }
+        if(D){
+          downEnd.push(area);
+          for(let cur = area; cur < n*m; cur += m) { // down
+            if(cur == to.d)break;
+            down[cur] = {u: area, d: to.d, rule: hashiRule.rules};
+          }
+        }
+        for(let i = col-1, cur = area-1; i >= 0; i--, cur--) {
+          if(this.hashi.has(cur)) {
+            L = true;
+            neighbour.push(cur);
+            to.l = cur;
+            break;
+          }
+        }
+        for(let i = col+1, cur = area+1; i < m; i++, cur++) {
+          if(this.hashi.has(cur)) {
+            R = true;
+            neighbour.push(cur);
+            to.r = cur;
+            break;
+          }
+        }
+        if(R) {
+          rightEnd.push(area);
+          for(let i = col, cur = area; i < m; i++, cur++) {
+            if(cur == to.r)break;
+            right[cur] = {l: area, r: to.r, rule: hashiRule.rules};
+          }
+        }
+        const rule = hashiRule.rules.hashi.limit;
+        const num = hashiRule.rules.hashi.number;
+        const set = [];
+        for(let u = 0; u <= rule[0]; u++) {
+          if(u > num)break;
+          if(!U && u > 0)break;
+          for(let d = 0; d <= rule[1]; d++) {
+            if(u+d > num)break;
+            if(!D && d > 0)break;
+            for(let l = 0; l <= rule[2]; l++) {
+              if(!L && l > 0)break;
+              const r = num - u - d - l;
+              if(r < 0)break;
+              if(!R && r > 0)continue;
+              if(r > rule[3])continue;
+              set.push({hashi:{u, d, l, r}, to});
             }
           }
-          for(let cur = area + m; cur < n*m; cur += m) { // down
-            if(this.hashi.has(cur)) {
-              D = true;
-              neighbour.push(cur);
-              to.d = cur;
-              break;
-            }
-          }
-          for(let i = col-1, cur = area-1; i >= 0; i--, cur--) {
-            if(this.hashi.has(cur)) {
-              L = true;
-              neighbour.push(cur);
-              to.l = cur;
-              break;
-            }
-          }
-          for(let i = col+1, cur = area+1; i < m; i++, cur++) {
-            if(this.hashi.has(cur)) {
-              R = true;
-              neighbour.push(cur);
-              to.r = cur;
-              break;
-            }
-          }
-          const rule = hashiRule.rules.hashi.limit;
-          const num = hashiRule.rules.hashi.number;
-          const set = [];
-          for(let u = 0; u <= rule[0]; u++) {
-            if(u > num)break;
-            if(!U && u > 0)break;
-            for(let d = 0; d <= rule[1]; d++) {
-              if(u+d > num)break;
-              if(!D && d > 0)break;
-              for(let l = 0; l <= rule[2]; l++) {
-                if(!L && l > 0)break;
-                const r = num - u - d - l;
-                if(r < 0)break;
-                if(!R && r > 0)continue;
-                if(r > rule[3])continue;
-                set.push({hashi:{u, d, l, r}, to});
-              }
-            }
-          }
-          hashiRule.rules.set = set;
-          hashiRule.rules.hashi.to = to;
-          globalRules.push({
-            restrictAreas: neighbour,
-            rules: hashiRule.rules,
-          });
-
+        }
+        hashiRule.rules.set = set;
+        hashiRule.rules.hashi.to = to;
+        hashiRule.rules.hashi.conflict = {};
+        globalRules.push({
+          restrictAreas: neighbour,
+          rules: hashiRule.rules,
+        });
       }
+    }
+
+    for(const re of rightEnd) {
+      const rule = right[re].rule;
+      const rules = [];
+      for (let cur = re+1; right[cur]; cur++) {
+        if(right[re].r === cur)break;
+        if(down[cur])rules.push(down[cur].rule.hashi);
+      }
+      if(rules.length > 0)rule.hashi.conflict.r = {rules};
+    }
+
+    for(const de of downEnd) {
+      const rule = down[de].rule;
+      const rules = [];
+      for(let cur = de + m; cur < n*m; cur += m) { // down
+        if(cur === down[de].d) break;
+        if(right[cur])rules.push(right[cur].rule.hashi);
+      }
+      if(rules.length > 0)
+      rule.hashi.conflict.d = {rules};
     }
   }
 
