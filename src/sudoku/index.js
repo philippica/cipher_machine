@@ -974,51 +974,56 @@ export class SudokuSolver {
     const result = [];
       let answer = "";
       let temp = [];
-      $(".vertical-").remove();
-      $(".horizon-").remove();
+      $("#showcase .vertical-").remove();
+      $("#showcase .horizon-").remove();
+      let isObject = false;
       for(let i = 0; i < this.possibleArray.length; i++) {
         const possibleArray = this.possibleArray[i];
         if(!possibleArray || possibleArray.size != 1)continue;
         const number = possibleArray ? possibleArray.values().next().value : ' ';
         if(number.hashi) {
+          isObject = true;
           const r = number.to['r'];
           const rnum = number.hashi['r'];
           const d = number.to['d'];
           const dnum = number.hashi['d'];
           if(rnum) {
             let cur = i+1;
-            $(`.sudoku-grid #grid-${cur}`).html("");
+            $(`#showcase .sudoku-grid #grid-${cur}`).html("");
             const interval = 100 / (rnum+1);
             while(cur != r) {
               for(let i = 0; i < rnum; i++) {
-                $(`.sudoku-grid #grid-${cur}`).append(`<div class="horizon-" style="top:${interval*(i+1)}%"></div>`);
+                $(`#showcase .sudoku-grid #grid-${cur}`).append(`<div class="horizon-" style="top:${interval*(i+1)}%"></div>`);
               }
               cur++;
             }
           }
           if(dnum) {
             let cur = i+this.m;
-            $(`.sudoku-grid #grid-${cur}`).html("");
+            $(`#showcase .sudoku-grid #grid-${cur}`).html("");
             const interval = 100 / (dnum+1);
             while(cur != d) {
               for(let i = 0; i < dnum; i++) {
-                $(`.sudoku-grid #grid-${cur}`).append(`<div class="vertical-" style="left:${interval*(i+1)}%"></div>`);
+                $(`#showcase .sudoku-grid #grid-${cur}`).append(`<div class="vertical-" style="left:${interval*(i+1)}%"></div>`);
               }
               cur+=this.m;
             }
           }
 
         } else if(number === 'black') {
-          $(`.sudoku-grid #grid-${i}`).css("background-color", number);
-          $(`.sudoku-grid #grid-${i}`).css("color", "white");
+          $(`#showcase .sudoku-grid #grid-${i}`).css("background-color", number);
+          $(`#showcase .sudoku-grid #grid-${i}`).css("color", "white");
+          isObject = true;
         } else if(number === 'white') {
-          $(`.sudoku-grid #grid-${i}`).css("background-color", number);
-          $(`.sudoku-grid #grid-${i}`).css("color", "black");
+          $(`#showcase .sudoku-grid #grid-${i}`).css("background-color", number);
+          $(`#showcase .sudoku-grid #grid-${i}`).css("color", "black");
+          isObject = true;
         } else if(number.length == 2) {
-          $(`.sudoku-grid #grid-${i}`).attr("class", "sudoku-grid-content " + number);
-          $(`.sudoku-grid #grid-${i}`).css("color", "white");
+          isObject = true;
+          $(`#showcase .sudoku-grid #grid-${i}`).attr("class", "sudoku-grid-content " + number);
+          $(`#showcase .sudoku-grid #grid-${i}`).css("color", "white");
         } else {
-          $(`.sudoku-grid #grid-${i}`).css("background-color", number);
+          $(`#showcase .sudoku-grid #grid-${i}`).css("background-color", number);
         }
         temp.push(number);
         answer += number + ' ';
@@ -1028,6 +1033,19 @@ export class SudokuSolver {
           temp = [];
         }
       }
+      if(isObject) {
+        const ans = $('#showcase #sudokuContainer').clone();
+        $('#sudokuAnswer').append(ans);
+        for(let i = 0; i < this.possibleArray.length; i++) {
+          const possibleArray = this.possibleArray[i];
+          if(!possibleArray || possibleArray.size != 1)continue;
+          const number = possibleArray ? possibleArray.values().next().value : ' ';
+          if(number.hashi)continue;
+          if(number.length === 2)continue;
+          if(number == "black" || number == "white" || number == "red")continue;
+          ans.find(`.sudoku-grid #grid-${i}`).html(number.toString());
+        }
+      }else
       $('#sudokuAnswer').append(answer + "\n-----------------------\n");
   }
 
