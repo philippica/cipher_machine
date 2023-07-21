@@ -884,14 +884,14 @@ export class SudokuSolver {
         const d = rule.conflict.d.rules;
         let flag = false;
         if(d)for(const cflct of d) {
-          const area = [...this.possibleArray[cflct.to.self]].filter(x=>!x.r);
-          if(area.length > 0) {
+          const area = [...this.possibleArray[cflct.to.self]].filter(x=>!x.hashi.r);
+          if(area.length === 0) {
             flag = true;
             break;
           }
         }
         if(flag) {
-          const newPossible = [...this.possibleArray[areas[0]]].filter(x=>!x.d);
+          const newPossible = [...this.possibleArray[areas[0]]].filter(x=>!x.hashi.d);
           if(newPossible.length === 0)return -1;
           if(newPossible.length < this.possibleArray[areas[0]].size){
             if(!origin[areas[0]]) {
@@ -906,14 +906,14 @@ export class SudokuSolver {
         const r = rule.conflict.r.rules;
         let flag = false;
         if(r)for(const cflct of r) {
-          const area = [...this.possibleArray[cflct.to.self]].filter(x=>!x.d);
-          if(area.length > 0) {
+          const area = [...this.possibleArray[cflct.to.self]].filter(x=>!x.hashi.d);
+          if(area.length === 0) {
             flag = true;
             break;
           }
         }
         if(flag) {
-          const newPossible = [...this.possibleArray[areas[0]]].filter(x=>!x.r);
+          const newPossible = [...this.possibleArray[areas[0]]].filter(x=>!x.hashi.r);
           if(newPossible.length === 0)return -1;
           if(newPossible.length < this.possibleArray[areas[0]].size){
             if(!origin[areas[0]]) {

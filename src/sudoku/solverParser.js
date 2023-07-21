@@ -12,6 +12,7 @@ export class SolverParser {
     this.n = n;
     this.m = m;
     this.filledArea = [];
+    this.noMeet = false;
     this.hashi = new Set();
     this.hashiRules = [];
     this.globalRules = globalRules;
@@ -121,25 +122,27 @@ export class SolverParser {
       }
     }
 
-    for(const re of rightEnd) {
-      const rule = right[re].rule;
-      const rules = [];
-      for (let cur = re+1; right[cur]; cur++) {
-        if(right[re].r === cur)break;
-        if(down[cur])rules.push(down[cur].rule.hashi);
+    if(this.noMeet) {
+      for(const re of rightEnd) {
+        const rule = right[re].rule;
+        const rules = [];
+        for (let cur = re+1; right[cur]; cur++) {
+          if(right[re].r === cur)break;
+          if(down[cur])rules.push(down[cur].rule.hashi);
+        }
+        if(rules.length > 0)rule.hashi.conflict.r = {rules};
       }
-      if(rules.length > 0)rule.hashi.conflict.r = {rules};
-    }
 
-    for(const de of downEnd) {
-      const rule = down[de].rule;
-      const rules = [];
-      for(let cur = de + m; cur < n*m; cur += m) { // down
-        if(cur === down[de].d) break;
-        if(right[cur])rules.push(right[cur].rule.hashi);
+      for(const de of downEnd) {
+        const rule = down[de].rule;
+        const rules = [];
+        for(let cur = de + m; cur < n*m; cur += m) { // down
+          if(cur === down[de].d) break;
+          if(right[cur])rules.push(right[cur].rule.hashi);
+        }
+        if(rules.length > 0)
+        rule.hashi.conflict.d = {rules};
       }
-      if(rules.length > 0)
-      rule.hashi.conflict.d = {rules};
     }
   }
 
@@ -582,6 +585,9 @@ export class SolverParser {
         this.parseLine(contentSubstitue);
       }
 
+      return true;
+    } else if(lineStr[0] === '线') { //线段之间互不相交
+      this.noMeet = true;
       return true;
     }
     return false;
