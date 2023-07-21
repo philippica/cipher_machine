@@ -974,6 +974,8 @@ export class SudokuSolver {
     const result = [];
       let answer = "";
       let temp = [];
+      $(".vertical-").remove();
+      $(".horizon-").remove();
       for(let i = 0; i < this.possibleArray.length; i++) {
         const possibleArray = this.possibleArray[i];
         if(!possibleArray || possibleArray.size != 1)continue;
@@ -983,7 +985,7 @@ export class SudokuSolver {
           const rnum = number.hashi['r'];
           const d = number.to['d'];
           const dnum = number.hashi['d'];
-          if(r) {
+          if(rnum) {
             let cur = i+1;
             $(`.sudoku-grid #grid-${cur}`).html("");
             const interval = 100 / (rnum+1);
@@ -994,7 +996,7 @@ export class SudokuSolver {
               cur++;
             }
           }
-          if(d) {
+          if(dnum) {
             let cur = i+this.m;
             $(`.sudoku-grid #grid-${cur}`).html("");
             const interval = 100 / (dnum+1);
