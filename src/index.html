@@ -351,8 +351,9 @@
 			<a href="https://philippica.github.io/cipher_machine/cipher_sheet">常用密码表</a>
 			<a href="https://www.quinapalus.com/cgi-bin/qat">QAT(非常强大的查词工具)</a>
 			<a href="https://nutrimatic.org/">NUTRI(词组暴力工具)</a>
-			<a href="https://www.quipqiup.com/">QUIPQUIP(自动单表暴力工具)</a>
+			<a href="https://www.quipqiup.com/">QUIPQIUP(自动单表暴力工具)</a>
 			<a href="https://www.wordplays.com/crossword-solver">Crossword线索查询网站</a>
+			<a href="https://nova.astrometry.net/">通过星空照片就能找到星座以及拍摄位置的网站</a>
 		</div>
 		<div class="container">
 			<div id="word-container">
@@ -1881,6 +1882,36 @@ const morseAnalysis = (result, words, chars) => {
 	$(`#analysis-bar-${analysisIndex-1}`).append(`<div><b>${chars[1]}为点, ${chars[0]}为长:</b> ${pt}</div>`);
 }
 
+
+let folderStatus = false;
+const fold = () => {
+	if(folderStatus){
+		$(".folder")[0].style.display = "none";
+	}else{
+		$(".folder")[0].style.display = "block";
+	}
+	folderStatus = !folderStatus;
+}
+
+const systemAnalysis = (result, nums) => {
+	result.append(`<button onClick="fold()">尝试2-36进制转10进制 +</button>`);
+	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar folder" style="${folderStatus?"":"display: none"};"></div>`);
+	const numResult = $(`#analysis-bar-${analysisIndex-1}`);
+	for(let i = 2; i <= 36; i++) {
+		let flag = false;
+		for(let j = i; j < 10; j++) {
+			if(nums.filter((x)=>x.includes(j)).length > 0){
+				flag = true;
+				break;
+			}
+		}
+		if(flag)continue;
+		const numi = nums.map((x)=>parseInt(x, i));
+		if(numi.filter((x)=>isNaN(x)).length > 0)continue;
+		numResult.append(`<div><b>${i}进制:</b> ${numi.join(" ")}</div>`);
+	}
+};
+
 const numbersAnalysis = (result, nums, rows) => {
 	result.append(`<h4 class="analysis-hint">尝试数字</h4>`);
 	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
@@ -2035,6 +2066,8 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 		const index = analysisIndex-1;
 		elementsAnalysis($(`#analysis-bar-${index}`), words);
 	}
+
+	systemAnalysis(result, words)
 
 	summaryAnalysis(result, content);
 
