@@ -1881,7 +1881,7 @@ const morseAnalysis = (result, words, chars) => {
 	$(`#analysis-bar-${analysisIndex-1}`).append(`<div><b>${chars[1]}为点, ${chars[0]}为长:</b> ${pt}</div>`);
 }
 
-const numbersAnalysis = (result, nums) => {
+const numbersAnalysis = (result, nums, rows) => {
 	result.append(`<h4 class="analysis-hint">尝试数字</h4>`);
 	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
 	const numResult = $(`#analysis-bar-${analysisIndex-1}`);
@@ -1899,12 +1899,24 @@ const numbersAnalysis = (result, nums) => {
 		const answer = nums.map((x)=>String.fromCharCode(x+97)).join("");
 		numResult.append(`<div><b>A=0..Z=25:</b> ${answer}</div>`);
 	}
-	numResult.append(`<h4 class="analysis-hint">发现所有数字都在1-255之间,尝试ASCII码</h4>`);
 	if(nums.filter((x)=>
 		x <=0 || x >= 255
 	).length === 0) {
+		numResult.append(`<h4 class="analysis-hint">发现所有数字都在1-255之间,尝试ASCII码</h4>`);
 		const answer = nums.map((x)=>String.fromCharCode(x)).join("");
 		numResult.append(`<div><b>ASCII:</b> ${answer}</div>`);
+	}
+
+	const five = rows.filter((x)=>(x.length == 2) && (parseInt(x[0]) <= 5 && parseInt(x[0]) >= 1) && (parseInt(x[1]) <= 5 && parseInt(x[1]) >= 1));
+	if(five.length === rows.length) {
+		numResult.append(`<h4 class="analysis-hint">发现所有数字长度都为2,且都在1到5之间，尝试棋盘密码</h4>`);
+		const fives = useMethod(4).split('\n');
+		let pt = "";
+		for(const word of rows) {
+			const c = decodeProcess(fives[1], fives[0], word).trim();
+			pt += c;
+		}
+		$(`#analysis-bar-${analysisIndex-1}`).append(`<div><b>5*5棋盘</b> ${pt}</div>`);
 	}
 }
 
@@ -1940,7 +1952,7 @@ const binaryAnalysis = (result, words, chars) => {
 
 	binaryResult.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
 
-	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers);
+	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers, words);
 
 	pt = "";
 	numbers = [];
@@ -1953,7 +1965,23 @@ const binaryAnalysis = (result, words, chars) => {
 
 	binaryResult.append(`<div><b>若${chars[1]}为1, ${chars[0]}为0:</b> ${pt}</div>`);
 	binaryResult.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
-	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers);
+	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers, words);
+}
+
+const elementsAnalysis = (result, words) => {
+	result.append(`<h4 class="analysis-hint">元素序号</h4>`);
+	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+	const elementsResult = $(`#analysis-bar-${analysisIndex-1}`);
+	let numbers = [];
+	let pt = "";
+	const element = useMethod(7).split('\n');
+	for(const word of words) {
+		const c = decodeProcess(element[1], element[0], word).trim();
+		pt += c + " ";
+		numbers.push(c);
+	}
+	elementsResult.append(`<div><b>元素序号:</b> ${pt}</div>`);
+	numbersAnalysis(elementsResult, numbers.map(x=>parseInt(x)), numbers);
 }
 
 
@@ -1962,12 +1990,14 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 	const result = $("#smart-analysis-ansers-list");
 	result.html("");
 	const content = $("#smart-analysis-content").val();
-	const words = content.trim().split(/[\s,]+/);
+	const words = content.trim().toLowerCase().split(/[\s,]+/);
 	const count = {};
 	const chars = [];
 	let index = 0;
 	let countOfChar = 0;
 	let isAllnumber = true;
+	const cheElement = substitutionTable[9].split(' ');
+	let isAllElement = true;
 	for(const word of words) {
 		for(let i = 0; i < word.length; i++) {
 			if(count[word[i]] === undefined) {
@@ -1981,6 +2011,9 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 		if(!/^-?\d+$/.test(word)) {
 			isAllnumber = false;
 		}
+		if(!cheElement.includes(word)) {
+			isAllElement = false;
+		}
 	}
 	if(countOfChar <= 2) {
 		result.append(`<div class="analysis-hint">只有两个字符, 开始二值分析</div><div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div`);
@@ -1993,7 +2026,14 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 	}
 
 	if(isAllnumber) {
-		numbersAnalysis(result, words.map((x) => parseInt(x)));
+		numbersAnalysis(result, words.map((x) => parseInt(x)), words);
+	}
+
+	if(isAllElement) {
+		result.append(`<div class="analysis-hint">全部为元素符号, 开始元素符号分析</div>`);
+		result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+		const index = analysisIndex-1;
+		elementsAnalysis($(`#analysis-bar-${index}`), words);
 	}
 
 	summaryAnalysis(result, content);

@@ -224,6 +224,22 @@ export class RubikCubeStage {
                 var mouseX = e.pageX - this.offsetLeft;
                 var mouseY = e.pageY - this.offsetTop;
                 ppPointArray.push(new ppPoint(mouseX, mouseY));
+
+                $(e.target).mousemove(function(eve)
+                {
+                    if(blockMousePressed)
+                    {
+                        var mouseX = eve.pageX - this.offsetLeft;
+                        var mouseY = eve.pageY - this.offsetTop;
+                        ppDrawLine(mouseX, mouseY, eve.currentTarget.getContext("2d"));
+                    }
+                });
+
+                $(window).mouseup(function(e){
+                    blockMousePressed = false;
+                    rubicCubeStage.draw();
+                    $(e.target).off("mousemove");
+                });
             }
         });
 
@@ -234,29 +250,25 @@ export class RubikCubeStage {
             blockMousePressed = true;
             ppPointArray.push(new ppPoint(mouseX, mouseY));
             e.preventDefault();
-        });
-
-        $('.cube-block').on("touchend",function(e)
-        {
-            blockMousePressed = false;
-            rubicCubeStage.draw();
-            e.preventDefault();
-        });
-
-        $('.cube-block').on("touchmove",function(e)
-        {
-            if(blockMousePressed)
+            $(e.target).on("touchmove",function(eve)
             {
-                var mouseX = e.originalEvent.changedTouches[0].pageX- this.offsetLeft;
-                var mouseY = e.originalEvent.changedTouches[0].pageY - this.offsetTop;
-                ppDrawLine(mouseX, mouseY, e.currentTarget.getContext("2d"));
-            }
+                if(blockMousePressed)
+                {
+                    var mouseX = eve.originalEvent.changedTouches[0].pageX- this.offsetLeft;
+                    var mouseY = eve.originalEvent.changedTouches[0].pageY - this.offsetTop;
+                    ppDrawLine(mouseX, mouseY, eve.currentTarget.getContext("2d"));
+                }
+            });
+
+            $(window).mouseup(function(e){
+                blockMousePressed = false;
+                rubicCubeStage.draw();
+                $(e.target).off("touchmove");
+            });
+
         });
+
         
-        $(window).mouseup(function(e){
-            blockMousePressed = false;
-            rubicCubeStage.draw();
-        });
         
         function ppDrawLine(curX, curY, context)
         {
@@ -272,16 +284,6 @@ export class RubikCubeStage {
             context.stroke();
             ppPointArray.push(new ppPoint(curX, curY));
         }
-        
-        $('.cube-block').mousemove(function(e)
-        {
-            if(blockMousePressed)
-            {
-                var mouseX = e.pageX - this.offsetLeft;
-                var mouseY = e.pageY - this.offsetTop;
-                ppDrawLine(mouseX, mouseY, e.currentTarget.getContext("2d"));
-            }
-        });
     }
 }
 
