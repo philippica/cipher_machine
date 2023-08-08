@@ -1938,6 +1938,18 @@ const numbersAnalysis = (result, nums, rows) => {
 		numResult.append(`<div><b>ASCII:</b> ${answer}</div>`);
 	}
 
+	if(nums.filter((x)=>x >= 118 || x <= 0).length === 0) {
+		numResult.append(`<h4 class="analysis-hint">发现所有数字都在1-118之间,尝试元素周期表</h4>`);
+		const element = useMethod(7).split('\n');
+		let pt = "";
+		for(const word of rows) {
+			let c = decodeProcess(element[0], element[1], word).trim();
+			c = c[0].toUpperCase() + c.slice(1);
+			pt += c + " ";
+		}
+		numResult.append(`<div><b>元素符号:</b> ${pt}</div>`);
+	}
+
 	const five = rows.filter((x)=>(x.length == 2) && (parseInt(x[0]) <= 5 && parseInt(x[0]) >= 1) && (parseInt(x[1]) <= 5 && parseInt(x[1]) >= 1));
 	if(five.length === rows.length) {
 		numResult.append(`<h4 class="analysis-hint">发现所有数字长度都为2,且都在1到5之间，尝试棋盘密码</h4>`);
