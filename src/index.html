@@ -2003,7 +2003,7 @@ const binaryAnalysis = (result, words, chars) => {
 
 	binaryResult.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
 
-	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers, words);
+	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers, numbers.map((x)=>x.toString()));
 
 	pt = "";
 	numbers = [];
@@ -2016,7 +2016,7 @@ const binaryAnalysis = (result, words, chars) => {
 
 	binaryResult.append(`<div><b>若${chars[1]}为1, ${chars[0]}为0:</b> ${pt}</div>`);
 	binaryResult.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
-	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers, words);
+	numbersAnalysis($(`#analysis-bar-${analysisIndex-1}`), numbers, numbers.map((x)=>x.toString()));
 }
 
 const elementsAnalysis = (result, words) => {
