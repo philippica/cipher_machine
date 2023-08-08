@@ -1884,30 +1884,38 @@ const morseAnalysis = (result, words, chars) => {
 
 
 let folderStatus = false;
-const fold = () => {
-	if(folderStatus){
-		$(".folder")[0].style.display = "none";
-	}else{
-		$(".folder")[0].style.display = "block";
-	}
-	folderStatus = !folderStatus;
-}
 
-const systemAnalysis = (result, nums) => {
-	result.append(`<button onClick="fold()">尝试2-36进制转10进制 +</button>`);
+const systemAnalysis = (result, nums, row) => {
+	const alphabet = substitutionTable[1].split(" ");
+	result.append(`<button id="systemCheck">尝试2-36进制转10进制 +</button>`);
 	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar folder" style="${folderStatus?"":"display: none"};"></div>`);
-	const numResult = $(`#analysis-bar-${analysisIndex-1}`);
-	for(let i = 2; i <= 36; i++) {
-		let flag = false;
-		for(let j = i; j < 10; j++) {
-			if(nums.filter((x)=>x.includes(j)).length > 0){
-				flag = true;
-				break;
-			}
+	$(`#systemCheck`).click(()=>{
+		console.info("a");
+		if(folderStatus){
+			$(".folder")[0].style.display = "none";
+		}else{
+			$(".folder")[0].style.display = "block";
 		}
-		if(flag)continue;
+		folderStatus = !folderStatus;
+	});
+	console.info("b");
+
+	let u = 2;
+	for(let i = 25, j = 36; i >= 0; i--, j--) {
+		if(row.includes(alphabet[i])) {
+			u = j;
+			break;
+		}
+	}
+	if(u==2)for(let i = 9; i >= 2; i--) {
+		if(row.includes(i)) {
+			u = i+1;
+			break;
+		}
+	}
+	const numResult = $(`#analysis-bar-${analysisIndex-1}`);
+	for(let i = u; i <= 36; i++) {
 		const numi = nums.map((x)=>parseInt(x, i));
-		if(numi.filter((x)=>isNaN(x)).length > 0)continue;
 		numResult.append(`<div><b>${i}进制:</b> ${numi.join(" ")}</div>`);
 	}
 };
@@ -2027,13 +2035,32 @@ const elementsAnalysis = (result, words) => {
 	numbersAnalysis(elementsResult, numbers.map(x=>parseInt(x)), numbers);
 }
 
+const lettersAnalysis = (result, content, words) => {
+	let element = useMethod(0).split('\n');
+	result.append(`<div><b>字母序(a = 1, z = 26): </b>${decodeProcess(element[0], element[1], content)}</div>`);
+	element = useMethod(2).split('\n');
+	result.append(`<div><b>QWE编码(a = q): </b>${words.map((x) => decodeProcess(element[0], element[1], x).replaceAll(" ", "")).join(" ")}</div>`);
+	element = useMethod(2).split('\n');
+	result.append(`<div><b>QWE解码(q = a): </b>${words.map((x) => decodeProcess(element[1], element[0], x).replaceAll(" ", "")).join(" ")}</div>`);
+	element = useMethod(3).split('\n');
+	result.append(`<div><b>Atbash: </b>${words.map((x) => decodeProcess(element[0], element[1], x).replaceAll(" ", "")).join(" ")}</div>`);
+	result.append(`<h4 class="analysis-hint">凯撒移位(暴力)</h4>`);
+	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+	const caeserResult = $(`#analysis-bar-${analysisIndex-1}`);
+	for(let i = 1; i < 26; i++) {
+		caeserResult.append(`<div><b>移动${i}位: </b> ${caeser(content, i)}</div>`);
+	}
+	//result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+}
 
-$("#smart-analysis-content").on("change keyup paste", () => {
+
+$("#smart-analysis-content").on("keyup paste", () => {
 	analysisIndex = 0;
 	const result = $("#smart-analysis-ansers-list");
 	result.html("");
 	const content = $("#smart-analysis-content").val();
-	const words = content.trim().toLowerCase().split(/[\s,]+/);
+	const row = content.trim().toLowerCase();
+	const words = row.split(/[\s,]+/);
 	const count = {};
 	const chars = [];
 	let index = 0;
@@ -2041,6 +2068,7 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 	let isAllnumber = true;
 	const cheElement = substitutionTable[9].split(' ');
 	let isAllElement = true;
+	let isAllLetter = true;
 	for(const word of words) {
 		for(let i = 0; i < word.length; i++) {
 			if(count[word[i]] === undefined) {
@@ -2056,6 +2084,10 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 		}
 		if(!cheElement.includes(word)) {
 			isAllElement = false;
+		}
+
+		if((/^[a-zA-Z]*$/.test(word)) === false) {
+			isAllLetter = false;
 		}
 	}
 	if(countOfChar <= 2) {
@@ -2079,7 +2111,14 @@ $("#smart-analysis-content").on("change keyup paste", () => {
 		elementsAnalysis($(`#analysis-bar-${index}`), words);
 	}
 
-	systemAnalysis(result, words)
+	if(isAllLetter) {
+		result.append(`<div class="analysis-hint">全部为字母, 开始加密分析</div>`);
+		result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+		const index = analysisIndex-1;
+		lettersAnalysis($(`#analysis-bar-${index}`), row, words);
+	}
+
+	systemAnalysis(result, words, row)
 
 	summaryAnalysis(result, content);
 
