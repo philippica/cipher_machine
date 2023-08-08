@@ -196,11 +196,24 @@ export class OneWord {
             callback = ()=>{};
         }
         const letterSet = this.makeLetterSet(letters);
+        const containsHelp = (letterSet, str) => {
+            const letterCount = [];
+            for(let i = 0; i < str.length; i++) {
+                if(!letterSet[str[i]]) {
+                    return false;
+                }
+                if(!letterCount[str[i]]){
+                    letterCount[str[i]] = 0;
+                }
+                letterCount[str[i]]++;
+            }
+            return true;
+        }
         for(let patten in words) {
             if(!patten)continue;
             const len = patten.length;
             for(let word of words[patten]) {
-                if(this.stringInclude(letterSet, word)) {
+                if(this.stringInclude(letterSet, word) || containsHelp(letterSet, word)) {
                     answers.push(word);
                     await callback(len, word);
                 }
