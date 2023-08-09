@@ -1914,9 +1914,10 @@ const systemAnalysis = (result, nums, row) => {
 		}
 	}
 	const numResult = $(`#analysis-bar-${analysisIndex-1}`);
+	const special = [2,3,8,16];
 	for(let i = u; i <= 36; i++) {
 		const numi = nums.map((x)=>parseInt(x, i));
-		numResult.append(`<div><b>${i}进制:</b> ${numi.join(" ")}</div>`);
+		numResult.append(`<div><b ${special.includes(i)?'style="color: red;"': ""}>${i}进制:</b> ${numi.join(" ")}</div>`);
 	}
 };
 
@@ -1994,7 +1995,7 @@ const binaryAnalysis = (result, words, chars) => {
 	const binaryResult = $(`#analysis-bar-${analysisIndex-1}`);
 	let numbers = [];
 	for(const word of words) {
-		const number = parseInt(word.replaceAll(chars[0], '1').replaceAll(chars[1], '0'), 2);
+		const number = parseInt(word.replaceAll(chars[0], ' ').replaceAll(chars[1], '0').replaceAll(' ', '1'), 2);
 		numbers.push(number);
 		pt += number.toString() + " ";
 	}
@@ -2008,7 +2009,7 @@ const binaryAnalysis = (result, words, chars) => {
 	pt = "";
 	numbers = [];
 	for(const word of words) {
-		const number = parseInt(word.replaceAll(chars[1], '1').replaceAll(chars[0], '0'), 2);
+		const number = parseInt(word.replaceAll(chars[1], ' ').replaceAll(chars[0], '0').replaceAll(' ', '1'), 2);
 		numbers.push(number);
 		pt += number.toString() + " ";
 	}
