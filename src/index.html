@@ -1921,6 +1921,60 @@ const systemAnalysis = (result, nums, row) => {
 	}
 };
 
+const _roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+
+const romanize = (number) => {
+    return Object.keys(_roman).reduce((acc, key) => {
+        while (number >= _roman[key]) {
+            acc += key;
+            number -= _roman[key];
+        }
+        return acc;
+    }, '');
+}
+
+
+
+const deromanize = (roman) => {
+  const romanNumeralRegex = new RegExp(
+    /^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$/
+  );
+  roman = roman.toUpperCase();
+  const regexResult = romanNumeralRegex.test(roman);
+
+  if (!regexResult) {
+    return false;
+  }
+
+  let arr = ["I", "V", "X", "L", "C", "D", "M"];
+
+  let values = {
+    I: 1,
+    V: 5,
+    X: 10,
+    L: 50,
+    C: 100,
+    D: 500,
+    M: 1000,
+  };
+
+  let sum = 0;
+
+  let prevIndex = 0;
+
+  for (let i = roman.length - 1; i >= 0; i--) {
+    if (arr.indexOf(roman[i]) >= prevIndex) {
+      sum = sum + values[roman[i]];
+    } else {
+      sum = sum - values[roman[i]];
+    }
+    prevIndex = arr.indexOf(roman[i]);
+  }
+
+  return sum;
+};
+
+
 const numbersAnalysis = (result, nums, rows) => {
 	result.append(`<h4 class="analysis-hint">尝试数字</h4>`);
 	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
@@ -1957,6 +2011,21 @@ const numbersAnalysis = (result, nums, rows) => {
 			pt += c + " ";
 		}
 		numResult.append(`<div><b>元素符号:</b> ${pt}</div>`);
+	}
+
+
+	let romanFlag = true;
+	let pt = "";
+	for(const num of nums) {
+		const rnum = romanize(num);
+		if(!rnum || num > 3999) {
+			romanFlag = false;
+			break;
+		}
+		pt += rnum + " ";
+	}
+	if(romanFlag) {
+		numResult.append(`<div><b>罗马数字:</b> ${pt}</div>`);
 	}
 
 	const five = rows.filter((x)=>(x.length == 2) && (parseInt(x[0]) <= 5 && parseInt(x[0]) >= 1) && (parseInt(x[1]) <= 5 && parseInt(x[1]) >= 1));
@@ -2097,8 +2166,6 @@ $("#smart-analysis-content").on("keyup paste", () => {
 		morseAnalysis($(`#analysis-bar-${index}`), words, chars);
 		binaryAnalysis($(`#analysis-bar-${index}`), words, chars);
 
-	} else if(countOfChar == 3) {
-		result.append('<div class="analysis-hint">只有三个字符, 开始三值分析</div>');
 	}
 
 	if(isAllnumber) {
@@ -2113,11 +2180,37 @@ $("#smart-analysis-content").on("keyup paste", () => {
 	}
 
 	if(isAllLetter) {
+		let pt = "";
+		let romanFlag = true;
+		const numbers = [];
+		for(const word of words) {
+			const number = deromanize(word);
+			if(!number) {
+				romanFlag = false;
+				break;
+			}
+			numbers.push(number);
+			pt += number.toString() + " ";
+		}
+
+		if(romanFlag) {
+			result.append(`<div class="analysis-hint">全部为罗马数字</div>`);
+			result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+			const index = analysisIndex-1;
+			const romanResult = $(`#analysis-bar-${index}`);
+			romanResult.append(`<div><b>罗马数字:</b>${pt}</div>`);
+			numbersAnalysis(romanResult, numbers, numbers.map(x=>x.toString()));
+		}
+
 		result.append(`<div class="analysis-hint">全部为字母, 开始加密分析</div>`);
 		result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
 		const index = analysisIndex-1;
 		lettersAnalysis($(`#analysis-bar-${index}`), row, words);
 	}
+
+	result.append(`<div><b>倒序:</b>${Array.from(content).reverse().join('')}</div>`);
+
+
 
 	systemAnalysis(result, words, row)
 
