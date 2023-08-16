@@ -61,7 +61,7 @@ export class OneWord {
             const len = pattern.length;
             for(let i = 0; i < words[pattern].length; i++) {
                 const word = words[pattern][i];
-                if(this.isFilter(pattern, i, filter))continue;
+                // if(this.isFilter(pattern, i, filter))continue;
                 if(regularExpression.test(word)) {
                     answer.push(word);
                     await callback(len, word);
