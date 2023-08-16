@@ -397,6 +397,7 @@
 							<option value ="findSimilarity">寻找相似单词(编辑距离)</option>
 							<option value ="findByCode">DIY写程序查找</option>
 						</select>
+						<div id="twoWordContainer"><span>两个词</span><input type="checkbox" id="twoWords" /></div>
 					</div>
 					<pre id="help-content" class="help-content"></pre>
 					<button id="find-words">solve</button>
@@ -720,6 +721,7 @@
 				$('#word-find-similarity-hint').remove();
 				$('#similarityRegex').remove();
 				$("#similarityDegree").remove();
+				$("#twoWordContainer").remove();
 				$("#one-word-content").height(60);
 				if(method === "findSimilarity") {
 					$("#method-select").append("<input id='similarityDegree' placeholder='相似度' value='1'/>");
@@ -729,6 +731,8 @@
 				} else if(method === "findByCode") {
 					$("#one-word-content").val('function check(str, tools) {\n\tif(str[0]!=str[str.length-1])return null; // 如果首字母和尾字母不相等，不选这个单词\n\tif(str.length > 7 || str.length < 5)return null; // 如果单词长度大于7或者小于2，不选这个单词\n\tif(/^a.*b$/.test(str))return null;// 如果满足正则^a.*b$ 不选这个单词\n\tif(tools.anagram(str.substr(2,3), "guo") === false)return null; // 如果从第3个字符起往后3个字母不是由abc组成的，不选这个单词\n\tif(tools.isWord(str.substr(2,5)) === true){ // 如果单词第3个字符（因为下标从0开始)往后5个字母是一个英语单词\n\t\treturn str + " " + str.substr(2,5); //输出该词，并把第三个到第5个字母的字串放后面\n\t}\n}');
 					$("#one-word-content").height(400);
+				} else if(method === "findByWildcard") {
+					$("#method-select").append(`<div id="twoWordContainer"><span>两个词</span><input type="checkbox" id="twoWords" /></div>`);
 				}
 				$("#help-content").text(oneWordHelpContent[method]);
 			}
@@ -796,6 +800,9 @@
 						await findWord(wordLength, word);
 					}
 					answer = await solverFunc(content, findSimilarity, filter)
+				} else if(method === 'findByWildcard') {
+					const twoWords = $("#twoWords").is(':checked');
+					answer = await solverFunc(content, findWord, filter, twoWords);
 				} else {
 					answer = await solverFunc(content, findWord, filter)
 				}

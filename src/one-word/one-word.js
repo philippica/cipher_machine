@@ -71,8 +71,88 @@ export class OneWord {
         return answer;
     }
 
-    findByWildcard(wildcard, callback, filter) {
+    async findByWildcard(wildcard, callback, filter, moreWord) {
         let regx = '';
+        const isLowerCase = (x) => {
+            return x >= 'a' && x <= 'z';
+        }
+        const parseWildcard = (wildcard, rev) => {
+            const wildcardObj = [];
+            const len = wildcard.length;
+            let regex = '';
+            for(let i = 0; i < len; i++) {
+                let x = wildcard[i];
+                if(x == '*') {
+                    regex = rev ?'.*' + regex : regex + '.*';
+                } else if(!rev && x == '[') {
+                    i++;
+                    let tmp = "[";
+                    while(i < len && wildcard[i] != ']') {
+                        tmp += wildcard[i];
+                        i++;
+                    }
+                    tmp += ']';
+                    regex = rev ? tmp + regex : regex + tmp;
+                } else if(rev && x == ']') {
+                    i++;
+                    let tmp = "[";
+                    while(i < len && wildcard[i] != '[') {
+                        tmp += wildcard[i];
+                        i++;
+                    }
+                    tmp += ']';
+                    regex = rev ? tmp + regex : regex + tmp;
+                } else if(isLowerCase(x)) {
+                    regex = rev ? x+regex :regex + x;
+                } else regex = rev ? '.' + regex : regex + '.';
+                if(!rev && wildcard[i+1] == '*') {
+                    wildcardObj.push(regex + ".*");
+                } else {
+                    wildcardObj.push(regex);
+                }
+            }
+            return {
+                wildcardObj,
+            };
+        }
+        if(moreWord) {
+            const wildcardsRev = parseWildcard(wildcard.split("").reverse().join(""), true).wildcardObj;
+            const wildcards = parseWildcard(wildcard).wildcardObj;
+    
+            console.info(wildcards);
+    
+            const answers = [];
+            const answerRev = [];
+    
+            for(const w of wildcards) {
+                answers.push(await this.findByRegularExpression(`^${w}$`, ()=>{}, filter));
+            }
+    
+            for(const w of wildcardsRev) {
+                answerRev.push(await this.findByRegularExpression(`^${w}$`, ()=>{}, filter));
+            }
+    
+            const answerFinal = [];
+            let count = 0;
+            for(let i = 0; i < answers.length - 1; i++) {
+                for(let j = 0; j < answers[i].length; j++) {
+                    const rev = answerRev[answers.length-i-2];
+                    for(let k = 0; k < rev.length; k++) {
+                        const word = answers[i][j] + " " + rev[k];
+                        count++;
+                        if(count > 20000) {
+                            await callback(20, "个数超过两万个，停止计算");
+                            return answerFinal;
+                        }
+                        await callback(word.length-1, word);
+                        answerFinal.push(word);
+                    }
+                }
+            }
+    
+            return answerFinal;
+        }
+
         for(let x of wildcard) {
             if(x === '#') {
                 regx += '.';
