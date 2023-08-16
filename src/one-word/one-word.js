@@ -78,12 +78,16 @@ export class OneWord {
         }
         const parseWildcard = (wildcard, rev) => {
             const wildcardObj = [];
+            let whole = "";
             const len = wildcard.length;
             let regex = '';
+            const exist = [];
+            let existCount = 0;
             for(let i = 0; i < len; i++) {
                 let x = wildcard[i];
                 if(x == '*') {
                     regex = rev ?'.*' + regex : regex + '.*';
+                    whole += '.*';
                 } else if(!rev && x == '[') {
                     i++;
                     let tmp = "[";
@@ -92,6 +96,7 @@ export class OneWord {
                         i++;
                     }
                     tmp += ']';
+                    whole += tmp;
                     regex = rev ? tmp + regex : regex + tmp;
                 } else if(rev && x == ']') {
                     i++;
@@ -104,20 +109,37 @@ export class OneWord {
                     regex = rev ? tmp + regex : regex + tmp;
                 } else if(isLowerCase(x)) {
                     regex = rev ? x+regex :regex + x;
-                } else regex = rev ? '.' + regex : regex + '.';
+                    whole += x;
+                } else {
+                    regex = rev ? '.' + regex : regex + '.';
+                    if(x == '#') {
+                        whole += '.';
+                    } else {
+                        if(exist[x]) {
+                            whole += exist[x];
+                        } else {
+                            whole += '(.)';
+                            exist[x] = `\\${++existCount}`;
+                        }
+                    }
+                }
                 if(!rev && wildcard[i+1] == '*') {
                     wildcardObj.push(regex + ".*");
                 } else {
                     wildcardObj.push(regex);
                 }
             }
+            whole = `^${whole}$`;
             return {
                 wildcardObj,
+                whole,
             };
         }
+        const ww = parseWildcard(wildcard);
         if(moreWord) {
+            const whole = eval(`/${ww.whole}/`);
             const wildcardsRev = parseWildcard(wildcard.split("").reverse().join(""), true).wildcardObj;
-            const wildcards = parseWildcard(wildcard).wildcardObj;
+            const wildcards = ww.wildcardObj;
     
             console.info(wildcards);
     
@@ -139,6 +161,10 @@ export class OneWord {
                     const rev = answerRev[answers.length-i-2];
                     for(let k = 0; k < rev.length; k++) {
                         const word = answers[i][j] + " " + rev[k];
+                        const wholestr = answers[i][j] + rev[k];
+                        if(!whole.test(wholestr)) {
+                            continue;
+                        }
                         count++;
                         if(count > 20000) {
                             await callback(20, "个数超过两万个，停止计算");
@@ -153,16 +179,7 @@ export class OneWord {
             return answerFinal;
         }
 
-        for(let x of wildcard) {
-            if(x === '#') {
-                regx += '.';
-            } else if( x === '*') {
-                regx += '.*';
-            } else {
-                regx += x;
-            }
-        }
-        return this.findByRegularExpression(`^${regx}$`, callback, filter);
+        return this.findByRegularExpression(`^${ww.whole}$`, callback, filter);
     }
 
     isFilter(patten, index, filter) {
