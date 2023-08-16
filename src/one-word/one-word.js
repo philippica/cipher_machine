@@ -105,7 +105,11 @@ export class OneWord {
                 } else if(isLowerCase(x)) {
                     regex = rev ? x+regex :regex + x;
                 } else regex = rev ? '.' + regex : regex + '.';
-                wildcardObj.push(regex);
+                if(!rev && wildcard[i+1] == '*') {
+                    wildcardObj.push(regex + ".*");
+                } else {
+                    wildcardObj.push(regex);
+                }
             }
             return {
                 wildcardObj,
@@ -130,14 +134,14 @@ export class OneWord {
     
             const answerFinal = [];
             let count = 0;
-            for(let i = 0; i < answers.length; i++) {
+            for(let i = 0; i < answers.length - 1; i++) {
                 for(let j = 0; j < answers[i].length; j++) {
                     const rev = answerRev[answers.length-i-2];
                     for(let k = 0; k < rev.length; k++) {
                         const word = answers[i][j] + " " + rev[k];
                         count++;
                         if(count > 20000) {
-                            await callback(0, "个数超过两万个，停止计算");
+                            await callback(20, "个数超过两万个，停止计算");
                             return answerFinal;
                         }
                         await callback(word.length-1, word);
