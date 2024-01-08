@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hiddle</title>
+	<script charset="utf-8" src="https://libs.baidu.com/jquery/1.6.4/jquery.min.js"></script>
+	<style>
+
+@keyframes fadenum{
+   100%{transform:rotateY(180deg);opacity: 0;}
+   opacity: 0;
+}
+#stage {
+	width: 408px;
+	height: 400px;
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	margin: 10px;
+}
+.cover {
+	width: calc((100%/4) - 2px);
+    height: calc((100%/4) - 2px);
+    background-color: #ffe000;
+    border: 1px solid;
+}
+.transparent {
+	transform:rotateY(180deg);
+	opacity: 0;
+	transition: .5s ease;
+}
+
+#puzzle {
+	width: 408px;
+	height: 400px;
+	position: absolute;
+    z-index: -1;
+}
+
+	</style>
+</head>
+<body>
+    <div id='stage'>
+		<div class="cover">0</div>
+		<div class="cover">2</div>
+		<div class="cover">3</div>
+		<div class="cover">4</div>
+		<div class="cover">5</div>
+		<div class="cover">6</div>
+		<div class="cover">7</div>
+		<div class="cover">8</div>
+		<div class="cover">9</div>
+		<div class="cover">10</div>
+		<div class="cover">11</div>
+		<div class="cover">12</div>
+		<div class="cover">13</div>
+		<div class="cover">14</div>
+		<div class="cover">15</div>
+		<div class="cover">16</div>
+		<img id="puzzle"></img>
+	</div>
+	<input type="file" id="open-file-btn" value="a">
+	<button id="reset">还原挡板</button>
+</body>
+<script>
+	$("div.cover").click((e)=>{
+		$(e.target).addClass("transparent");
+	})
+	$("#open-file-btn").change((e)=>{
+		$("#puzzle").attr("src", URL.createObjectURL(e.target.files[0]));
+	})
+	$("#reset").click((e)=>{
+		$(".cover").removeClass("transparent");
+	})
+</script>
+</html>
