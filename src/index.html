@@ -2098,8 +2098,12 @@ const numbersAnalysis = (result, nums, rows) => {
 	let romanFlag = true;
 	let pt = "";
 	for(const num of nums) {
+		if(num > 3999 || num < 0) {
+			romanFlag = false;
+			break;
+		}
 		const rnum = romanize(num);
-		if(!rnum || num > 3999) {
+		if(!rnum) {
 			romanFlag = false;
 			break;
 		}

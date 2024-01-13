@@ -128,6 +128,16 @@ export class RubikCubeStage {
         const rubicCubeStage = this;
 		let originCoordinate = {};
 		let ppMousePressed = false;
+
+        $('#rubik-cube').off("mousedown");
+        $('#rubik-cube').off("touchstart");
+        $('#rubik-cube').off("touchend");
+        $('#rubik-cube').off("touchmove");
+        $('.cube-block').off("mousedown");
+        $('body').off("mouseup");
+        $('body').off("mousemove");
+        $(window).off("mouseup");
+
         $('#rubik-cube').mousedown((e) => {
             if(e.which === 1) // left click
             {
