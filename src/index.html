@@ -949,11 +949,9 @@
 					arr[i] = sineWaveAt(i, tone) * volume
 					arr[i] += sineWaveAt(i, tone*2) * volume * 0.4;
 					arr[i] += sineWaveAt(i, tone*3) * volume * 0.2;
-					arr[i] += sineWaveAt(i, tone*4) * volume * 0.1;
 				}
 
 				playSound(arr, 0);
-				playSound(arr2, 0);
 		}
 
 			// blind
