@@ -1292,7 +1292,7 @@
 		}
 		const generate = (n, m) => {
 			$('#sudokuContainer').html("");
-			$('#sudokuContainer').width(m*30 - m);
+			$('#sudokuContainer').width(m*30 - m+2);
 			$('#sudokuContainer').height(n*30 + n);
 			for(let i = 0; i < n*m; i++) {
 				$('#sudokuContainer').append(`<div class="sudoku-grid"><div class="sudoku-index">${i+1}</div><div id="grid-${i}" class="sudoku-grid-content" contenteditable="true"></div></div>`);
