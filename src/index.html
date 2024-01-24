@@ -2078,6 +2078,12 @@ const numbersAnalysis = (result, nums, rows) => {
 		numResult.append(`<h4 class="analysis-hint">发现所有数字都在1-255之间,尝试ASCII码</h4>`);
 		const answer = nums.map((x)=>String.fromCharCode(x)).join("");
 		numResult.append(`<div><b>ASCII:</b> ${answer}</div>`);
+	} else if(nums.filter((x)=>
+		x <=0 || x > 65536
+	).length === 0) {
+		numResult.append(`<h4 class="analysis-hint">发现所有数字都在1-65536之间,尝试UNICODE码</h4>`);
+		const answer = nums.map((x)=>String.fromCharCode(x)).join("");
+		numResult.append(`<div><b>UNICODE:</b> ${answer}</div>`);
 	}
 
 	if(nums.filter((x)=>x >= 118 || x <= 0).length === 0) {
@@ -2128,15 +2134,35 @@ const summaryAnalysis = (result, str) => {
 	result.append(`<h4 class="analysis-hint">综合分析</h4>`);
 	result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
 	const summaryResult = $(`#analysis-bar-${analysisIndex-1}`);
-	summaryResult.append(`<div>共${str.length}个字符, 详细统计</div>`);
+	const len = str.length;
+	summaryResult.append(`<div>共${len}个字符, 详细统计</div>`);
 	const chars = {};
-	for(let i = 0; i < str.length; i++) {
+	for(let i = 0; i < len; i++) {
 		chars[str[i]] = (chars[str[i]] || 0) + 1;
 	}
 	const res = Object.entries(chars);
 	let s = "";
 	for(const entry of res) {
 		summaryResult.append(`<div>${entry[0]}: ${entry[1]}</div>`);
+	}
+
+	for(let i = 2; i * i <= len; i++) {
+		if(len % i == 0) {
+			summaryResult.append(`<h4 class="analysis-hint">尝试将文本重新排列成${i} * ${len/i}的矩阵:</h4>`);
+			let mat = "";
+			for(let j = 0; j <= len; j+=i) {
+				mat += str.substring(j, j+i) + "\n";
+			}
+			summaryResult.append(`<pre>${mat.slice(0, -1)}</pre>`);
+			if(i*i != len) {
+				summaryResult.append(`<h4 class="analysis-hint">尝试将文本重新排列成${len/i} * ${i}的矩阵:</h4>`);
+				mat = "";
+				for(let j = 0; j <= len; j+=len/i) {
+					mat += str.substring(j, j+len/i) + "\n";
+				}
+				summaryResult.append(`<pre>${mat.slice(0, -1)}</pre>`);
+			}
+		}
 	}
 }
 
@@ -2210,6 +2236,31 @@ const lettersAnalysis = (result, content, words) => {
 	//result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
 }
 
+const chineseAnalysis = (result, row) => {
+	const chineseToUnicodeHex = (chinese) => {
+		let unicode = '';
+		for (let i = 0; i < chinese.length; i++) {
+			const hex = chinese.charCodeAt(i).toString(16);
+			unicode += '\\u' + ('0000' + hex).slice(-4) + ' ';
+		}
+		return unicode;
+	}
+	const chineseToUnicode = (chinese) => {
+		let unicode = '';
+		for (let i = 0; i < chinese.length; i++) {
+			const hex = chinese.charCodeAt(i).toString();
+			unicode += hex + ' ';
+		}
+		return unicode;
+	}
+	result.append(`<div><b>转UNICODE(十六进制): </b>${chineseToUnicodeHex(row)}</div>`);
+	result.append(`<div><b>转UNICODE(十进制): </b>${chineseToUnicode(row)}</div>`);
+}
+
+const hexAnalysis = (result, nums) => {
+	result.append(`<div><b>UNICODE转字符(十六进制): </b>${nums.map((x) => String.fromCharCode(x)).reduce((x, y) => x + y)}</div>`);
+
+}
 
 $("#smart-analysis-content").on("keyup paste", () => {
 	analysisIndex = 0;
@@ -2226,6 +2277,7 @@ $("#smart-analysis-content").on("keyup paste", () => {
 	const cheElement = substitutionTable[9].split(' ');
 	let isAllElement = true;
 	let isAllLetter = true;
+	let hasChinese = false;
 	for(const word of words) {
 		for(let i = 0; i < word.length; i++) {
 			if(count[word[i]] === undefined) {
@@ -2236,16 +2288,37 @@ $("#smart-analysis-content").on("keyup paste", () => {
 				count[word[i]]++;
 			}
 		}
-		if(!/^-?\d+$/.test(word)) {
+		if(isAllnumber && !/^-?\d+$/.test(word)) {
 			isAllnumber = false;
 		}
-		if(!cheElement.includes(word)) {
+		if(isAllElement && !cheElement.includes(word)) {
 			isAllElement = false;
 		}
 
-		if((/^[a-zA-Z]*$/.test(word)) === false) {
+		if(isAllLetter && ((/^[a-zA-Z]*$/.test(word)) === false)) {
 			isAllLetter = false;
 		}
+
+		if(word.charCodeAt(0) > 256) {
+			hasChinese = true;
+		}
+	}
+
+	let hexs = [];
+	for(const word of words) {
+		let h = word;
+		if(h.startsWith("\\u") || h.startsWith("0x")) {
+			h = h.slice(2);
+		}
+		if(h.startsWith("&#x")) {
+			h = h.slice(3);
+		}
+
+		if(!/^[0-9a-fA-F]+$/.test(h)) {
+			hexs = [];
+			break;
+		}
+		hexs.push(parseInt(h, 16));
 	}
 	if(countOfChar <= 2) {
 		result.append(`<div class="analysis-hint">只有两个字符, 开始二值分析</div><div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div`);
@@ -2293,6 +2366,20 @@ $("#smart-analysis-content").on("keyup paste", () => {
 		result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
 		const index = analysisIndex-1;
 		lettersAnalysis($(`#analysis-bar-${index}`), row, words);
+	}
+
+	if(hasChinese) {
+		result.append(`<div class="analysis-hint">存在非ASCII字符</div>`);
+		result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+		const index = analysisIndex-1;
+		chineseAnalysis($(`#analysis-bar-${index}`), row);
+	}
+
+	if(hexs.length != 0) {
+		result.append(`<div class="analysis-hint">尝试十六进制</div>`);
+		result.append(`<div id="analysis-bar-${analysisIndex++}" class="analysis-bar"></div>`);
+		const index = analysisIndex-1;
+		hexAnalysis($(`#analysis-bar-${index}`), hexs);
 	}
 
 	result.append(`<div><b>倒序:</b>${Array.from(content).reverse().join('')}</div>`);
