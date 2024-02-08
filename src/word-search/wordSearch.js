@@ -62,8 +62,48 @@ export class WordSearch {
         }
         return answers;
     }
+
+    dfs(matrix, x, y, trie, ans, pos, answers) {
+        const dx = [-1,0,1,-1,1,-1,0,1];
+        const dy = [1,1,1,0,0,-1,-1,-1];
+        const curr = matrix[x][y];
+        const newNode = trie[curr];
+        if(!newNode)return;
+        if(newNode.isWord) {
+            answers.push({
+                word: ans, 
+                pos: pos.slice(0)
+            });
+        }
+        matrix[x][y] = '0';
+        for(let i = 0; i < 8; i++) {
+            const nx = x + dx[i];
+            const ny = y + dy[i];
+            if(nx >= matrix.length || ny >= matrix[0].length)continue;
+            if(nx < 0 || ny < 0)continue;
+            pos.push(nx * matrix[0].length + ny);
+            this.dfs(matrix, nx, ny, newNode, ans + matrix[nx][ny], pos, answers);
+            pos.pop();
+        }
+        matrix[x][y] = curr;
+    }
+
+    wordSearch2(matrix) {
+        this.matrix = matrix;
+        const answers = [];
+        const row = this.row = matrix.length;
+        const column = this.column = matrix[0].length;
+        for(let i = 0; i < row; i++) {
+            for(let j = 0; j < column; j++) {
+
+                this.dfs(matrix, i, j, window.Trie.root, matrix[i][j], [i*column+j], answers);
+            }
+        }
+        return answers;
+    }
+
     buildMatrix(str, row, column) {
-        let strWithOnlyEnglishLetter = str.replace(/[^A-Za-z\n]/g, '').toLowerCase();
+        let strWithOnlyEnglishLetter = str.replace(/[^A-Za-z\u4e00-\u9fa5\n]/g, '').toLowerCase();
         const returnMat = [];
         row = 0;
         if(!row || !column) {

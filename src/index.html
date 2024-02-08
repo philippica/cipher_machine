@@ -47,9 +47,13 @@
     			color: #adabab;
 				background-color: "unset";
 			}
-			#word-search-content {
-				width: 40%;
+			#word-search-content, #word-search-mat {
+				width: 400px;
 				height: 400px;
+				margin-left: 20px;
+			}
+			#word-search-mat {
+				display: flex;
 			}
 			.word-content {
 				width: 80%;
@@ -174,7 +178,7 @@
 				margin-right: -1px;
 				margin-bottom: -1px;
 			}
-			#sudokuContainer {
+			#sudokuContainer, #word-search-mat{
 				display: flex;
 				flex-wrap: wrap;
 				align-content: flex-start;
@@ -454,9 +458,14 @@
 					<div class="help-content">abc</div>
 					<div class="help-content">ddf</div>
 					<div class="help-content">ghi</div>
-					<div>
-						<textarea id="word-search-content" class="form-control" placeholder="请输出字母方阵,用空行隔开"></textarea>
-						<button onclick="wordSearch()">Solver</button>
+					<span>只搜横/竖/斜方向的单词</span><input type="checkbox" id="onlyvh" checked> 
+					<div style="display: flex">
+						<div>
+							<textarea id="word-search-content" class="form-control" placeholder="请输出字母方阵,用空行隔开"></textarea>
+							<button onclick="wordSearch()">Solver</button>
+						</div>
+						<div id="word-search-mat">
+						</div>
 					</div>
 					<div id="word-search-ansers" style="display: flex">
 						<div id="word-search-ansers-list"></div>
@@ -841,11 +850,30 @@
 			// word search
 			wordSearch = () => {
 				var content = $("#word-search-content").val();
+				$("#word-search-ansers-list").html("");
+				$("#word-search-ansers-position").html("");
 				console.info(content);
 				const mat = new Solver.WordSearch().buildMatrix(content);
-				const answers = new Solver.WordSearch().wordSearch(mat);
+				const col = mat[0].length;
+				let id = 0;
+				$("#word-search-mat").html("");
+				$("#word-search-mat").css("width", `${col * 26 + col*2 + 10}px`);
+				for(const row of mat) {
+					for(const ch of row) {
+						$("#word-search-mat").append(`<div id="ws-${id}" class="sudoku-grid-content">${ch}</div>`);
+						id++;
+					}
+				}
+				let answer;
+				if($('#onlyvh').get(0).checked) {
+					answers = new Solver.WordSearch().wordSearch(mat);
+				} else {
+					answers = new Solver.WordSearch().wordSearch2(mat);
+				}
 				answers.sort((a, b) => b.word.length - a.word.length);
+				let lastans = "";
 				for(let answer of answers) {
+					if(answer.word == lastans)continue;
 					let dirFirst = "";
 					let dirSecond = "";
 					if(answer.dy === 1) {
@@ -859,10 +887,79 @@
 						dirSecond = "上";
 					}
 					$("#word-search-ansers-list").append(`<div>${answer.word}</div>`);
-					$("#word-search-ansers-position").append(
-						`<div>出现在第${answer.x+1}行，第${answer.y+1}列，向${dirFirst}${dirSecond}方向</div>`
-					);
+					if($('#onlyvh').get(0).checked) {
+						$("#word-search-ansers-position").append(
+							`<div class="ws-answer" data-answer="${JSON.stringify(answer).replace(/\"/g,"'")}">出现在第${answer.x+1}行，第${answer.y+1}列，向${dirFirst}${dirSecond}方向</div>`
+						);
+					} else {
+						$("#word-search-ansers-position").append(
+							`<div class="ws-answer" data-answer="${JSON.stringify(answer.pos)}">从第${parseInt(answer.pos[0] / col) + 1}行，第${answer.pos[0] % col + 1}列开始</div>`
+						);
+					}
+					lastans = answer.word;
 				}
+				$(".ws-answer").on("click", (e) => {
+					const r = Math.round(Math.random() * 255);
+					const g = Math.round(Math.random() * 255);
+					const b = Math.round(Math.random() * 255);
+					let color = "rgb(" + r + "," + g + ',' + b + ')';
+					const answer = JSON.parse(e.target.dataset.answer.replace(/\'/g,"\""));
+					if(e.target.style.backgroundColor) {
+						color = e.target.style.backgroundColor;
+						e.target.style.backgroundColor = "";
+					} else e.target.style.backgroundColor = color;
+					if(e.target.dataset.answer[0] == '[') {
+						for(const idx of answer) {
+							const originColor = $(`#ws-${idx}`).css("background-color");
+							if(!originColor) {
+								$(`#ws-${idx}`).css("background-color", color);
+							} else {
+								const backgroundRGB = originColor.match(/\d+/g);
+								const backgroundR = parseInt(backgroundRGB[0]);
+								const backgroundG = parseInt(backgroundRGB[1]);
+								const backgroundB = parseInt(backgroundRGB[2]);
+
+								const otherRGB = color.match(/\d+/g);
+								const otherR = parseInt(otherRGB[0]);
+								const otherG = parseInt(otherRGB[1]);
+								const otherB = parseInt(otherRGB[2]);
+								const xorColor = `rgb(${backgroundR^otherR},${backgroundG^otherG},${backgroundB^otherB})`;
+								if(xorColor == "rgb(0,0,0)") {
+									$(`#ws-${idx}`).css("background-color", "");
+								}else
+								$(`#ws-${idx}`).css("background-color", xorColor);
+							}
+						}
+						return;
+					}
+					const len = answer.word.length;
+					let x = answer.x;
+					let y = answer.y;
+					for(let i = 0; i < len; i++) {
+						const idx = x * col + y;
+						const originColor = $(`#ws-${idx}`).css("background-color");
+						if(!originColor) {
+							$(`#ws-${idx}`).css("background-color", color);
+						} else {
+							const backgroundRGB = originColor.match(/\d+/g);
+							const backgroundR = parseInt(backgroundRGB[0]);
+							const backgroundG = parseInt(backgroundRGB[1]);
+							const backgroundB = parseInt(backgroundRGB[2]);
+
+							const otherRGB = color.match(/\d+/g);
+							const otherR = parseInt(otherRGB[0]);
+							const otherG = parseInt(otherRGB[1]);
+							const otherB = parseInt(otherRGB[2]);
+							const xorColor = `rgb(${backgroundR^otherR},${backgroundG^otherG},${backgroundB^otherB})`;
+							if(xorColor == "rgb(0,0,0)") {
+								$(`#ws-${idx}`).css("background-color", "");
+							}else
+							$(`#ws-${idx}`).css("background-color", xorColor);
+						}
+						x += answer.dx;
+						y += answer.dy;
+					}
+				});
 			}
 
 			// rubik cube
