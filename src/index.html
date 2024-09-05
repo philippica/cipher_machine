@@ -110,6 +110,7 @@
 				float:left
 			}
 
+
 			.piano .white {
 				height:16em;
 				width:3.1em;
@@ -156,7 +157,7 @@
 			.ws-answer:hover {
 				border: 1px solid;
 			}
-			
+
 			.blind-dot {
 				border-radius: 50%;
 				width: 30px;
@@ -376,6 +377,22 @@
 				z-index: 10;
 				border: 1px solid;
 			}
+
+			#cvs-tools span:hover {
+				border: 1px solid black;
+				cursor: pointer;
+			}
+
+
+			#cvs-tools {
+				border: 1px solid black;
+				width: 45px;
+			}
+
+			#cvs {
+				border: 1px solid black;
+			}
+
  		</style>
 		<link rel="stylesheet" href="./static/nonogram.css">
 		<link rel="stylesheet" href="./static/bootstrap.min.css">
@@ -680,24 +697,29 @@
 					<button id="solveSudoku">solve</button>
 				</div>
 			</div>
-			<div id="audio-container">
-				<div id="audio-capsule" class="capsule" data-expend=true>音频文件(当你没有安装音频处理软件时)</div>
-				<div id="audio-main" class="content-area" style="display: none;">
-					<input id="files" type="file" id="files" name="files[]" multiple />
-					<input type="radio" name="linesType" id="singleLine" onchange="changeLineType()"checked>只显示一条竖线(用于分析频率时用)
-					<input type="radio" name="linesType" id="doubleLine" onchange="changeLineType()">显示起始和结束两条线(用于播放)
-					<div style="height: 200px;">
-						<div id="waveContainer" style="position: absolute">
-							<canvas id="wave"></canvas>
-							<div id="start" class="line"></div>
-							<div id="selectedArea" style="display: none;"></div>
-							<div id="end" class="line" style="left: 100%; display: none;"></div>
+			<div id="cvs-container">
+				<div id="cvs-capsule" class="capsule" data-expend=true>图片处理</div>
+				<div id="cvs-main" class="content-area" style="display: none;">
+					<canvas id="cvs"></canvas>
+					<div id="cvs-details" style="margin: 10px;"></div>
+					<div id="cvs-tools">
+						<div>
+							<span id="zoom">🔍</span>
+							<span id="pen">✎</span>
+						</div>
+						<div>
+							<span id="zoom">🔍</span>
+							<span id="pen">✎</span>
 						</div>
 					</div>
-					<button id="play">▶</button>
-					<button onclick="analysis()">analysis</button>
-					<div id="frequency"></div>
-					<div id="noteOutput"></div>
+					<div id="cvs-rgb" style="display: none;">
+						<div><b>红色通道 R</b></div>
+						<canvas id="cvs-r"></canvas>
+						<div><b>绿色通道 G</b></div>
+						<canvas id="cvs-g"></canvas>
+						<div><b>蓝色通道 B</b></div>
+						<canvas id="cvs-b"></canvas>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -878,7 +900,7 @@
 				} else {
 					answers = new Solver.WordSearch().wordSearch2(mat);
 				}
-				answers.sort((a, b) => b.word.length - a.word.length);
+				answers.sort((a, b) => b.word.length !== a.word.length ? b.word.length - a.word.length : b.word < a.word);
 				let lastans = "";
 				for(let answer of answers) {
 					if(answer.word == lastans)continue;
@@ -1668,375 +1690,6 @@
 			generate(n,m);
 		});
 
-// audio
-
-function Complex(re, im) {
-    this.re = re;
-    this.im = im || 0.0;
-}
-Complex.prototype.add = function (other, dst) {
-    dst.re = this.re + other.re;
-    dst.im = this.im + other.im;
-    return dst;
-}
-Complex.prototype.sub = function (other, dst) {
-    dst.re = this.re - other.re;
-    dst.im = this.im - other.im;
-    return dst;
-}
-Complex.prototype.mul = function (other, dst) {
-    //cache re in case dst === this
-    var r = this.re * other.re - this.im * other.im;
-    dst.im = this.re * other.im + this.im * other.re;
-    dst.re = r;
-    return dst;
-}
-Complex.prototype.cexp = function (dst) {
-    var er = Math.exp(this.re);
-    dst.re = er * Math.cos(this.im);
-    dst.im = er * Math.sin(this.im);
-    return dst;
-}
-
-Complex.prototype.magnitude = function () {
-    return Math.sqrt(this.re * this.re + this.im * this.im);
-}
-const changeLineType = () => {
-	const isSingleLine = $('#singleLine').get(0).checked;
-	if(isSingleLine) {
-		$("#selectedArea").css("display", "none");
-		$("#end").css("display", "none");
-	} else {
-		$("#selectedArea").css("display", "unset");
-		$("#end").css("display", "unset");
-	}
-}
-
-const Note = [
-	["C0",16.35],
-	["C#0/Db0",17.32],
-	["D0",18.35],
-	["D#0/Eb0",19.45],
-	["E0",20.60],
-	["F0",21.83],
-	["F#0/Gb0",23.12],
-	["G0",24.50],
-	["G#0/Ab0",25.96],
-	["A0",27.50],
-	["A#0/Bb0",29.14],
-	["B0",30.87],
-	["C1",32.70],
-	["C#1/Db1",34.65],
-	["D1",36.71],
-	["D#1/Eb1",38.89],
-	["E1",41.20],
-	["F1",43.65],
-	["F#1/Gb1",46.25],
-	["G1",49.00],
-	["G#1/Ab1",51.91],
-	["A1",55.00],
-	["A#1/Bb1",58.27],
-	["B1",61.74],
-	["C2",65.41],
-	["C#2/Db2",69.30],
-	["D2",73.42],
-	["D#2/Eb2",77.78],
-	["E2",82.41],
-	["F2",87.31],
-	["F#2/Gb2",92.50],
-	["G2",98.00],
-	["G#2/Ab2",103.83],
-	["A2",110.00],
-	["A#2/Bb2",116.54],
-	["B2",123.47],
-	["C3",130.81],
-	["C#3/Db3",138.59],
-	["D3",146.83],
-	["D#3/Eb3",155.56],
-	["E3",164.81],
-	["F3",174.61],
-	["F#3/Gb3",185.00],
-	["G3",196.00],
-	["G#3/Ab3",207.65],
-	["A3",220.00],
-	["A#3/Bb3",233.08],
-	["B3",246.94],
-	["C4",261.63],
-	["C#4/Db4",277.18],
-	["D4",293.66],
-	["D#4/Eb4",311.13],
-	["E4",329.63],
-	["F4",349.23],
-	["F#4/Gb4",369.99],
-	["G4",392.00],
-	["G#4/Ab4",415.30],
-	["A4",440.00],
-	["A#4/Bb4",466.16],
-	["B4",493.88],
-	["C5",523.25],
-	["C#5/Db5",554.37],
-	["D5",587.33],
-	["D#5/Eb5",622.25],
-	["E5",659.25],
-	["F5",698.46],
-	["F#5/Gb5",739.99],
-	["G5",783.99],
-	["G#5/Ab5",830.61],
-	["A5",880.00],
-	["A#5/Bb5",932.33],
-	["B5",987.77],
-	["C6",1046.50],
-	["C#6/Db6",1108.73],
-	["D6",1174.66],
-	["D#6/Eb6",1244.51],
-	["E6",1318.51],
-	["F6",1396.91],
-	["F#6/Gb6",1479.98],
-	["G6",1567.98],
-	["G#6/Ab6",1661.22],
-	["A6",1760.00],
-	["A#6/Bb6",1864.66],
-	["B6",1975.53],
-	["C7",2093.00],
-	["C#7/Db7",2217.46],
-	["D7",2349.32],
-	["D#7/Eb7",2489.02],
-	["E7",2637.02],
-	["F7",2793.83],
-	["F#7/Gb7",2959.96],
-	["G7",3135.96],
-	["G#7/Ab7",3322.44],
-	["A7",3520.00],
-	["A#7/Bb7",3729.31],
-	["B7",3951.07],
-	["C8",4186.01],
-	["C#8/Db8",4434.92],
-	["D8",4698.63],
-	["D#8/Eb8",4978.03],
-	["E8",5274.04],
-	["F8",5587.65],
-	["F#8/Gb8",5919.91],
-	["G8",6271.93],
-	["G#8/Ab8",6644.88],
-	["A8",7040.00],
-	["A#8/Bb8",7458.62],
-	["B8",7902.13]
-]
-
-const fft = (amplitudes) => {
-	var N = amplitudes.length;
-	if (N <= 1)
-		return amplitudes;
-
-	var hN = N / 2;
-	var even = [];
-	var odd = [];
-	even.length = hN;
-	odd.length = hN;
-	for (var i = 0; i < hN; ++i) {
-		even[i] = amplitudes[i * 2];
-		odd[i] = amplitudes[i * 2 + 1];
-	}
-	even = fft(even);
-	odd = fft(odd);
-
-	var a = -2 * Math.PI;
-	for (var k = 0; k < hN; ++k) {
-		if (!(even[k] instanceof Complex))
-			even[k] = new Complex(even[k], 0);
-		if (!(odd[k] instanceof Complex))
-			odd[k] = new Complex(odd[k], 0);
-		var p = k / N;
-		var t = new Complex(0, a * p);
-		t.cexp(t).mul(odd[k], t);
-		amplitudes[k] = even[k].add(t, odd[k]);
-		amplitudes[k + hN] = even[k].sub(t, even[k]);
-	}
-	return amplitudes;
-}
-
-window.AudioContext = window.AudioContext || window.webkitAudioContext;
-var source;
-
-function drawBuffer( width, height, context, buffer ) {
-    var data = buffer.getChannelData( 0 );
-    var step = Math.ceil( data.length / width );
-    var amp = 600;
-	context.lineWidth = 0.5;
-	context.lineJoin = "round";
-    context.lineCap = "round";
-    for(var i=0; i < width; i++){
-        var min = 1.0;
-        var max = -1.0;
-        for (var j=0; j<step; j++) {
-            var datum = data[(i*step)+j]; 
-            if (datum < min)
-                min = datum;
-            if (datum > max)
-                max = datum;
-        }
-
-		context.beginPath();
-		context.moveTo(i+0.5, (1+min)*amp-500);
-		context.lineTo(i+0.5, Math.max(1,(max-min)*amp)+(1+min)*amp-500);
-		context.stroke();
-    }
-}
-let data;
-let sampleRate;
-
-
-const drawFrequency = (freq) => {
-	$("#frequency").empty();
-	let noteIndex = 0;
-	const note = [];
-	for(let i = 0; i < 2000; i++) {
-		while(1) {
-			if(Math.abs(i*apart+apart/2 - Note[noteIndex+1][1]) < Math.abs(i*apart+apart/2 - Note[noteIndex][1])) {
-				noteIndex++;
-			} else {
-				break;
-			}
-		}
-		note.push(noteIndex);
-		$("#frequency").append(`<div class='bar noteTooltip' style="height: ${freq[i]*5}px;"><span class="tooltiptext">${i*apart} ~ ${(i+1)*apart}Hz ${Note[noteIndex][0]}</span></div>`);
-		freq[i] = [freq[i], noteIndex];
-	}
-	freq = freq.sort((x, y) => {return - x[0] + y[0]}).slice(0, 10).sort((x, y) => {return x[1] - y[1]}).map((x)=> {return Note[x[1]][0];});
-	let output = "";
-	for(let i = 0, j = -1; i < 10; i++) {
-		if(freq[i]===freq[j])continue;
-		j = i;
-		output += freq[i] + " ";
-	}
-	$("#noteOutput").html(output);	
-}
-
-const analysis = () => {
-	const startL = parseInt($("#start").css("left"));
-	const endL = parseInt($("#end").css("left"));
-
-	$("#end").css("left", $("#start").css("left"));
-	$("#selectedArea").css("width", 0);
-	
-	const leftLine = Math.min(startL, endL);
-	const rightLine = Math.max(startL, endL);
-
-	apart = sampleRate / 16384;
-	const start = parseInt(leftLine/1000*data.length);
-	let ret = [];
-	for(let i = start; i < start+16384; i++) {
-		ret.push(data[i]*(0.54 - (0.46 * Math.cos(2.0 * Math.PI * (i / ((16384 - 1) * 1.0))))));
-	}
-	let temp = fft(ret);
-	const len = temp.length / 2;
-	ret = [];
-
-	temp = temp.slice(0, len);
-
-	for(let i = 0; i < len; i++) {
-		temp[i] = temp[i].magnitude();
-		if(temp[i][0] > 35) {
-			ret.push([(i)*apart,i,temp[i][0]]);
-		}
-	}
-
-	drawFrequency(temp);
-}
-
-let g_buf;
-function playAudio(arraybuffer) {
-    var context = new window.AudioContext();
-    context.decodeAudioData(arraybuffer, function (buf) {
-        g_buf = buf;
-        var canvas = document.getElementById("wave");
-        drawBuffer( canvas.width, canvas.height, canvas.getContext('2d'), buf );
-		data = buf.getChannelData( 0 );
-		sampleRate = buf.sampleRate;
-    });
-}
-
-function handleFileSelect(evt) {
-    var files = evt.target.files; // FileList object
-    playFile(files[0]);
-}
-
-function playFile(file) {
-    var freader = new FileReader();
-
-    freader.onload = function (e) {
-        console.log(e.target.result);
-        playAudio(e.target.result);
-    };
-    freader.readAsArrayBuffer(file);
-}
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
-
-
-$(".line").mousedown((e)=> {
-	const left = e.clientX;
-	const offset = e.target.parentElement.offsetLeft;
-	$(e.target).css("left", left-offset);
-	let movable = true;
-	const line = $(e.target);
-	$(window).mousemove((e)=> {
-		if(movable===false)return;
-		const startL = parseInt($("#start").css("left"));
-		const endL = parseInt($("#end").css("left"));
-		
-		const leftLine = Math.min(startL, endL);
-		const rightLine = Math.max(startL, endL);
-		const leftMost = Math.min(e.clientX-offset, leftLine);
-		line.css("left", e.clientX-offset);
-		$("#selectedArea").css("left", leftMost);
-		const selectedWidth = rightLine-leftLine;
-		$("#selectedArea").css("width", selectedWidth);
-	});
-	$(window).mouseup((e)=> {
-		movable = false;
-	});
-})
-
-let analyser;
-let tmp = 0;
-let apart;
-
-let audioBufferSourceNode;
-var start = function() {
-	const startL = parseInt($("#start").css("left"));
-	const endL = parseInt($("#end").css("left"));
-
-	const leftLine = Math.min(startL, endL);
-	const rightLine = Math.max(startL, endL);
-
-  buffer = g_buf;
-  if(audioBufferSourceNode) {
-      audioBufferSourceNode.stop();
-  }
-  const audioContext = new AudioContext({
-      sampleRate: 44100,
-  });
-  const l = leftLine*startL;
-  analyser = audioContext.createAnalyser();
-  analyser.fftSize = 16384;
-  apart = 44100 / analyser.fftSize;
-  
-  audioBufferSourceNode = audioContext.createBufferSource();
-  audioBufferSourceNode.connect(analyser);
-  analyser.connect(audioContext.destination);
-  audioBufferSourceNode.buffer = buffer;
-
-  const total = $("#waveContainer").width();
-
-  const start = audioBufferSourceNode.buffer.duration / total * leftLine;
-  const length = audioBufferSourceNode.buffer.duration / total * (rightLine-leftLine);
-  audioBufferSourceNode.start(audioContext.currentTime, start, length);
-}
-
-$("#play").click(() => {
-    start();
-});
-
 // smart analysis
 let analysisIndex = 0;
 const morseAnalysis = (result, words, chars) => {
@@ -2496,6 +2149,159 @@ $("#smart-analysis-content").on("keyup paste", () => {
 	summaryAnalysis(result, content);
 
 });
+
+// cvs
+	const canvas = document.getElementById('cvs');
+	const ctx = canvas.getContext('2d');
+	let imageData;
+
+	ctx.font = '20px Arial';
+	ctx.fillStyle = 'gray';
+	ctx.textAlign = 'center';
+	ctx.fillText('复制图片后，ctrl+V 载入图片', canvas.width / 2, canvas.height / 2);
+	document.addEventListener('paste', function (e) { cvsPaste(e); }, false);
+
+	const cvsPaste = (e) => {
+		paste_createImage = function (source) {
+			var pastedImage = new Image();
+			pastedImage.onload = function () {
+				canvas.width = pastedImage.width;
+				canvas.height = pastedImage.height;
+				ctx.drawImage(pastedImage, 0, 0);
+				imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+				document.getElementById('cvs-r').width = document.getElementById('cvs-g').width = document.getElementById('cvs-b').width = canvas.width;
+				document.getElementById('cvs-r').height = document.getElementById('cvs-g').height = document.getElementById('cvs-b').height = canvas.height;
+				const redCtx = document.getElementById('cvs-r').getContext('2d');
+				const greenCtx = document.getElementById('cvs-g').getContext('2d');
+				const blueCtx = document.getElementById('cvs-b').getContext('2d');
+				const redImageData = redCtx.createImageData(canvas.width, canvas.height);
+				const greenImageData = greenCtx.createImageData(canvas.width, canvas.height);
+				const blueImageData = blueCtx.createImageData(canvas.width, canvas.height);
+
+				for (let i = 0; i < imageData.data.length; i += 4) {
+					redImageData.data[i] = imageData.data[i];
+					greenImageData.data[i+1] = imageData.data[i+1];
+					blueImageData.data[i+2] = imageData.data[i+2];
+					redImageData.data[i+3] = greenImageData.data[i+3] = blueImageData.data[i+3] = 255;
+				}
+				redCtx.putImageData(redImageData, 0, 0);
+				greenCtx.putImageData(greenImageData, 0, 0);
+				blueCtx.putImageData(blueImageData, 0, 0);
+				$('#cvs-rgb').css("display", "unset");
+			};
+			pastedImage.src = source;
+		};
+		if (e.clipboardData) {
+			var items = e.clipboardData.items;
+			if (!items) return;
+			
+			var is_image = false;
+			for (var i = 0; i < items.length; i++) {
+				if (items[i].type.indexOf("image") !== -1) {
+					var blob = items[i].getAsFile();
+					var URLObj = window.URL || window.webkitURL;
+					var source = URLObj.createObjectURL(blob);
+					paste_createImage(source);
+					is_image = true;
+				}
+			}
+			if(is_image == true){
+				e.preventDefault();
+			}
+		}
+	};
+
+	canvas.addEventListener('mousemove', function(event) {
+		const x = event.pageX - canvas.offsetLeft;
+		const y = event.pageY - canvas.offsetTop;
+		$('#cvs-details').html(`<div>x: ${x}, y: ${y}</div><div>RGB(红绿蓝): (${imageData.data[(y * canvas.width + x) * 4]}, ${imageData.data[(y * canvas.width + x) * 4 + 1]}, ${imageData.data[(y * canvas.width + x) * 4 + 2]})</div>`);
+
+	});
+
+	var ppPoint = function(x, y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+        let blockMousePressed = false;
+        let ppPointArray = new Array();
+		let drawMode = '';
+        $('#cvs').mousedown(function(e)
+        {
+            if(e.which == 1 && drawMode == 'pen')// 如果是左键
+            {
+                blockMousePressed = true;
+                var mouseX = e.pageX - this.offsetLeft;
+                var mouseY = e.pageY - this.offsetTop;
+                ppPointArray.push(new ppPoint(mouseX, mouseY));
+
+                $(e.target).mousemove(function(eve)
+                {
+                    if(blockMousePressed)
+                    {
+                        var mouseX = eve.pageX - this.offsetLeft;
+                        var mouseY = eve.pageY - this.offsetTop;
+                        ppDrawLine(mouseX, mouseY, eve.currentTarget.getContext("2d"));
+                    }
+                });
+
+                $(window).mouseup(function(e){
+                    blockMousePressed = false;
+                    rubicCubeStage.draw();
+                    $(e.target).off("mousemove");
+                });
+            }
+        });
+
+        $('#cvs').on("touchstart",function(e)
+        {
+			if(drawMode == 'pen') {
+				var mouseX = e.originalEvent.changedTouches[0].pageX - this.offsetLeft;
+				var mouseY = e.originalEvent.changedTouches[0].pageY - this.offsetTop;
+				blockMousePressed = true;
+				ppPointArray.push(new ppPoint(mouseX, mouseY));
+				e.preventDefault();
+				$(e.target).on("touchmove",function(eve)
+				{
+					if(blockMousePressed)
+					{
+						var mouseX = eve.originalEvent.changedTouches[0].pageX- this.offsetLeft;
+						var mouseY = eve.originalEvent.changedTouches[0].pageY - this.offsetTop;
+						ppDrawLine(mouseX, mouseY, eve.currentTarget.getContext("2d"));
+					}
+				});
+
+				$(window).mouseup(function(e){
+					blockMousePressed = false;
+					rubicCubeStage.draw();
+					$(e.target).off("touchmove");
+				});
+			}
+
+        });
+
+        
+        
+        function ppDrawLine(curX, curY, context)
+        {
+            const color = 'red';
+            context.strokeStyle = color;
+            const width = 5;
+            context.lineWidth = parseInt(width);
+            context.beginPath();
+            var ppLastPoint = ppPointArray[ppPointArray.length - 1];
+            context.moveTo(ppLastPoint.x, ppLastPoint.y);
+            context.lineTo(curX, curY);
+            context.closePath();
+            context.stroke();
+            ppPointArray.push(new ppPoint(curX, curY));
+        }
+
+		$('#cvs-tools span').click((e) => {
+			console.info(e.target.id);
+			drawMode = e.target.id;
+		})
 
 		</script>
 		<script src="./static/dict.v1.0.min.js"></script>
