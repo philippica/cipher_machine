@@ -275,7 +275,7 @@ export class SudokuSolver {
         currentSum = undefined;
         continue;
       }
-      currentSum = currentSum?currentSum+possibleList[0] : possibleList[0];
+      currentSum = currentSum?currentSum+possibleList[0] : undefined;
       fixedCount--;
       currentSum2 += possibleList[0];
     }
