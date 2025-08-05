@@ -82,33 +82,51 @@ export class RubikCube {
 			}
 		}
 	}
-	front(inverse) {
-		const permutationTable = [[2,8,6,0],[1,5,7,3],[4]];
+	front(inverse, little) {
+		let permutationTable = [[2,8,6,0],[1,5,7,3],[4]];
+		if(little) {
+			permutationTable.push([11,16,14,9],[10,13,15,12]);
+		}
 		this.rotateLayer(permutationTable, inverse, "x");
 		this.permutation(permutationTable, inverse);
 	}
-	up(inverse) {
+	up(inverse, little) {
 		const permutationTable = [[0,6,23,17],[3,14,20,9],[12]];
+		if(little) {
+			permutationTable.push([1,7,24,18],[4,15,21,10]);
+		}
 		this.rotateLayer(permutationTable, inverse, "z");
 		this.permutation(permutationTable, inverse);
 	}
-	back(inverse) {
+	back(inverse, little) {
 		const permutationTable = [[22,24,20,18],[19,25,23,17],[21]];
+		if(little) {
+			permutationTable.push([9,11,16,14],[12,10,13,15]);
+		}
 		this.rotateLayer(permutationTable, inverse, "x");
 		this.permutation(permutationTable, inverse);
 	}
-	bottom(inverse) {
+	bottom(inverse, little) {
 		const permutationTable = [[11,5,16,22],[19,2,8,25],[13]];
+		if(little) {
+			permutationTable.push([1,7,24,18],[4,15,21,10]);
+		}
 		this.rotateLayer(permutationTable, inverse, "z");
 		this.permutation(permutationTable, inverse);
 	}
-	left(inverse) {
+	left(inverse, little) {
 		const permutationTable = [[0,17,19,2],[1,9,18,11],[10]];
+		if(little) {
+			permutationTable.push([3,20,22,5],[4,12,21,13]);
+		}
 		this.rotateLayer(permutationTable, inverse, "y");
 		this.permutation(permutationTable, inverse);
 	}
-	right(inverse) {
+	right(inverse, little) {
 		const permutationTable = [[8,6,23,25],[16,7,14,24],[15]];
+		if(little) {
+			permutationTable.push([3,20,22,5],[4,12,21,13]);
+		}
 		this.rotateLayer(permutationTable, inverse, "y");
 		this.permutation(permutationTable, inverse);
 	}

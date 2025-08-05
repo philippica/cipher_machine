@@ -88,7 +88,7 @@ export class Point3D {
 			break;
 			}
 		}
-		this.mat = this.multiply(this.mat, mat);
+		this.mat = this.multiply(mat, this.mat);
 		const xx = this.originX * this.mat[0][0] + this.originY * this.mat[0][1]+ this.originZ * this.mat[0][2];
 		const yy = this.originX * this.mat[1][0] + this.originY * this.mat[1][1]+ this.originZ * this.mat[1][2];
 		const zz = this.originX * this.mat[2][0] + this.originY * this.mat[2][1]+ this.originZ * this.mat[2][2];

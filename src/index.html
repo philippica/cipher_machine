@@ -518,22 +518,42 @@
 					<canvas id="rubik-cube" height="300px" width="300px"></canvas>
 					<button onclick="resetRubicCube()">重置魔方</button>
 					<div>
-						<div>顺时针</div>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' F');window.rubicCube.front(1)">前面(F)</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' U');window.rubicCube.up(1)">顶面(U)</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' B');window.rubicCube.back(-1)">背面(B)</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' D');window.rubicCube.bottom(-1)">底面(D)</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' L');window.rubicCube.left(1)">左边(L)</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' R');window.rubicCube.right(-1)">右面(R)</button>
+						<div>顺时针(小写表示转两层)</div>
+						<div>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' F');window.rubicCube.front(1)">前面(F)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' U');window.rubicCube.up(1)">顶面(U)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' B');window.rubicCube.back(-1)">背面(B)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' D');window.rubicCube.bottom(-1)">底面(D)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' L');window.rubicCube.left(1)">左边(L)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' R');window.rubicCube.right(-1)">右面(R)</button>
+						</div>
+						<div>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' f');window.rubicCube.front(1, true)">前面(f)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' u');window.rubicCube.up(1, true)">顶面(u)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' b');window.rubicCube.back(-1, true)">背面(b)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' d');window.rubicCube.bottom(-1, true)">底面(d)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' l');window.rubicCube.left(1, true)">左边(l)</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' r');window.rubicCube.right(-1, true)">右面(r)</button>
+						</div>
 					</div>
 					<div>
 						<div>逆时针</div>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' F\'');window.rubicCube.front(-1)">前面(F')</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' U\'');window.rubicCube.up(-1)">顶面(U')</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' B\'');window.rubicCube.back(1)">背面(B')</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' D\'');window.rubicCube.bottom(1)">底面(D')</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' L\'');window.rubicCube.left(-1)">左边(L')</button>
-						<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' R\'');window.rubicCube.right(1)">右面(R')</button>
+						<div>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' F\'');window.rubicCube.front(-1)">前面(F')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' U\'');window.rubicCube.up(-1)">顶面(U')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' B\'');window.rubicCube.back(1)">背面(B')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' D\'');window.rubicCube.bottom(1)">底面(D')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' L\'');window.rubicCube.left(-1)">左边(L')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' R\'');window.rubicCube.right(1)">右面(R')</button>
+						</div>
+						<div>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' f\'');window.rubicCube.front(-1, true)">前面(f')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' u\'');window.rubicCube.up(-1, true)">顶面(u')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' b\'');window.rubicCube.back(1, true)">背面(b')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' d\'');window.rubicCube.bottom(1, true)">底面(d')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' l\'');window.rubicCube.left(-1, true)">左边(l')</button>
+							<button onclick="$('#rubic-formular').html($('#rubic-formular').html() + ' r\'');window.rubicCube.right(1, true)">右面(r')</button>
+						</div>
 					</div>
 					<br/>
 					<b id="rubic-formular">公式 :</b>
@@ -1856,9 +1876,18 @@ const numbersAnalysis = (result, nums, rows) => {
 		numResult.append(`<div><b>元素符号:</b> ${pt}</div>`);
 	}
 
+	
+	let pt = "";
+	const mobile = useMethod(5).split('\n');
+
+	for(const num of nums) {
+		let c = decodeProcess(mobile[1], mobile[0], num.toString()).trim();
+		pt += c;
+	}
+	numResult.append(`<div><b>手机九键:</b> ${pt}</div>`);
 
 	let romanFlag = true;
-	let pt = "";
+	pt = "";
 	for(const num of nums) {
 		if(num > 3999 || num < 0) {
 			romanFlag = false;
@@ -1874,6 +1903,30 @@ const numbersAnalysis = (result, nums, rows) => {
 	if(romanFlag) {
 		numResult.append(`<div><b>罗马数字:</b> ${pt}</div>`);
 	}
+
+	pt = "";
+	for(const num of nums) {
+		pt += num.toString(2) + " ";
+	}
+	numResult.append(`<div><b>转二进制:</b> ${pt}</div>`);
+
+	pt = "";
+	let flag = false;
+	for(const ch of row) {
+		if (ch == ' ' || ch == ',' || ch == '\n') continue;
+		const num = parseInt(ch, 36);
+		if(!(1 <= num && num <= 7)) {
+			flag = true;
+			break;
+		} 
+	}
+
+
+	pt = "";
+	for(const num of nums) {
+		pt += num.toString(16) + " ";
+	}
+	numResult.append(`<div><b>转十六进制:</b> ${pt}</div>`);
 
 	const five = rows.filter((x)=>(x.length == 2) && (parseInt(x[0]) <= 5 && parseInt(x[0]) >= 1) && (parseInt(x[1]) <= 5 && parseInt(x[1]) >= 1));
 	if(five.length === rows.length) {
@@ -1908,17 +1961,34 @@ const summaryAnalysis = (result, str) => {
 		if(len % i == 0) {
 			summaryResult.append(`<h4 class="analysis-hint">尝试将文本重新排列成${i} * ${len/i}的矩阵:</h4>`);
 			let mat = "";
+			let fence = "";
 			for(let j = 0; j <= len; j+=i) {
 				mat += str.substring(j, j+i) + "\n";
 			}
+
+			for(let j = 0; j < i; j++) {
+				for(let k = j; k < len; k+=i) {
+					fence += str[k];
+				}
+			}
+
 			summaryResult.append(`<pre>${mat.slice(0, -1)}</pre>`);
+			summaryResult.append(`<h4 class="analysis-hint">纵向读: ${fence}</h4>`);
+
 			if(i*i != len) {
+				fence = "";
 				summaryResult.append(`<h4 class="analysis-hint">尝试将文本重新排列成${len/i} * ${i}的矩阵:</h4>`);
 				mat = "";
 				for(let j = 0; j <= len; j+=len/i) {
 					mat += str.substring(j, j+len/i) + "\n";
 				}
+				for(let j = 0; j < len/i; j++) {
+					for(let k = j; k < len; k+=len/i) {
+						fence += str[k];
+					}
+				}
 				summaryResult.append(`<pre>${mat.slice(0, -1)}</pre>`);
+				summaryResult.append(`<h4 class="analysis-hint">纵向读: ${fence}</h4>`);
 			}
 		}
 	}

@@ -94,34 +94,34 @@ export class RubikCubeStage {
 	resetRotation() {
 		this.cube.resetRotation();
 	}
-	front(inverse) {
+	front(inverse, little) {
 		if(!inverse)inverse = 1;
-		this.cube.front(inverse);
+		this.cube.front(inverse, little);
 		this.draw();
 	}
-	up(inverse) {
+	up(inverse, little) {
 		if(!inverse)inverse = 1;
-		this.cube.up(inverse);
+		this.cube.up(inverse, little);
 		this.draw();
 	}
-	back(inverse) {
+	back(inverse, little) {
 		if(!inverse)inverse = 1;
-		this.cube.back(inverse);
+		this.cube.back(inverse, little);
 		this.draw();
 	}
-	bottom(inverse) {
+	bottom(inverse, little) {
 		if(!inverse)inverse = 1;
-		this.cube.bottom(inverse);
+		this.cube.bottom(inverse, little);
 		this.draw();
 	}
-	left(inverse) {
+	left(inverse, little) {
 		if(!inverse)inverse = 1;
-		this.cube.left(inverse);
+		this.cube.left(inverse, little);
 		this.draw();
 	}
-	right(inverse) {
+	right(inverse, little) {
 		if(!inverse)inverse = 1;
-		this.cube.right(inverse);
+		this.cube.right(inverse, little);
 		this.draw();
 	}
     register() {
