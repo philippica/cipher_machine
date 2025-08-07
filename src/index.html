@@ -1912,7 +1912,7 @@ const numbersAnalysis = (result, nums, rows) => {
 
 	pt = "";
 	let flag = false;
-	for(const ch of row) {
+	for(const ch of rows) {
 		if (ch == ' ' || ch == ',' || ch == '\n') continue;
 		const num = parseInt(ch, 36);
 		if(!(1 <= num && num <= 7)) {
