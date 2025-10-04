@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.131.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.131.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        #container{width:100%;height:80vh;background-color:#1f2937;border-radius:.5rem;overflow:hidden;touch-action:none;}
+        canvas{display:block;}
+        #textureEditorContainer {z-index: 1000;}
+    </style>
+</head>
+<body class="bg-gray-50 p-4 min-h-screen font-sans">
+    <div class="max-w-4xl mx-auto space-y-4">
+        <div class="bg-white p-4 rounded-xl shadow-lg flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0 sm:space-x-4">
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <label for="inputN" class="text-gray-600 font-medium">N:</label>
+                <input type="number" id="inputN" value="10" min="1" max="50" class="w-20 p-2 border rounded-lg text-center">
+            </div>
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <label for="inputM" class="text-gray-600 font-medium">M:</label>
+                <input type="number" id="inputM" value="10" min="1" max="50" class="w-20 p-2 border rounded-lg text-center">
+            </div>
+            <button id="toggleSelectMode" class="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition duration-150 shadow-md whitespace-nowrap">
+                点击切换到选择模式 (S)
+            </button>
+            <button id="generateButton" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                重新生成网格
+            </button>
+        </div>
+        <div id="container"></div>
+        <p id="tipMessage" class="text-sm text-gray-500 text-center">
+            提示: 拖动旋转。按 **'C'** 键创建立方体。点击 **'S'** 键或紫色按钮切换到立方体选择模式。
+        </p>
+    </div>
+
+    <div id="textureEditorContainer" class="hidden fixed top-0 right-0 h-full w-64 bg-gray-100 p-4 shadow-xl z-10 overflow-y-auto border-l border-gray-300">
+        <h3 class="text-xl font-bold mb-3 text-gray-700">立方体贴图编辑器</h3>
+        <p class="text-sm text-gray-500 mb-4">在下方画布上绘制，实时更新 3D 立方体贴图。</p>
+        
+        <div class="mt-4 p-3 bg-white rounded-lg shadow-inner mb-4">
+            <label class="block text-sm font-bold text-gray-700 mb-3">立方体外观设置 (Mesh)</label>
+            
+            <div class="flex items-center justify-between space-x-3 mb-4">
+                <label for="meshColor" class="text-sm">基础颜色:</label>
+                <input type="color" id="meshColor" value="#ffcccc" class="h-8 w-8 rounded-full border-none p-0 cursor-pointer">
+            </div>
+
+            <div class="space-y-1 mb-4">
+                <label for="meshOpacity" class="text-sm flex justify-between items-center">
+                    <span>不透明度:</span>
+                    <span id="meshOpacityValue" class="font-mono text-xs text-gray-500">0.6</span>
+                </label>
+                <input type="range" id="meshOpacity" min="0" max="1" step="0.01" value="0.6" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <button id="toggleGeometry" class="w-full px-3 py-2 text-white font-semibold rounded-lg transition shadow-md bg-green-500 hover:bg-green-600">
+                切换到 球体
+            </button>
+        </div>
+
+        <div id="brushControls" class="mt-4 p-3 bg-white rounded-lg shadow-inner mb-4">
+            <label class="block text-sm font-bold text-gray-700 mb-3">画笔设置 (Texture)</label>
+            <div class="flex items-center justify-between space-x-3 mb-4">
+                <label for="brushColor" class="text-sm">颜色:</label>
+                <input type="color" id="brushColor" value="#ff0000" class="h-8 w-8 rounded-full border-none p-0 cursor-pointer">
+            </div>
+            <div class="space-y-1">
+                <label for="brushSize" class="text-sm flex justify-between items-center">
+                    <span>粗细:</span>
+                    <span id="brushSizeValue" class="font-mono text-xs text-gray-500">5px</span>
+                </label>
+                <input type="range" id="brushSize" min="1" max="50" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+        <div id="textureCanvases" class="grid grid-cols-2 gap-2"></div>
+        <button id="deselectCube" class="mt-4 w-full px-3 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition shadow-md">取消选择并关闭编辑器</button>
+    </div>
+
+    <script>
+        // 全局变量和常量
+        let scene, camera, renderer, controls;
+        let planeMesh, highlightMesh;
+        let cubes = [];
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const W = 10, H = 10;
+        let N = 10, M = 10;
+        let cw, ch;
+        let isSelectMode = false;
+        let currentCube = null; 
+        let brushColor = '#ff0000';
+        let brushSize = 5; 
+		
+		const direction = new THREE.Vector3(); // 用于计算相机方向
+        const upVector = new THREE.Vector3(0, 1, 0); // Y轴正方向（上）
+
+        // 几何体常量
+        const GEOMETRY_TYPE_CUBE = 'cube';
+        const GEOMETRY_TYPE_SPHERE = 'sphere';
+
+        // 材质定义
+        const DEFAULT_COLOR = 0xffcccc;
+        const DEFAULT_OPACITY = 0.6;
+        
+        // CUBE_MAT_BASE: 非高亮、默认状态下的基础属性
+        const CUBE_MAT_BASE = { color: DEFAULT_COLOR, opacity: DEFAULT_OPACITY, transparent: true, side: THREE.DoubleSide, depthWrite: false };
+        const CUBE_MAT = new THREE.MeshBasicMaterial(CUBE_MAT_BASE);
+        
+        // H_CUBE_MAT: 高亮状态下的基础属性 (Purple Glow)
+        const H_COLOR = 0x8a2be2;
+        const H_OPACITY = 0.9;
+        const H_CUBE_MAT = new THREE.MeshBasicMaterial({ color: H_COLOR, opacity: H_OPACITY, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+        
+        // 贴图编辑器常量
+        const CANVAS_SIZE = 128;
+        const FACE_NAMES = ['右 (X+)', '左 (X-)', '上 (Y+)', '下 (Y-)', '前 (Z+)', '后 (Z-)'];
+        const STORAGE_KEY = 'threejs-cube-editor-state';
+        let saveTimeout = null;
+        const SAVE_DELAY = 1000;
+
+        // --- LocalStorage 持久化逻辑 ---
+
+        /** Debounced function to save the current state to localStorage. */
+        function saveState() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                const stateData = { N, M, cubes: [] };
+                cubes.forEach(group => {
+                    const mesh = group.children[0];
+                    const textures = mesh.userData?.faceCanvases ? 
+                        mesh.userData.faceCanvases.map(canvas => canvas.toDataURL('image/png')) : Array(6).fill('');
+
+                    stateData.cubes.push({
+                        position: { x: group.position.x, y: group.position.y, z: group.position.z },
+                        textures,
+                        geometryType: mesh.userData.geometryType, 
+                        baseColor: mesh.userData.baseColor,         
+                        baseOpacity: mesh.userData.baseOpacity,     
+                    });
+                });
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateData));
+                } catch (error) {
+                    console.error("Error saving state:", error);
+                }
+            }, SAVE_DELAY);
+        }
+
+        /** Loads state from localStorage and restores the scene. */
+        function loadState() {
+            const storedState = localStorage.getItem(STORAGE_KEY);
+            if (!storedState) return createGridPlane();
+
+            try {
+                const state = JSON.parse(storedState);
+                
+                N = state.N || 10;
+                M = state.M || 10;
+                document.getElementById('inputN').value = N;
+                document.getElementById('inputM').value = M;
+                
+                createGridPlane();
+
+                if (state.cubes?.length) {
+                    state.cubes.forEach(addCubeFromState);
+                }
+                
+                render();
+            } catch (error) {
+                console.error("Error loading state:", error);
+                createGridPlane();
+            }
+        }
+
+        /** Creates the base Group and initializes 6 Canvases/Textures. 默认创建立方体。 */
+        function createCubeGroup(x, y, z) {
+            const cubeH = cw;
+            const geom = new THREE.BoxGeometry(cw, cubeH, ch);
+            const edges = new THREE.LineSegments(
+                new THREE.EdgesGeometry(geom),
+                new THREE.LineBasicMaterial({ color: 0x000000 })
+            );
+            
+            const mesh = new THREE.Mesh(geom, CUBE_MAT.clone());
+            
+            const group = new THREE.Group();
+            group.add(mesh);
+            group.add(edges);
+            group.position.set(x, y, z);
+            
+            mesh.userData = { 
+                faceCanvases: [], 
+                faceTextures: [], 
+                geometryType: GEOMETRY_TYPE_CUBE,
+                edges: edges,
+                baseColor: DEFAULT_COLOR, 
+                baseOpacity: DEFAULT_OPACITY, 
+            };
+
+            for (let i = 0; i < 6; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = CANVAS_SIZE;
+                canvas.height = CANVAS_SIZE;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+                ctx.lineCap = 'round';
+
+                const texture = new THREE.CanvasTexture(canvas);
+                mesh.userData.faceCanvases[i] = canvas;
+                mesh.userData.faceTextures[i] = texture;
+            }
+            return group;
+        }
+
+        /** Creates a cube from loaded state data. */
+        function addCubeFromState(cubeData) {
+            const { x, y, z } = cubeData.position;
+            const group = createCubeGroup(x, y, z);
+            const mesh = group.children[0];
+            const { faceCanvases, faceTextures } = mesh.userData;
+            
+            const baseColor = cubeData.baseColor !== undefined ? cubeData.baseColor : DEFAULT_COLOR;
+            const baseOpacity = cubeData.baseOpacity !== undefined ? cubeData.baseOpacity : DEFAULT_OPACITY;
+            const geometryType = cubeData.geometryType || GEOMETRY_TYPE_CUBE;
+            
+            mesh.userData.baseColor = baseColor;
+            mesh.userData.baseOpacity = baseOpacity;
+            mesh.userData.geometryType = GEOMETRY_TYPE_CUBE;
+
+            const newMaterials = [];
+            const loadPromises = [];
+
+            for (let i = 0; i < 6; i++) {
+                const texture = faceTextures[i];
+                const mat = CUBE_MAT.clone();
+                mat.map = texture;
+                
+                mat.color.set(baseColor);
+                mat.opacity = baseOpacity;
+                mat.transparent = baseOpacity < 1;
+
+                newMaterials.push(mat);
+                
+                const base64Data = cubeData.textures[i];
+                if (base64Data) {
+                    const promise = new Promise(resolve => {
+                        const img = new Image();
+                        img.onload = () => {
+                            faceCanvases[i].getContext('2d').drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+                            texture.needsUpdate = true;
+                            render();
+                            resolve();
+                        };
+                        img.onerror = resolve; 
+                        img.src = base64Data;
+                    });
+                    loadPromises.push(promise);
+                }
+            }
+
+            mesh.material = newMaterials;
+            scene.add(group);
+            cubes.push(group);
+
+            if (geometryType === GEOMETRY_TYPE_SPHERE) {
+                switchGeometry(group, GEOMETRY_TYPE_SPHERE, false); 
+            }
+
+            if (loadPromises.length > 0) Promise.all(loadPromises).then(render);
+        }
+        
+        // --- 核心逻辑函数 ---
+
+        function render() { renderer.render(scene, camera); }
+
+        /** Disposes old geometry and replaces it with a new one (Cube or Sphere). */
+        // --- MODIFICATION START: The entire switchGeometry function is replaced ---
+        function switchGeometry(cubeGroup, type, shouldSave = true) {
+            const mesh = cubeGroup.children[0];
+            const currentType = mesh.userData.geometryType;
+            const newType = type || (currentType === GEOMETRY_TYPE_CUBE ? GEOMETRY_TYPE_SPHERE : GEOMETRY_TYPE_CUBE);
+            
+            if (currentType === newType && type === undefined) return;
+
+            const sizeX = cw; 
+            const sizeY = cw; 
+            const sizeZ = ch; 
+            
+            const { baseColor, baseOpacity, faceTextures } = mesh.userData;
+
+            // 1. 释放旧资产
+            mesh.geometry.dispose();
+            // 增加判断：仅当旧的edges存在时才移除和释放，避免报错
+            if (mesh.userData.edges) {
+                cubeGroup.remove(mesh.userData.edges);
+                mesh.userData.edges.geometry.dispose();
+            }
+
+            // 2. 创建新几何体和边缘
+            let newGeometry;
+            let newEdges = null; // 默认没有边缘
+            if (newType === GEOMETRY_TYPE_SPHERE) {
+                const radius = Math.min(sizeX, sizeY, sizeZ) / 2;
+                newGeometry = new THREE.SphereGeometry(radius, 32, 32);
+                // 对于球体，我们不再创建 newEdges
+                
+                // 材质：球体使用单个非贴图材质
+                const mat = CUBE_MAT.clone();
+                mat.map = null;
+                mat.color.set(baseColor);
+                mat.opacity = baseOpacity;
+                mat.transparent = baseOpacity < 1;
+                mesh.material = mat; 
+
+            } else { // GEOMETRY_TYPE_CUBE
+                newGeometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ);
+                // 仅为立方体创建边缘
+                newEdges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(newGeometry),
+                    new THREE.LineBasicMaterial({ color: 0x000000 })
+                );
+                
+                // 材质：立方体恢复 6 个贴图材质
+                mesh.material = faceTextures.map(texture => {
+                    const mat = CUBE_MAT.clone();
+                    mat.map = texture;
+                    mat.color.set(baseColor);
+                    mat.opacity = baseOpacity;
+                    mat.transparent = baseOpacity < 1;
+                    return mat;
+                });
+            }
+
+            // 3. 更新 Mesh 和 Group
+            mesh.geometry = newGeometry;
+            mesh.userData.edges = newEdges;
+            mesh.userData.geometryType = newType;
+            // 增加判断：仅当新的edges存在时才添加到group中
+            if (newEdges) {
+                cubeGroup.add(newEdges);
+            }
+            
+            // 4. 更新 UI 按钮文本 (如果编辑器已开启)
+            const toggleButton = document.getElementById('toggleGeometry');
+            if (toggleButton) { 
+                 toggleButton.textContent = (newType === GEOMETRY_TYPE_CUBE) ? "切换到 球体" : "切换到 立方体";
+                 if (currentCube === cubeGroup) setupTextureEditor(cubeGroup, false);
+            }
+            
+            if (shouldSave) saveState();
+            render();
+        }
+        // --- MODIFICATION END ---
+
+
+        function updateTip(isCubeMode) {
+            const el = document.getElementById('tipMessage');
+            el.innerHTML = isCubeMode ?
+                `<span class="font-bold text-red-500">当前模式: 点击选择立方体。</span> 选中的**整个物体**将高亮为紫色。
+                 <span class="font-bold text-purple-600">按下 'Delete' 或 'Backspace' 删除选中的物体。</span>` :
+                `提示: 拖动旋转。按 <span class="font-bold text-purple-600">'C'</span> 键创建立方体。点击 <span class="font-bold text-red-500">'S'</span> 键或紫色按钮切换到物体选择模式。`;
+        }
+        
+        /** 恢复材质到非高亮状态并关闭编辑器 */
+        function hideTextureEditor() {
+            if (currentCube) {
+                const mesh = currentCube.children[0];
+                const { baseColor, baseOpacity, geometryType, faceTextures } = mesh.userData;
+
+                if (geometryType === GEOMETRY_TYPE_CUBE) {
+                    const finalMaterials = faceTextures.map(texture => {
+                        const mat = CUBE_MAT.clone();
+                        mat.map = texture;
+                        mat.color.set(baseColor);
+                        mat.opacity = baseOpacity;
+                        mat.transparent = baseOpacity < 1;
+                        return mat;
+                    });
+                    mesh.material = finalMaterials;
+                } else {
+                    const mat = CUBE_MAT.clone();
+                    mat.map = null;
+                    mat.color.set(baseColor);
+                    mat.opacity = baseOpacity;
+                    mat.transparent = baseOpacity < 1;
+                    mesh.material = mat;
+                }
+                
+                saveState(); 
+            }
+            currentCube = null;
+            document.getElementById('textureEditorContainer').classList.add('hidden');
+            
+            controls.enabled = true; 
+            controls.update(); 
+            
+            render();
+        }
+
+        function toggleCubeSelectionMode() {
+            isSelectMode = !isSelectMode;
+            highlightMesh.visible = !isSelectMode; 
+            if (!isSelectMode) hideTextureEditor();
+            else highlightMesh.visible = false;
+
+            const btn = document.getElementById('toggleSelectMode');
+            btn.textContent = isSelectMode ? "选择模式已开启：点击取消 (S)" : "点击切换到选择模式 (S)";
+            btn.classList.toggle('bg-purple-600', !isSelectMode);
+            btn.classList.toggle('bg-pink-500', isSelectMode);
+            btn.classList.toggle('animate-pulse', isSelectMode);
+            updateTip(isSelectMode);
+            render();
+        }
+
+        function deleteCube(cubeGroup) {
+            if (!cubeGroup) return;
+
+            scene.remove(cubeGroup);
+            cubes.splice(cubes.indexOf(cubeGroup), 1);
+            
+            cubeGroup.children.forEach(c => {
+                c.geometry?.dispose();
+                c.userData?.faceTextures?.forEach(t => t.dispose());
+            });
+            hideTextureEditor(); 
+            saveState(); 
+            render();
+        }
+        
+        /** * 设置右侧编辑面板，并高亮选中的物体。
+         * @param {THREE.Group} cubeGroup - 选中的 THREE.Group
+         * @param {boolean} shouldUpdateUI - 是否更新贴图画布的 UI 内容 (形状切换时不需要重绘画布)
+         */
+        function setupTextureEditor(cubeGroup, shouldUpdateUI = true) {
+            const editorCanvasDiv = document.getElementById('textureCanvases');
+            const brushControlsDiv = document.getElementById('brushControls');
+            const mesh = cubeGroup.children[0];
+            const { faceCanvases, faceTextures, geometryType } = mesh.userData;
+
+            // --- A. 材质和形状控件设置 ---
+            const meshColorInput = document.getElementById('meshColor');
+            const meshOpacityInput = document.getElementById('meshOpacity');
+            const meshOpacityValueSpan = document.getElementById('meshOpacityValue');
+            const toggleButton = document.getElementById('toggleGeometry');
+            
+            // 1. 初始化控件值
+            meshColorInput.value = `#${new THREE.Color(mesh.userData.baseColor).getHexString()}`;
+            meshOpacityInput.value = mesh.userData.baseOpacity;
+            meshOpacityValueSpan.textContent = mesh.userData.baseOpacity.toFixed(2);
+            toggleButton.textContent = (geometryType === GEOMETRY_TYPE_CUBE) ? "切换到 球体" : "切换到 立方体";
+
+            // --- HELPER FUNCTION to apply consistent highlight effect ---
+            const applyHighlightEffect = (meshToHighlight) => {
+                const baseColor = new THREE.Color(meshToHighlight.userData.baseColor);
+                const highlightColor = new THREE.Color(H_COLOR);
+                const materials = Array.isArray(meshToHighlight.material) ? meshToHighlight.material : [meshToHighlight.material];
+
+                materials.forEach(mat => {
+                    mat.color.copy(baseColor).lerp(highlightColor, 0.7);
+                    mat.opacity = 0.9;
+                    mat.transparent = true;
+                    mat.needsUpdate = true;
+                });
+            };
+
+            // 2. 材质属性更新函数 (用于 Mesh Color/Opacity)
+            const updateMaterialProps = () => {
+                const color = new THREE.Color(meshColorInput.value).getHex();
+                const opacity = parseFloat(meshOpacityInput.value);
+                
+                mesh.userData.baseColor = color;
+                mesh.userData.baseOpacity = opacity;
+
+                applyHighlightEffect(mesh);
+
+                meshOpacityValueSpan.textContent = opacity.toFixed(2);
+                saveState();
+                render();
+            };
+            
+            // 3. 绑定材质事件
+            meshColorInput.oninput = updateMaterialProps;
+            meshOpacityInput.oninput = updateMaterialProps;
+            toggleButton.onclick = () => switchGeometry(cubeGroup);
+
+
+            // --- B. 几何体特定处理 (高亮和贴图UI) ---
+            if (geometryType === GEOMETRY_TYPE_CUBE) {
+                editorCanvasDiv.style.display = 'grid';
+                brushControlsDiv.style.display = 'block';
+                
+                const newEditorMaterials = []; 
+                if (shouldUpdateUI) editorCanvasDiv.innerHTML = ''; 
+
+                for (let i = 0; i < 6; i++) {
+                    const canvas = faceCanvases[i];
+                    const texture = faceTextures[i];
+                    
+                    const mat = H_CUBE_MAT.clone();
+                    mat.map = texture;
+                    newEditorMaterials.push(mat);
+                    
+                    if (shouldUpdateUI) {
+                         canvas.className = 'border border-gray-400 shadow-inner bg-white cursor-crosshair';
+                         let isDrawing = false;
+                         canvas.onmousedown = (e) => {
+                            if (currentCube === cubeGroup) { isDrawing = true; e.stopPropagation(); const ctx = canvas.getContext('2d'); ctx.strokeStyle = brushColor; ctx.lineWidth = brushSize; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); }
+                         };
+                         canvas.onmousemove = (e) => {
+                            if (isDrawing) { const ctx = canvas.getContext('2d'); ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); texture.needsUpdate = true; render(); }
+                         };
+                         canvas.onmouseup = () => { isDrawing = false; saveState(); };
+                         canvas.onmouseleave = () => { isDrawing = false; };
+
+                         const wrapper = document.createElement('div');
+                         wrapper.className = 'flex flex-col items-center p-1 bg-gray-200 rounded-lg';
+                         wrapper.innerHTML = `<span class="text-xs font-medium mb-1 text-gray-600">${FACE_NAMES[i]}</span>`;
+                         wrapper.appendChild(canvas);
+                         editorCanvasDiv.appendChild(wrapper);
+                    }
+                }
+                mesh.material = newEditorMaterials;
+
+            } else { // GEOMETRY_TYPE_SPHERE
+                editorCanvasDiv.style.display = 'none';
+                brushControlsDiv.style.display = 'none';
+                
+                const mat = H_CUBE_MAT.clone();
+                mat.map = null;
+                mesh.material = mat;
+            }
+            
+            applyHighlightEffect(mesh);
+
+            document.getElementById('textureEditorContainer').classList.remove('hidden');
+            document.getElementById('deselectCube').onclick = hideTextureEditor;
+            controls.enabled = false; 
+            render();
+        }
+
+        function addCubeAtHighlightPosition() {
+            if (!highlightMesh.visible) return; 
+            
+            const [targetX, targetZ] = [highlightMesh.position.x, highlightMesh.position.z];
+            let maxTopY = 0; 
+
+            cubes.forEach(group => {
+                if (Math.abs(group.position.x - targetX) < 0.001 && Math.abs(group.position.z - targetZ) < 0.001) {
+                    maxTopY = Math.max(maxTopY, group.position.y + cw / 2);
+                }
+            });
+
+            const newY = maxTopY + cw / 2;
+            const group = createCubeGroup(targetX, newY, targetZ);
+            const mesh = group.children[0];
+
+            mesh.userData.baseColor = DEFAULT_COLOR;
+            mesh.userData.baseOpacity = DEFAULT_OPACITY;
+
+            mesh.material = mesh.userData.faceTextures.map(texture => {
+                const mat = CUBE_MAT.clone();
+                mat.map = texture;
+                return mat;
+            });
+
+            scene.add(group);
+            cubes.push(group);
+            saveState(); 
+            render();
+        }
+        
+        function createGridPlane() {
+            scene.children.filter(c => c !== camera).forEach(c => scene.remove(c));
+            cubes = [];
+            hideTextureEditor(); 
+
+            cw = W / N; ch = H / M; 
+
+            const planeGeom = new THREE.PlaneGeometry(W, H, N, M);
+            const planeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            planeMesh = new THREE.Mesh(planeGeom, planeMat);
+            planeMesh.rotation.x = -Math.PI / 2;
+            scene.add(planeMesh);
+
+            const grid = new THREE.GridHelper(W, Math.max(N,M), 0x000000, 0x000000);
+            grid.material.opacity = 0.2;
+            grid.material.transparent = true;
+            grid.position.y = 0.005;
+            scene.add(grid);
+
+            highlightMesh = new THREE.Mesh(new THREE.PlaneGeometry(cw, ch), new THREE.MeshBasicMaterial({ color: 0x8a2be2, opacity: 0.6, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+            highlightMesh.position.y = 0.01;
+            highlightMesh.rotation.x = -Math.PI / 2;
+            highlightMesh.visible = false;
+            scene.add(highlightMesh);
+        }
+
+        function onMouseMove(event) {
+            const bounds = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+            mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+            
+            if (!isSelectMode) { 
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(planeMesh, false);
+
+                if (intersects.length > 0) {
+                    const [x, z] = [intersects[0].point.x, intersects[0].point.z]; 
+                    const [i, j] = [Math.floor((x + W / 2) / cw), Math.floor((z + H / 2) / ch)];
+                    const [col, row] = [Math.max(0, Math.min(N - 1, i)), Math.max(0, Math.min(M - 1, j))];
+                    
+                    highlightMesh.geometry.dispose();
+                    highlightMesh.geometry = new THREE.PlaneGeometry(cw, ch);
+                    highlightMesh.position.x = (col * cw) + (cw / 2) - (W / 2);
+                    highlightMesh.position.z = (row * ch) + (ch / 2) - (H / 2);
+                    highlightMesh.visible = true;
+                } else {
+                    highlightMesh.visible = false;
+                }
+                render();
+            } 
+        }
+
+        function onMouseDown(event) {
+            if (event.button !== 0 || !isSelectMode) return; 
+            
+            event.stopPropagation();
+
+            const bounds = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+            mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersectableMeshes = cubes.map(g => g.children[0]);
+            const hitCube = raycaster.intersectObjects(intersectableMeshes, false)[0]?.object.parent || null; 
+
+            if (hitCube) {
+                if (hitCube === currentCube) hideTextureEditor(); 
+                else {
+                    if (currentCube) hideTextureEditor(); 
+                    currentCube = hitCube;
+                    setupTextureEditor(currentCube); 
+                }
+            } else {
+                hideTextureEditor();
+            }
+            render();
+        }
+        
+        function setupEditorControls() {
+            const colorInput = document.getElementById('brushColor');
+            const sizeInput = document.getElementById('brushSize');
+            const sizeValueSpan = document.getElementById('brushSizeValue');
+
+            colorInput.addEventListener('input', (e) => brushColor = e.target.value);
+            sizeInput.addEventListener('input', (e) => {
+                brushSize = parseInt(e.target.value, 10);
+                sizeValueSpan.textContent = `${brushSize}px`;
+            });
+        }
+
+        function init() {
+            const container = document.getElementById('container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1f2937);
+
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = false; 
+            controls.addEventListener('change', render);
+
+            setupEditorControls(); 
+            loadState();
+            
+            // --- 事件绑定 ---
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+                render();
+            }, false);
+            
+            container.addEventListener('mousemove', onMouseMove, false);
+            container.addEventListener('mousedown', onMouseDown, false); 
+            
+            document.getElementById('generateButton').addEventListener('click', () => {
+                const nVal = parseInt(document.getElementById('inputN').value);
+                const mVal = parseInt(document.getElementById('inputM').value);
+
+                    N = nVal; M = mVal;
+                    createGridPlane();
+                    saveState();
+                    render();
+                
+            });
+            document.getElementById('toggleSelectMode').addEventListener('click', toggleCubeSelectionMode);
+            
+            window.addEventListener('keydown', (event) => {
+                if ((event.key === 's' || event.key === 'S') && !event.repeat) {
+                    toggleCubeSelectionMode();
+                } else if ((event.key === 'Delete' || event.key === 'Backspace') && isSelectMode && currentCube) {
+                    event.preventDefault();
+                    deleteCube(currentCube);
+                } else if ((event.key === 'c' || event.key === 'C') && !isSelectMode && highlightMesh.visible) {
+                    addCubeAtHighlightPosition();
+                }
+				
+				
+				
+				if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                    let moved = false;
+                    
+                    // 1. 获取相机在X-Z平面上的前进方向 (忽略Y轴，保持在地面上移动)
+                    camera.getWorldDirection(direction);
+                    direction.y = 0;
+                    direction.normalize(); // 归一化以保证移动速度一致
+
+                    const speed = 0.005;
+                    
+                    switch (event.key) {
+                        case 'ArrowUp':
+                            // 前进：沿方向向量移动
+                            camera.position.addScaledVector(direction, speed);
+                            controls.target.addScaledVector(direction, speed);
+                            moved = true;
+                            break;
+                        case 'ArrowDown':
+                            // 后退：沿相反方向移动
+                            camera.position.addScaledVector(direction, -speed);
+                            controls.target.addScaledVector(direction, -speed);
+                            moved = true;
+                            break;
+                        case 'ArrowLeft':
+                            // 左平移：计算左侧（垂直于方向）向量
+                            // 通过方向向量与Y轴的叉积得到左侧向量
+                            const left = direction.clone().cross(upVector).normalize(); 
+                            camera.position.addScaledVector(left, speed);
+                            controls.target.addScaledVector(left, speed);
+                            moved = true;
+                            break;
+                        case 'ArrowRight':
+                            // 右平移：左侧向量的相反方向
+                            const right = direction.clone().cross(upVector).normalize().negate(); 
+                            camera.position.addScaledVector(right, speed);
+                            controls.target.addScaledVector(right, speed);
+                            moved = true;
+                            break;
+                    }
+
+                    if (moved) {
+                        controls.update(); // 必须更新 controls 以应用新的 target
+                        render();
+                        event.preventDefault(); // 阻止默认的浏览器滚动/导航行为
+                    }
+                }
+            }, false);
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
